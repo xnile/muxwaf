@@ -29,7 +29,7 @@ const (
 	RateLimit               = "/api/rate-limit"
 	Certificate             = "/api/certificates"
 	Site                    = "/api/sites"
-	SampledLogUpload        = "/sys/configs/sampled_log_upload"
+	SampledLogUpload        = "/api/sys/configs/sampled_log_upload"
 	All                     = "/api/sys/configs"
 )
 

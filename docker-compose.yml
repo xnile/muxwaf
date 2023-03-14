@@ -8,6 +8,7 @@ services:
     ports:
       - 8083:8083
       - 8080:80
+      - 8443:443
 
   db:
     image: postgres:13

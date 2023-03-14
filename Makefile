@@ -6,7 +6,7 @@ build-apiserver:
 	cd apiserver && env CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o bin/muxwaf-apiserver .
 
 build-ui:
-	cd ui && yarn run build
+	cd ui && yarn -i && yarn run build
 
 build-docker-guard:
 	docker buildx build -f docker/guard/Dockerfile -t xnile/muxwaf-guard:$(VERSION) ./

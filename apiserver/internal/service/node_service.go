@@ -309,7 +309,7 @@ func (svc *nodeService) Sync(id int64) error {
 		RateLimit:       arrayRateLimitGuard,
 	}
 
-	sampledLogUploadApi := "http://" + utils.GetOutboundIP().String() + ":" + viper.GetString("port") + "/logs/sampled"
+	sampledLogUploadApi := "http://" + utils.GetOutboundIP().String() + ":" + viper.GetString("port") + "/api/logs/sampled"
 	logCfgGuard.SampledLogUploadAPI = sampledLogUploadApi
 
 	guardConfigs := model.GuardConfigs{

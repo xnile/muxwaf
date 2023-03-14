@@ -20,7 +20,7 @@ MuxWaf是基于OpenResty实现的一款防CC的高性能WAF。
 ## 安装
 ### 快速体验
 
-需要dockert和docker-compose环境。
+需要docker和docker-compose环境。
 
 * git clone https://github.com/xnile/muxwaf ./
 * cd muxwaf

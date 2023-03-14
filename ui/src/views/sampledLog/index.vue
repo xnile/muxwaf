@@ -48,9 +48,14 @@
       </div>
       <a-table :columns="columns" :dataSource="list" :rowKey="record => record.id" :pagination="false">
         <span slot="time" slot-scope="text">{{ text | moment }}</span>
-        <!-- <template slot="operation" slot-scope="text, record">
-          <a-button type="link" size="small" @click="toDetail(record.id)">详情</a-button>
-        </template> -->
+        <template slot="action" slot-scope="text">
+          <template v-if="text === 1">
+            <a-badge status="success" text="放行" />
+          </template>
+          <template v-else>
+            <a-badge status="error" text="拦截" />
+          </template>
+        </template>
       </a-table>
       <!-- 分页 -->
       <a-row :style="{ marginTop: '10px' }" v-if="meta.total">
@@ -123,7 +128,8 @@ const columns = [
   {
     title: '防护动作',
     dataIndex: 'action',
-    width: '8%'
+    width: '8%',
+    scopedSlots: { customRender: 'action' }
   },
   {
     title: 'IP',
