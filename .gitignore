@@ -1,0 +1,16 @@
+.DS_Store
+node_modules/
+
+#ide
+.idea/
+.vscode/
+
+*.log
+*.swp
+*.pid
+
+bin/
+dist/
+
+/guard/config.json
+config.json

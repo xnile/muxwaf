@@ -1,0 +1,177 @@
+@import '~ant-design-vue/es/style/themes/default.less';
+
+html,
+body,
+#app, #root {
+  height: 100%;
+}
+
+.colorWeak {
+  filter: invert(80%);
+}
+
+.ant-layout.layout-basic {
+  height: 100vh;
+  min-height: 100vh;
+}
+
+canvas {
+  display: block;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+// 数据列表 样式
+.table-alert {
+  margin-bottom: 16px;
+}
+// 数据列表 操作
+.table-operator {
+  margin-bottom: 18px;
+
+  button {
+    margin-right: 8px;
+  }
+}
+// 数据列表 搜索条件
+.table-page-search-wrapper {
+
+  .ant-form-inline {
+    .ant-form-item {
+      display: flex;
+      margin-bottom: 24px;
+      margin-right: 0;
+
+      .ant-form-item-control-wrapper {
+        flex: 1 1;
+        display: inline-block;
+        vertical-align: middle;
+      }
+
+      > .ant-form-item-label {
+        line-height: 32px;
+        padding-right: 8px;
+        width: auto;
+      }
+      .ant-form-item-control {
+        height: 32px;
+        line-height: 32px;
+      }
+    }
+  }
+
+  .table-page-search-submitButtons {
+    display: block;
+    margin-bottom: 24px;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: @screen-xs) {
+  .ant-table {
+    width: 100%;
+    overflow-x: auto;
+    &-thead > tr,
+    &-tbody > tr {
+      > th,
+      > td {
+        white-space: pre;
+        > span {
+          display: block;
+        }
+      }
+    }
+  }
+}
+
+// 自定义
+.ant-advanced-search-form{
+  .ant-form-item {
+    display: flex;
+  }
+  .ant-form-item-control-wrapper {
+    flex: 1 ;
+  }
+}
+
+.ant-page-header-footer .ant-tabs-bar .ant-tabs-nav .ant-tabs-tab {
+    padding: 8px;
+    font-size: 14px;
+    color: #000;
+}
+
+.ant-tabs-nav .ant-tabs-tab-active {
+    font-weight: 600;
+}
+
+.ant-page-header-heading-title {
+    font-size: 18px;
+}
+
+.ant-page-header-footer {
+    margin-top: 8px;
+}
+
+// 红点
+.suceess-status{
+  position: relative;
+  padding-left: 16px;
+  color: #555;
+  font-size: 14px;
+  cursor: pointer;
+}
+.suceess-status::before{
+  position: absolute;
+  top: 6px;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  background: #00BDA5;
+  border-radius: 8px;
+  content: '';
+}
+
+.fail-approval-status{
+  position: relative;
+  padding-left: 16px;
+  color: #555;
+  font-size: 14px;
+  cursor: pointer;
+}
+.fail-approval-status::before{
+  position: absolute;
+  top: 6px;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  background:#425B76;
+  border-radius: 8px;
+  content: '';
+}
+
+
+.drawer-submit-button {
+   position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  border-top: 1px solid #e9e9e9;
+  padding: 10px 16px;
+  background: #fff;
+  text-align: right;
+  z-index: 1;
+}
+
+
+.text-danger {
+    color: #dd2b0e !important;
+}
