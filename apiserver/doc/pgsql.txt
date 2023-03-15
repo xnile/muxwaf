@@ -1,1 +1,0 @@
-CREATE TABLE "preset_rule_group" ("id" bigserial,"attack_type" smallint,"name" text,"remark" text,"created_at" bigint,PRIMARY KEY ("id"))
