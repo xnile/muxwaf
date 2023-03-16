@@ -9,7 +9,7 @@ local ipairs         = ipairs
 local string_format  = string.format
 local table_new      = table.new
 local table_clear    = table.clear
-local table_deepcopy = table.deepcopy
+local table_clone    = require("table.clone")
 
 -- local shm       = ngx_shared[constants.DICTS.CERTIFICATE]
 local certificates = table_new(0, 20)
@@ -67,7 +67,7 @@ function _M.update(_, items)
 end
 
 function _M.full_sync(_, items)
-    -- local del_ids = utils.diff_cfg_ids(table_deepcopy(cache), items)
+    -- local del_ids = utils.diff_cfg_ids(table_clone(cache), items)
 
     -- local this = _M
     -- this:del(del_ids)

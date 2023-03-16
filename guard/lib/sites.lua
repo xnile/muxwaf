@@ -7,7 +7,7 @@ local ngx            = ngx
 local ipairs         = ipairs
 local table_new      = table.new
 local table_clear    = table.clear
-local table_deepcopy = table.deepcopy
+local table_clone    = require("table.clone")
 local string_format  = string.format
 
 local _M = {
@@ -48,7 +48,7 @@ function _M.add(_, items)
             goto continue
         end
 
-        sites[id] = table_deepcopy(item)
+        sites[id] = table_clone(item)
         host_matcher[host] = id
         log.info(string_format("add site '%s' success", host))
         ::continue::
@@ -87,11 +87,11 @@ function _M.update(_, items)
         end
 
         if item.config then
-            candidate.config = table_deepcopy(item.config)
+            candidate.config = table_clone(item.config)
         end
 
         if item.origins then
-            candidate.origins = table_deepcopy(item.origins)
+            candidate.origins = table_clone(item.origins)
         end
 
         ::continue::
@@ -176,7 +176,7 @@ end
 function _M.get_raw(_)
   local cnt = {}
   for _, item in pairs(cache) do
-    cnt[#cnt +1] = table_deepcopy(item)
+    cnt[#cnt +1] = table_clone(item)
   end
   return cnt
 end

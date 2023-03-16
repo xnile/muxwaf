@@ -1,6 +1,6 @@
 local require      = require
 local _            = require("cjson.safe").encode_empty_table_as_object(false)
-local _            = require("utils.table.deepcopy")
+-- local _            = require("utils.table.deepcopy")
 local tablepool    = require("resty.tablepool")
 local ipdb_parser  = require("resty.ipdb.city")
 local constants    = require("constants")
@@ -72,10 +72,6 @@ end
 function _M.api_serve()
   ctx = require("ctx").new()
   apis:start(ctx)
-end
-
-function _M.say_410()
-  ctx.say_410()
 end
 
 function _M.say_500()

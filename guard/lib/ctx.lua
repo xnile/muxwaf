@@ -14,7 +14,7 @@ local cjson              = require("cjson.safe")
 local ngx                = ngx
 local ngx_say            = ngx.say
 local ngx_worker_id      = ngx.worker.id
-local str_sub            = ngx.re.sub
+-- local str_sub            = ngx.re.sub
 local ngx_unescape_uri   = ngx.unescape_uri
 local req_read_body      = ngx.req.read_body
 local req_get_body_data  = ngx.req.get_body_data
@@ -114,14 +114,11 @@ local function say_block(ctx)
   metrics.incr_block_count()
 
   local request_id = ctx.var.request_id
-  local rendered_page, _, err = str_sub(page_403, "{{REQUEST_ID}}", request_id)
-  if not rendered_page then
-    log.error(string_format("failed to render page: %s", err))
-    return ngx_exit(HTTP_FORBIDDEN)
-  end
+  local page_403 = page_403
+  page_403[2] = request_id
   ngx.header["Content-Type"] = 'text/html'  -- should before ngx.status
   ngx.status = HTTP_FORBIDDEN
-  ngx_say(rendered_page)
+  ngx_say(page_403)
   ngx.exit(ngx.status)
 end
 

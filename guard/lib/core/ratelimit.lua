@@ -9,7 +9,7 @@ local setmetatable   = setmetatable
 local string_format  = string.format
 local table_new      = table.new
 local table_clear    = table.clear
-local table_deepcopy = table.deepcopy
+local table_clone    = require("table.clone")
 
 local dict_name         = require("constants").DICTS.RATELIMIT
 local ratelimit_device  = ratelimit.new(dict_name)
@@ -26,7 +26,7 @@ function _M.add(self, items)
   for _, item in pairs(items) do
     local id, host, path, match_mode = item.id, item.host, item.path, item.match_mode
 
-    cache[id] = table_deepcopy(item)
+    cache[id] = table_clone(item)
 
     if not tree[host] then
       tree[host] = {
@@ -104,7 +104,7 @@ function _M.update(self, items)
 
     -- only limit or window changed
     if host == old.host and path == old.path and match_mode == old.match_mode then
-      cache[id] = table_deepcopy(item)
+      cache[id] = table_clone(item)
       goto continue
     end
 
@@ -119,7 +119,7 @@ end
 
 
 function _M.full_sync(_, items)
-  local del_ids = utils.diff_cfg_ids(table_deepcopy(cache), items)
+  local del_ids = utils.diff_cfg_ids(table_clone(cache), items)
 
   local this = _M
   this:del(del_ids)
@@ -167,7 +167,7 @@ end
 function _M.get_raw(_)
   local cnt = {}
   for _, item in pairs(cache) do
-    cnt[#cnt +1] = table_deepcopy(item)
+    cnt[#cnt +1] = table_clone(item)
   end
   return cnt
 end

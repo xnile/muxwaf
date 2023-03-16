@@ -6,7 +6,7 @@ local setmetatable   = setmetatable
 local string_format  = string.format
 local table_clear    = table.clear
 local table_new      = table.new
-local table_deepcopy = table.deepcopy
+local table_clone    = require("table.clone")
 
 local cache = table_new(0, 100)
 local tree  = ipmatcher.new()
@@ -28,7 +28,7 @@ function _M.add(self, items)
       goto continue
     end
 
-    cache[id] = table_deepcopy(item)
+    cache[id] = table_clone(item)
     log.info(string_format("add blacklist ip '%s' success", ip))
 
     ::continue::
@@ -70,7 +70,7 @@ function _M.full_sync(_, items)
     local id, ip = item.id, item.ip
     local ok, err = new_tree:insert(ip, id)
     if ok then
-      new_cache[id] = table_deepcopy(item)
+      new_cache[id] = table_clone(item)
     else
       log.error(string_format("failed full sync blacklist ip '%s': %s", ip, err))
     end
@@ -97,7 +97,7 @@ end
 function _M.get_raw(_)
   local cnt = {}
   for _, item in pairs(cache) do
-    cnt[#cnt +1] = table_deepcopy(item)
+    cnt[#cnt +1] = table_clone(item)
   end
   return cnt
 end

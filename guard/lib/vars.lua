@@ -6,18 +6,18 @@ local string_format = string.format
 
 
 local NGX_VARS = {
-      "uri",
-      "host",
-      "https",
-      "scheme",
-      "remote_addr",
-      "realip_remote_addr",
-      "request_id",
-      "request_uri",
-      "request_time",
-      "request_method",
-      "ssl_server_name",
-      "server_port",
+    "uri",
+    "host",
+    "https",
+    "scheme",
+    "remote_addr",
+    "realip_remote_addr",
+    "request_id",
+    "request_uri",
+    "request_time",
+    "request_method",
+    "ssl_server_name",
+    "server_port",
 }
 
 local CUSTOME_VARS = {
@@ -25,17 +25,19 @@ local CUSTOME_VARS = {
     "upstream_scheme"
 }
 
--- TODO: cache var
-local function getter(_, key)
+local function getter(self, key)
 
     if type(key) ~= "string" then
         return error("invalid argument, string expect", 2)
     end
 
-    local vars = tablex.array_concat(NGX_VARS, CUSTOME_VARS)
+    local vars = tablex.array_merge(NGX_VARS, CUSTOME_VARS)
     if not tablex.array_contains(vars, key) then
         return error(string_format("var '%s' is not allowed to access", key), 2)
     end
+
+    -- lazy caching
+    -- self[key] = ngx_var[key]
 
     return ngx_var[key]
 end

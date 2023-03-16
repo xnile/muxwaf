@@ -3,7 +3,7 @@ local log           = require("log")
 local table_new     = table.new
 local table_clear   = table.clear
 local string_format = string.format
--- local table_deepcopy = table.deepcopy
+-- local table_clone    = require("table.clone")
 
 local _M  = {
   _VERSION = 0.1,
@@ -34,35 +34,6 @@ local function find_ip_location(ip)
     return location
 end
 
-
--- @schema 
--- {
---     description = "add or update region limit",
---     type = "array",
---     items = {
---         type = "object",
---         properties = {
---             id = id_def,
---             site_id = id_def,
---             countries = {
---                 type = "array",
---                 items = { type = "string"},
---             },
---             regions = {
---                 type = "array",
---                 items = { type = "string"},       
---             },
---             mode = {
---                 description = "match mode, 0 as blacklist, 1 as whitelist"
---                 type = "integer",
---                 enum = { 0, 1 },
---                 default = 0,
---             },
---         },
---         additionalProperties = false,
---         required = { "site_id", "countries", "regions", "mode" },
---     },
--- }
 local function update_with_add(items)
     if not items then return end
     for _, item in ipairs(items) do
@@ -98,13 +69,7 @@ function _M.update(_, items)
     update_with_add(items)
 end
 
--- @param items array like table, an array containing the site_ids to delete
--- @schema
--- {
---     description = "delete region blacklist",
---     type = "array",
---     items = site_id_def
--- }
+
 function _M.del(_, items)
     for _, site_id in ipairs(items) do
         if not matcher[site_id] then

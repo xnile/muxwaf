@@ -11,7 +11,7 @@ local assert        = assert
 local io_open       = io.open
 local io_close      = io.close
 local string_format = string.format
-local table_deepcopy = table.deepcopy
+local table_clone   = require("table.clone")
 
 local shm_log = ngx_shared[constants.DICTS.LOG]
 
@@ -88,7 +88,7 @@ local function update_log_config(cfg)
         ngx_log(ngx.ERR, "failed to update log configuration: parameter error")
         return
     end
-    config = table_deepcopy(cfg)
+    config = table_clone(cfg)
 end
 
 local function sampled(ctx, rule_type, action)
@@ -174,7 +174,7 @@ function _M.worker_exit(self)
 end
 
 function _M.get_raw(_)
-    return table_deepcopy(config)
+    return table_clone(config)
 end
 
 setmetatable(_M, {
