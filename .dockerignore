@@ -1,0 +1,5 @@
+/guard/config.json
+/guard/*.conf
+!/guard/nginx.docker.conf
+
+.gitkeep

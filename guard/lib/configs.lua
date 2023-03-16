@@ -101,20 +101,11 @@ setmetatable(this, {
 local config_types = {
     this = this
 }
+
 setmetatable(config_types, {
     __index = configs
 })
 
-
-
-
--- local function get_cnt_configs(_)
---     local cfg = {}
---     for k, c in pairs(configs) do
---         cfg[k] = c:get_raw()
---     end
---     return cfg
--- end
 
 local async_save_config
 do
@@ -139,65 +130,6 @@ do
         end
     end
 end
-
--- local function sync_cfg_from_cfg_file(cfg)
-
---     -- Exit if file is empty
---     if not cfg then return end
-
---     for k, v in pairs(cfg) do
---         if configs[k] then
---             configs[k]:full_sync(cfg[k])
---         end
---     end    
-
--- end
-
--- full configs sync
--- local function apply_full_sync(cfg)
---     if not cfg then return end
-
---     for k, v in pairs(cfg) do
---         if configs[k] then
---             configs[k]:full_sync(cfg[k])
---         end
---     end
-
--- end
-
--- local function apply_sync(target, operation, cfg)
---   if operation == "add" then
---     target:add(cfg)
---   elseif operation == "del" then
---     target:del(cfg)
---   elseif operation == "update" then
---     target:update(cfg)
---   elseif operation == "reset" then
---     target:reset()
---   elseif operation == "sync" then
---     -- full configuration
---     apply_full_sync(cfg)
---   else
---     log.warn(operation .. " operation is not supported")
---     return
---   end
-
---   -- trigger save config to file
---   async_save_config()
--- end
-
--- local function apply_sync(target, operation, cfg)
---     if operation == "sync" then
---         -- full configuration
---         apply_full_sync(cfg)
---     else
---         target[operation](nil,cfg)
---     end
-
---       -- trigger save config to file
---     async_save_config()
--- end
-
 
 function _M.init()
     local fd, err = io_open(CONFIG_FILE, "r")

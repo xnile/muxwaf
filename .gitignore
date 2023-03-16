@@ -13,11 +13,9 @@ bin/
 dist/
 
 /guard/logs/
-/guard/nginx.dev.conf
 /guard/config.json
 
-/apiserver/conf/*
-!/apiserver/conf/config.default.yaml
-
+/guard/nginx.dev.conf
+/apiserver/conf/config.dev.yaml
 
 test/
