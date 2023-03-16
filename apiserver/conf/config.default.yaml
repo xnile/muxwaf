@@ -1,0 +1,16 @@
+host: 0.0.0.0
+port: 8001
+postgresql:
+  host: 127.0.0.1
+  port: 5432
+  db: muxwaf
+  username: muxwaf
+  password: muxwaf
+  debug: false
+log:
+  writers: file,stdout
+  logger_level: error
+  logger_file: /tmp/muxwaf-apiserver.log
+  log_rolling_policy: daily
+  log_rotate_date: 1
+  log_backup_count: 7
