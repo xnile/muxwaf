@@ -11,6 +11,7 @@ local metrics            = require("metrics")
 local ngx_re_split       = require("ngx.re").split
 local tablepool          = require("resty.tablepool")
 local cjson              = require("cjson.safe")
+local stringx            = require("utils.stringx")
 local ngx                = ngx
 local ngx_say            = ngx.say
 local ngx_worker_id      = ngx.worker.id
@@ -91,23 +92,31 @@ local function get_real_client_ip(host, remote_addr)
 
   local raw_header_ip = ngx.req.get_headers()[real_ip_header]
   if not raw_header_ip then
-    log.error(string_format("failed to get ip from http header: '%s' header does not found, fallback to use remote_addr", string_upper(real_ip_header)))
+    log.warn(string_format("failed to get ip from http header: '%s' header does not found, fallback to use remote_addr", string_upper(real_ip_header)))
     return remote_addr
   end
 
-  local xffs, err = ngx_re_split(raw_header_ip, ", ")
-  if not xffs then
+  -- local xffs, err = ngx_re_split(raw_header_ip, ", ")
+  -- if not xffs then
+  --   return remote_addr
+  -- end
+
+  -- local real_client_ip = xffs[1]
+
+  local real_client_ip = ''
+  local idx = stringx.rfind_char(raw_header_ip, ',')
+  if not idx then
+    real_client_ip = raw_header_ip
+  else
+    real_client_ip = raw_header_ip:sub(1, idx-1)
+  end
+
+  if not net.is_valid_ip(real_client_ip) then
+    log.warn(string_format("failed to get ip from http header: ip '%s' is invalid, fallback to use remote_addr", client_real_ip))
     return remote_addr
   end
 
-  local client_real_ip = xffs[1]
-
-  if not net.is_valid_ip(client_real_ip) then
-    log.error(string_format('failed to get ip from http header: ip '%s' is invalid', client_real_ip))
-    return remote_addr
-  end
-
-  return client_real_ip
+  return real_client_ip
 end
 
 local function say_block(ctx)
