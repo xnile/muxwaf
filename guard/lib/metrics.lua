@@ -22,6 +22,7 @@ local BLOCK_RULE_TYPE   = { RULE_TYPE.BLACKLIST_IP, RULE_TYPE.BLACKLIST_REGION, 
 
 local ditcs       = constants.DICTS
 local shm_metrics = ngx_shared[ditcs.METRICS]
+local resp_sts_code_shm_keys
 
 
 ffi.cdef[[
@@ -76,7 +77,7 @@ local function get_block_count()
     for _, rule_type in ipairs(BLOCK_RULE_TYPE) do
         local count, err = shm_metrics:get("block_count_" .. rule_type)
         if err then
-            log.error("Failed to get the number of blocks: ", tostring(err))
+            log.error("failed to get the number of blocks: ", tostring(err))
         end
         count = count and count or 0
         block_count[rule_type] = count
@@ -115,6 +116,51 @@ do
 end
 
 
+-- TODO: better it
+function _M.incr_resp_sts_code()
+    local code = ngx.var.status
+    local shm_key = ''
+    if code == '200' then
+        shm_key = '200'
+    elseif code == '204' then
+        shm_key = '204'
+    elseif code == '403' then
+        shm_key = '403'
+    elseif code == '404' then
+        shm_key = '404'
+    elseif code == '499' then
+        shm_key = '499'
+    elseif code == '500' then
+        shm_key = '500'
+    elseif code  == '502' then
+        shm_key = '502'
+    elseif code == '504' then
+        shm_key = '504'
+    else
+        shm_key = 'other_no_200'
+    end
+
+    local _, err = shm_metrics:incr("resp_sts_code_" .. shm_key, 1, 0, 0)
+    if err then
+        log.error("failed to increase response status code: ", tostring(err))
+    end
+end
+
+
+resp_sts_code_shm_keys = { '200', '204', '403' ,'404', '499', '500', '502', '504', 'other_no_200'}
+local function get_resp_sts_code_count()
+    local r = {}
+    for _, key in ipairs(resp_sts_code_shm_keys)do
+        local c, err = shm_metrics:get("resp_sts_code_" .. key)
+        if err then
+            log.error("failed to get the number of response status code: ", tostring(err))
+        end
+        r[key] = c and c or 0
+    end
+    return r
+end
+
+
 function _M.show()
     return {
         nginx_status = get_nginx_status(),
@@ -123,7 +169,8 @@ function _M.show()
         qps = qps,
         -- TODO: collect all worker lua vm
         lua_vm = utils.format_capacity(collectgarbage("count") *1024),
-        worker_id = ngx.worker.id()
+        worker_id = ngx.worker.id(),
+        rsp_sts_code = get_resp_sts_code_count(),
     }
 end
 

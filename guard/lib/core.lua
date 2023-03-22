@@ -17,6 +17,14 @@ local _M = {
   _VERSION = 0.1
 }
 
+local function bypass_admin_apis(ctx)
+  if ctx.var.server_port == '8083' then
+    log.error("BYPASS")
+    return ngx_exit(NGX_OK)
+  end
+end
+
+
 local function check_site_is_exist(ctx)
   if not sites.is_exist(ctx.var.host) then
     log.error("site ", ctx.var.host, " is not exist")
@@ -113,6 +121,7 @@ end
 
 
 function _M.access(_, ctx)
+  bypass_admin_apis(ctx)
   check_site_is_exist(ctx)
   check_whitelist_ip(ctx)
   check_whitelist_url(ctx)

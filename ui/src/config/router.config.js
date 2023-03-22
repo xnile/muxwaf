@@ -33,6 +33,7 @@ export const asyncRouterMap = [
         name: 'Site',
         component: RouteView,
         meta: { title: '网站管理', icon: 'setting', permission: ['超级管理员', '管理员'] },
+        redirect: '/site/list',
         children: [
           {
             path: '/site/list',

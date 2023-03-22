@@ -217,7 +217,7 @@ const columns = [
   },
   {
     title: '前置CDN',
-    dataIndex: 'config.pre_cdn',
+    dataIndex: 'config.is_real_ip_from_header',
     scopedSlots: { customRender: 'pre_cdn' }
   },
   {

@@ -6,7 +6,8 @@ local ipdb_parser  = require("resty.ipdb.city")
 local constants    = require("constants")
 local page_500     = require("page.500")
 local apis         = require("apis")
-local time         = require "time"
+local time         = require("time")
+local metrics      = require("metrics")
 local setmetatable = setmetatable
 local tab_new      = table.new
 local assert       = assert
@@ -47,8 +48,13 @@ function _M.exit_worker_phase()
   log.worker_exit()
 end
 
+
+local mod_ctx -- lazy load
 function _M.access_phase()
-  ctx = require("ctx").new()
+  if not mod_ctx then
+    mod_ctx = require('ctx')
+  end
+  ctx = mod_ctx.new()
   
   local core = require("core")
   core:access(ctx)
@@ -67,10 +73,11 @@ end
 
 function _M.log_phase()
   tablepool.release("pool_ctx", ctx)
+  metrics.incr_resp_sts_code()
 end
 
 function _M.api_serve()
-  ctx = require("ctx").new()
+  -- ctx = require("ctx").new()
   apis:start(ctx)
 end
 
