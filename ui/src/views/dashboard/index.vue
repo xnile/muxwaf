@@ -1,5 +1,5 @@
 <template>
   <div>
-  dashboard
+    dashboard
   </div>
 </template>

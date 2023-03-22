@@ -60,10 +60,11 @@ return {
   },
 
   RULE_TYPE = {
-    WHITELIST_IP    = 'whitelist_ip',
-    WHITELIST_URL   = 'whitelist_url',
-    BLACKLIST_IP    = 'blacklist_ip',
-    RATELIMIT       = 'ratelimit',
+    WHITELIST_IP     = 'whitelist_ip',
+    WHITELIST_URL    = 'whitelist_url',
+    BLACKLIST_IP     = 'blacklist_ip',
+    RATELIMIT        = 'ratelimit',
+    BLACKLIST_REGION = 'blacklist_region',
   },
 
   ACTION_TYPES = {

@@ -7,6 +7,7 @@ local C           = ffi.C
 local tonumber    = tonumber
 local tostring    = tostring
 local math        = math
+local ipairs      = ipairs
 local table_new   = table.new
 local ngx_shared  = ngx.shared
 
@@ -14,9 +15,13 @@ local _M = {
     _VERSION = 0.1
 }
 
+
+local CALC_QPS_INTERVAL = constants.CALC_QPS_INTERVAL
+local RULE_TYPE         = constants.RULE_TYPE
+local BLOCK_RULE_TYPE   = { RULE_TYPE.BLACKLIST_IP, RULE_TYPE.BLACKLIST_REGION, RULE_TYPE.RATELIMIT }
+
 local ditcs       = constants.DICTS
 local shm_metrics = ngx_shared[ditcs.METRICS]
-local CALC_QPS_INTERVAL = constants.CALC_QPS_INTERVAL
 
 
 ffi.cdef[[
@@ -55,30 +60,55 @@ local function get_shm_status()
 end
 
 
+-- local function get_block_count()
+
+--     local count, err = shm_metrics:get("block_count")
+--     if err then
+--         log.error("Failed to get the number of blocks: ", tostring(err))
+--     end
+--     count = count and count or 0
+--     return count
+-- end
+
 local function get_block_count()
-    local count, err = shm_metrics:get("block_count")
-    if err then
-        log.error("Failed to get the number of blocks: ", tostring(err))
+    local block_count = {}
+    local total = 0
+    for _, rule_type in ipairs(BLOCK_RULE_TYPE) do
+        local count, err = shm_metrics:get("block_count_" .. rule_type)
+        if err then
+            log.error("Failed to get the number of blocks: ", tostring(err))
+        end
+        count = count and count or 0
+        block_count[rule_type] = count
+        total = total + count
     end
-    count = count and count or 0
-    return count
+    block_count['total'] = total
+    return block_count
 end
 
 
+-- function _M.incr_block_count()
+--     local _, err = shm_metrics:incr("block_count", 1, 0, 0)
+--     if err then
+--         log.error("Failed to increase the number of blocks: ", tostring(err))
+--     end
+-- end
 
-function _M.incr_block_count()
-    local _, err = shm_metrics:incr("block_count", 1, 0, 0)
+
+function _M.incr_block_count(rule_type)
+    local _, err = shm_metrics:incr("block_count_" .. rule_type, 1, 0, 0)
     if err then
-        log.error("Failed to increase the number of blocks: ", tostring(err))
+        log.error("failed to increase the number of blocks: ", tostring(err))
     end
 end
+
 
 local qps = 0
 do
     last_requests = 0
     function _M.calc_qps()
-        total_requests = tonumber(C.ngx_stat_requests[0])
-        incr_requests = total_requests - last_requests
+        local total_requests = tonumber(C.ngx_stat_requests[0])
+        local incr_requests = total_requests - last_requests
         qps = math.floor(incr_requests / CALC_QPS_INTERVAL)
         last_requests = total_requests
     end

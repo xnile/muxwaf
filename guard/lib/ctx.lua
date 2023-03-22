@@ -8,7 +8,7 @@ local net                = require("utils.net")
 local vars               = require("vars")
 local time               = require("time")
 local log                = require("log")
-local metrics            = require("metrics")
+-- local metrics            = require("metrics")
 local ngx_re_split       = require("ngx.re").split
 local tablepool          = require("resty.tablepool")
 local cjson              = require("cjson.safe")
@@ -131,7 +131,7 @@ local function get_real_client_ip(host, remote_addr)
   end
 
   if not net.is_valid_ip(real_client_ip) then
-    log.warn(string_format("failed to get ip from http header: ip '%s' is invalid, fallback to use remote_addr", client_real_ip))
+    log.warn(string_format("failed to get ip from http header: ip '%s' is invalid, fallback to use remote_addr", real_client_ip))
     return remote_addr
   end
 
@@ -139,7 +139,7 @@ local function get_real_client_ip(host, remote_addr)
 end
 
 local function say_block(ctx)
-  metrics.incr_block_count()
+  -- metrics.incr_block_count()
 
   local request_id = ctx.var.request_id
   local page_403 = page_403

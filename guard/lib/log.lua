@@ -13,8 +13,12 @@ local io_close      = io.close
 local string_format = string.format
 local table_clone   = require("table.clone")
 
-local shm_log = ngx_shared[constants.DICTS.LOG]
 
+local _M = {
+  _VERSION = 0.1
+}
+
+local shm_log = ngx_shared[constants.DICTS.LOG]
 local ACTION_TYPES = constants.ACTION_TYPES
 local SAMPLE_LOG_FILE = ngx_cfg_prefix() .. "logs/sampled.log"
 local sample_log_file_fd
@@ -38,9 +42,6 @@ local ngx_log_levels = {
     debug  = ngx.DEBUG,
 }
 
-local _M = {
-  _VERSION = 0.1
-}
 
 local function get_cnt_log_level()
     local cnt
@@ -137,7 +138,13 @@ function _M.reset(_)
     disable_upload_sample_log()
 end
 
+ -- TODO: better
+local metrics  -- lazy load, avoid cycle
 function _M.block(ctx, rule_type)
+    if not metrics then
+        metrics = require("metrics")
+    end
+    metrics.incr_block_count(rule_type)
     sampled(ctx, rule_type, ACTION_TYPES.BLOCK)
 end
 
