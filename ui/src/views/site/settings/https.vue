@@ -1,6 +1,6 @@
 <template>
   <div>
-    <a-form-model :label-col="labelCol" labelAlign="left">
+    <!-- <a-form-model :label-col="labelCol" labelAlign="left">
       <a-form-model-item label="HTTPS" class="info-item">
         <template v-if="enableHttps">已启用</template>
         <template v-else>未启用</template>
@@ -10,7 +10,31 @@
         <template v-else>无</template>
         <a-button type="link" @click="onEditCert">编辑证书</a-button>
       </a-form-model-item>
-    </a-form-model>
+    </a-form-model> -->
+    <a-row>
+      <div class="item">
+        <a-col :span="2">
+          <span class="list-lable">HTTPS :</span>
+        </a-col>
+        <a-col :span="20">
+          <span v-if="form.is_https == 1">已启用</span>
+          <span v-else>未启用</span>
+        </a-col>
+        <a-col :span="2">
+          <a @click="onEditCert">修改</a>
+        </a-col>
+      </div>
+    </a-row>
+    <a-row v-if="form.is_https == 1">
+      <div class="item">
+        <a-col :span="2">
+          <span class="list-lable">HTTPS证书 :</span>
+        </a-col>
+        <a-col :span="12">
+          <span>{{ certName }} </span>
+        </a-col>
+      </div>
+    </a-row>
     <a-modal
       title="编辑证书"
       :visible="visible"
@@ -89,6 +113,7 @@ export default {
         .then(res => {
           if (res.code == 0) {
             this.$message.success('更新成功！')
+            this.doGetConfigs()
             this.visible = false
           } else {
             this.$message.error(res.msg)
@@ -135,6 +160,8 @@ export default {
                 this.certName = r.data
               }
             })
+          } else {
+            this.certName = '无'
           }
         }
       })
@@ -150,4 +177,19 @@ export default {
 }
 </script>
 
-<style lang="less" scoped></style>
+<style scoped>
+.list-lable {
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 14px;
+  /* line-height: 30px; */
+  /* font-weight: 500; */
+}
+.item {
+  /* height: 10px; */
+  line-height: 35px;
+}
+
+.right {
+  text-align: right;
+}
+</style>

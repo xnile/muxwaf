@@ -29,6 +29,7 @@ type ISiteService interface {
 	UpdateRegionBlacklist(id int64, region *model.SiteRegionBlacklistModel) error
 	AddSiteOrigins(id int64, origins []*model.SiteOriginModel) error
 	DelOrigin(id int64) error
+	GetSiteDomain(id int64) (string, error)
 }
 
 type siteService struct {
@@ -602,4 +603,13 @@ func (svc *siteService) getSiteUUID(siteID int64) (string, error) {
 		return "", ecode.InternalServerError
 	}
 	return uuid, nil
+}
+
+func (svc *siteService) GetSiteDomain(id int64) (string, error) {
+	var domain string
+	if err := svc.repo.DB.Model(&model.SiteModel{}).Where("id = ?", id).Select("domain").Scan(&domain).Error; err != nil {
+		logx.Error("[site]Failed to get site domain: ", err)
+		return "", ecode.InternalServerError
+	}
+	return domain, nil
 }

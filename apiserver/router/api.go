@@ -94,6 +94,7 @@ func Init() *gin.Engine {
 		api.PUT("/sites/origins/:id", site.UpdateOrigin)
 		api.DELETE("/sites/origins/:id", site.DelOrigin)
 		api.GET("/sites/:id/https", site.GetHttpsInfo)
+		api.GET("/sites/:id/domain", site.GetSiteDomain)
 		api.GET("/sites/:id/configs", site.GetConfigs)
 		api.GET("/sites/:id/certificates", site.GetCandidateCertificates)
 		api.GET("/sites/:id/region-blacklist", site.GetRegionBlacklist)

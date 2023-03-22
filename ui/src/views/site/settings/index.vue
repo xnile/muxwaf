@@ -87,7 +87,6 @@ export default {
   },
   mounted() {
     this.updateMenu()
-    console.log(this.$route.params.id)
   },
   methods: {
     onOpenChange(openKeys) {
@@ -98,7 +97,6 @@ export default {
       this.selectedKeys = [routes.pop().path]
     },
     onChangeOperation(e) {
-      console.log(e)
       this.operation = e
     }
   },

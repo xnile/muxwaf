@@ -63,3 +63,10 @@ export function UpdateStatus(id) {
     method: 'put'
   })
 }
+
+export function GetDomain(id) {
+  return request({
+    url: `/api/sites/${id}/domain`,
+    method: 'get'
+  })
+}

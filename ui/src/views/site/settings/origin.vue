@@ -1,5 +1,14 @@
 <template>
   <div>
+    <a-row>
+      <div class="item">
+        <a-col :span="22"></a-col>
+        <a-col :span="2">
+          <!-- <a @click="onEdit">修改</a> -->
+        </a-col>
+      </div>
+    </a-row>
+
     <!-- 添加源站 -->
     <a-modal
       title="新增源站"
@@ -83,9 +92,7 @@
   </div>
 </template>
 <script>
-import { values } from 'store/storages/all'
 import { GetOrigins, UpdateOrigin, AddOrigins, DelOrigin } from '@/api/site/origin'
-import { resolve } from 'path'
 const columns = [
   {
     title: '源站',
@@ -189,7 +196,6 @@ export default {
       }
     },
     edit(key) {
-      console.log(key)
       const newData = [...this.data]
       const target = newData.find(item => key === item.id)
       this.editingKey = key
@@ -199,7 +205,6 @@ export default {
       }
     },
     del(key) {
-      console.log('key:', key)
       let newData = [...this.data]
       const target = newData.find(item => key === item.id)
       if (target) {
@@ -225,7 +230,6 @@ export default {
       const target = newData.find(item => key === item.id)
       const targetCache = newCacheData.find(item => key === item.id)
       if (target && targetCache) {
-        console.log(target)
         this.doUpdateOrigin(key, target).then(res => {
           if (res) {
             delete target.editable
@@ -255,6 +259,7 @@ export default {
 
     // add
     onAddOrigin() {
+      // this.$parent.$emit('changeOperation', '编辑')
       this.visible = true
     },
     onAddOriginItem() {
@@ -283,7 +288,6 @@ export default {
         if (res.code == 0) {
           this.data = res.data
           this.cacheData = this.data.map(item => ({ ...item }))
-          console.log(this.cacheData)
         }
       })
     },

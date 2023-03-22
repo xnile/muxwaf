@@ -134,11 +134,11 @@ export default {
   color: rgba(0, 0, 0, 0.65);
   font-size: 14px;
   /* line-height: 30px; */
-  font-weight: 500;
+  /* font-weight: 500; */
 }
 .item {
   /* height: 10px; */
-  line-height: 40px;
+  line-height: 35px;
 }
 
 .right {

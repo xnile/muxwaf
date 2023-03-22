@@ -168,3 +168,9 @@ func GetCandidateCertificates(c *gin.Context) {
 	data, err := service.SVC.Site.GetCertificates(id, domain)
 	handler.ResponseBuilder(c, err, data)
 }
+
+func GetSiteDomain(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	data, err := service.SVC.Site.GetSiteDomain(id)
+	handler.ResponseBuilder(c, err, data)
+}
