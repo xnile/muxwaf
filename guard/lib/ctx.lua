@@ -1,4 +1,5 @@
 local require            = require
+local lrucache           = require "resty.lrucache.pureffi"
 local page_403           = require("page.403")
 local page_410           = require("page.410")
 local sites              = require("sites")
@@ -38,8 +39,26 @@ local _M  = {
   _VERSION = 0.1,
 }
 
-
 local _mt = { __index = _M }
+
+local ip_loc_cache, err = lrucache.new(1000)
+if not ip_loc_cache then
+    error("failed to create the cache: " .. (err or "unknown"), 2)
+end
+
+local ipdb
+local function get_ip_location(ip)
+    if not ipdb then
+        ipdb = muxwaf.get_ipdb()
+    end
+    local location = ip_loc_cache:get(ip)
+    if not location then
+        -- {"country_name":"中国","region_name":"北京","city_name":"北京"}
+        location = ipdb.ipip:find(ip, "CN")
+        ip_loc_cache:set(ip, location, 3600)
+    end
+    return location
+end
 
 local function get_body_data()
     req_read_body()
@@ -200,6 +219,7 @@ function _M.new()
   ctx.site_id = sites.get_site_id(ctx.var.host)
   ctx.real_client_ip = get_real_client_ip(ctx.var.host, ctx.var.remote_addr)  
   ctx.upstream_scheme = sites.get_origin_protocol(ctx.var.host, ctx.var.scheme)
+  ctx.location = get_ip_location(ctx.real_client_ip)
   
   --TODO: move to set func
   ctx.var.upstream_x_real_ip = ctx.real_client_ip

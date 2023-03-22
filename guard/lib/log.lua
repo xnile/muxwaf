@@ -19,15 +19,12 @@ local ACTION_TYPES = constants.ACTION_TYPES
 local SAMPLE_LOG_FILE = ngx_cfg_prefix() .. "logs/sampled.log"
 local sample_log_file_fd
 
--- send sample log to api server, default disabled
--- local is_sampled_log_upload = false
--- local sampled_log_upload_api
+
 local config = {
     is_sampled_log_upload = 0,
     sampled_log_upload_api = "",
     sampled_log_upload_api_token = "",
 }
-
 
 local ngx_log_levels = {
     stderr = ngx.STDERR,

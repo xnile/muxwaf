@@ -38,7 +38,8 @@ end
 local function check_blacklist_region(ctx)
   local client_ip = ctx.real_client_ip
   local mather = rules.blacklist_region
-  if mather.match(ctx.site_id, client_ip) then
+  -- if mather.match(ctx.site_id, client_ip) then
+  if mather.match(ctx) then
     log.block(ctx, "blacklist_region")
     return ctx:say_block()
   end

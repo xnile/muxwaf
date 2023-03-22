@@ -1,6 +1,7 @@
 local require       = require
 local log           = require("log")
 local events        = require("events")
+local metrics       = require("metrics")
 local constants     = require("constants")
 local cjson         = require("cjson.safe")
 local ngx           = ngx
@@ -25,6 +26,14 @@ local function save_logs()
     end
 end
 
+local function cal_qps()
+    -- just need one worker
+    if ngx_worker_id() == 0 then
+        local ok, err = every(10, metrics.cal_qps)
+        assert(ok, "Failed to setting up timer for calculate qps: " .. tostring(err))        
+    end
+end
+
 
 local function sync_config()
     local ok, err = every(CONFIG_SYNC_INTERVAL, events.pop, ngx_worker_id())
@@ -35,6 +44,7 @@ end
 function _M.run(_)
     sync_config()
     save_logs()
+    cal_qps()
 end
 
 return _M

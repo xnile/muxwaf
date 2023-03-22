@@ -1,4 +1,4 @@
-local lrucache      = require "resty.lrucache.pureffi"
+-- local lrucache      = require "resty.lrucache.pureffi"
 local log           = require("log")
 local table_new     = table.new
 local table_clear   = table.clear
@@ -16,23 +16,24 @@ local MATCH_MODE = {
     WHITELIST = 1,
 }
 
-local ip_geo_cache, err = lrucache.new(1000)
-if not ip_geo_cache then
-    error("failed to create the cache: " .. (err or "unknown"), 2)
-end
+-- local ip_geo_cache, err = lrucache.new(1000)
+-- if not ip_geo_cache then
+--     error("failed to create the cache: " .. (err or "unknown"), 2)
+-- end
 
-local ipdb
-local function find_ip_location(ip)
-    if not ipdb then
-        ipdb = muxwaf.get_ipdb()
-    end
-    local location = ip_geo_cache:get(ip)
-    if not location then
-        location = ipdb.ipip:find(ip, "CN")
-        ip_geo_cache:set(ip, location, 3600)
-    end
-    return location
-end
+-- local ipdb
+-- local function find_ip_location(ip)
+--     if not ipdb then
+--         ipdb = muxwaf.get_ipdb()
+--     end
+--     local location = ip_geo_cache:get(ip)
+--     if not location then
+--         -- {"country_name":"中国","region_name":"北京","city_name":"北京"}
+--         location = ipdb.ipip:find(ip, "CN")
+--         ip_geo_cache:set(ip, location, 3600)
+--     end
+--     return location
+-- end
 
 local function update_with_add(items)
     if not items then return end
@@ -93,15 +94,15 @@ end
 -- @param site_id string
 -- @param ip string
 -- @return boolean
-function _M.match(site_id, ip)
+function _M.match(ctx)
+    local site_id = ctx.site_id
     local candidate = matcher[site_id]
-    if not ip or not candidate then
+    if not candidate then
         return false
     end
 
-    -- local ipdb = muxwaf.get_ipdb()
-    -- local location = ipdb.ipip:find(ip, "CN")
-    local location = find_ip_location(ip)
+    -- local location = find_ip_location(ip)
+    local location = ctx.location
     local country = location.country_name
     local region  = location.region_name
 

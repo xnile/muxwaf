@@ -6,6 +6,7 @@ local ffi         = require "ffi"
 local C           = ffi.C
 local tonumber    = tonumber
 local tostring    = tostring
+local math        = math
 local table_new   = table.new
 local ngx_shared  = ngx.shared
 local shm_metrics = ngx_shared[ditcs.METRICS]
@@ -68,12 +69,27 @@ function _M.incr_block_count()
     end
 end
 
+local qps = 0
+do
+    last_requests = 0
+    function _M.cal_qps()
+        total_requests = tonumber(C.ngx_stat_requests[0])
+        incr_requests = total_requests - last_requests
+        qps = math.floor(incr_requests / 10)
+        last_requests = total_requests
+    end
+end
+
 
 function _M.show()
     return {
         nginx_status = get_nginx_status(),
         shm_status   = get_shm_status(),
         block_count  = get_block_count(),
+        qps = qps,
+        -- TODO: collect all worker lua vm
+        lua_vm = utils.format_capacity(collectgarbage("count") *1024),
+        worker_id = ngx.worker.id()
     }
 end
 
