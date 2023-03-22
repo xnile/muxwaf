@@ -1,5 +1,5 @@
 local require     = require
-local ditcs       = require("constants").DICTS
+local constants   = require("constants")
 local utils       = require("utils")
 local log         = require("log")
 local ffi         = require "ffi"
@@ -9,11 +9,15 @@ local tostring    = tostring
 local math        = math
 local table_new   = table.new
 local ngx_shared  = ngx.shared
-local shm_metrics = ngx_shared[ditcs.METRICS]
 
 local _M = {
     _VERSION = 0.1
 }
+
+local ditcs       = constants.DICTS
+local shm_metrics = ngx_shared[ditcs.METRICS]
+local CALC_QPS_INTERVAL = constants.CALC_QPS_INTERVAL
+
 
 ffi.cdef[[
     uint64_t *ngx_stat_active;
@@ -72,10 +76,10 @@ end
 local qps = 0
 do
     last_requests = 0
-    function _M.cal_qps()
+    function _M.calc_qps()
         total_requests = tonumber(C.ngx_stat_requests[0])
         incr_requests = total_requests - last_requests
-        qps = math.floor(incr_requests / 10)
+        qps = math.floor(incr_requests / CALC_QPS_INTERVAL)
         last_requests = total_requests
     end
 end

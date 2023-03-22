@@ -13,6 +13,7 @@ local assert        = assert
 
 local CONFIG_SYNC_INTERVAL  = constants.CONFIG_SYNC_INTERVAL
 local LOG_SYNC_INTERVAL     = constants.LOG_SYNC_INTERVAL
+local CALC_QPS_INTERVAL     = constants.CALC_QPS_INTERVAL
 
 local _M = {
   _VERSION = 0.1
@@ -26,10 +27,10 @@ local function save_logs()
     end
 end
 
-local function cal_qps()
+local function calc_qps()
     -- just need one worker
     if ngx_worker_id() == 0 then
-        local ok, err = every(10, metrics.cal_qps)
+        local ok, err = every(CALC_QPS_INTERVAL, metrics.calc_qps)
         assert(ok, "Failed to setting up timer for calculate qps: " .. tostring(err))        
     end
 end
@@ -44,7 +45,7 @@ end
 function _M.run(_)
     sync_config()
     save_logs()
-    cal_qps()
+    calc_qps()
 end
 
 return _M
