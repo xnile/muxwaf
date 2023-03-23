@@ -23,7 +23,7 @@ local function save_logs()
     -- just need one worker
     if ngx_worker_id() == 0 then
         local ok, err = every(LOG_SYNC_INTERVAL, log.iterator)
-        assert(ok, "Failed to setting up timer for save logs: " .. tostring(err))        
+        assert(ok, "failed to setting up timer for save logs: " .. tostring(err))        
     end
 end
 
@@ -31,14 +31,14 @@ local function calc_qps()
     -- just need one worker
     if ngx_worker_id() == 0 then
         local ok, err = every(CALC_QPS_INTERVAL, metrics.calc_qps)
-        assert(ok, "Failed to setting up timer for calculate qps: " .. tostring(err))        
+        assert(ok, "failed to setting up timer for calculate qps: " .. tostring(err))        
     end
 end
 
 
 local function sync_config()
     local ok, err = every(CONFIG_SYNC_INTERVAL, events.pop, ngx_worker_id())
-    assert(ok, "Failed to setting up timer for config sync: " .. tostring(err))
+    assert(ok, "failed to setting up timer for config sync: " .. tostring(err))
 end
 
 
