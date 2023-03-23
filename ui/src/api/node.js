@@ -36,3 +36,10 @@ export function SwitchLogUpload(id) {
     method: 'put'
   })
 }
+
+export function SwitchStatus(id) {
+  return request({
+    url: `/api/nodes/${id}/status`,
+    method: 'put'
+  })
+}

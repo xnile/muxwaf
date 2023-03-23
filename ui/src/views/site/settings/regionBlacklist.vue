@@ -80,9 +80,12 @@ export default {
 
     doUpdateSiteRegionBlacklist() {
       let siteID = this.$route.params.id
+      let countries = this.form.countries ? this.form.countries.split(',') : []
+      let regions = this.form.regions ? this.form.regions.split(',') : []
+
       let data = {
-        countries: this.form.countries.split(','),
-        regions: this.form.regions.split(','),
+        countries,
+        regions,
         match_mode: this.form.match_mode
       }
       UpdateSiteRegionBlacklist(siteID, data)

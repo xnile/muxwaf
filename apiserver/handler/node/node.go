@@ -61,3 +61,13 @@ func SwitchSampledLogUpload(c *gin.Context) {
 	err = service.SVC.Node.SwitchSampledLogUpload(id)
 	handler.ResponseBuilder(c, err, nil)
 }
+
+func SwitchStatus(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id < 1 {
+		handler.ResponseBuilder(c, ecode.ErrParam, nil)
+		return
+	}
+	err = service.SVC.Node.SwitchStatus(id)
+	handler.ResponseBuilder(c, err, nil)
+}

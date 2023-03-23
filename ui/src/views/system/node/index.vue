@@ -11,6 +11,14 @@
         :rowKey="record => record.id"
         :pagination="false"
       >
+        <template slot="status" slot-scope="value">
+          <template v-if="value === 1">
+            <a-badge status="success" text="已启用" />
+          </template>
+          <template v-else>
+            <a-badge status="warning" text="未启用" />
+          </template>
+        </template>
         <template slot="isSampledLogUpload" slot-scope="value">
           <template v-if="value === 1">
             <a-badge status="success" text="已启用" />
@@ -38,19 +46,23 @@
         </template>
         <template slot="operation" slot-scope="text, record">
           <a-button type="link" size="small" @click="onSync(record.id)">同步</a-button>
-          <!-- <a-button type="link" @click="onSwitchLogUploadStatus(record.id)">{{
-            record.is_sampled_log_upload === 1 ? '关闭日志上报' : '开启日志上报'
-          }}</a-button>
+          <!-- <a-button type="link" @click="onSwitchStatus(record.id)">{{
+            record.status === 1 ? '禁用' : '启用'
+          }}</a-button> -->
+          <!--
           <a-button type="link" size="small" @click="onDelete(record.id)">删除</a-button> -->
           <template>
             <a-dropdown>
               <a class="ant-dropdown-link" @click="e => e.preventDefault()"> 更多<a-icon type="down" /> </a>
               <a-menu slot="overlay" @click="e => onClickMore(e.key, record.id)">
                 <a-menu-item :key="1">
-                  {{ record.is_sampled_log_upload === 1 ? '关闭日志上报' : '开启日志上报' }}
+                  {{ record.status === 1 ? '禁用' : '启用' }}
                 </a-menu-item>
                 <a-menu-item :key="2">
                   删除
+                </a-menu-item>
+                <a-menu-item :key="3">
+                  {{ record.is_sampled_log_upload === 1 ? '关闭日志上报' : '开启日志上报' }}
                 </a-menu-item>
               </a-menu>
             </a-dropdown>
@@ -79,15 +91,21 @@
 
 <script>
 import moment from 'moment'
-import { AddNode, ListNodes, DelNode, SyncCfg, SwitchLogUpload } from '@/api/node'
+import { AddNode, ListNodes, DelNode, SyncCfg, SwitchLogUpload, SwitchStatus } from '@/api/node'
 const columns = [
   {
     title: '地址',
-    dataIndex: 'ip_or_domain'
+    dataIndex: 'ip_or_domain',
+    width: '10%'
   },
   {
     title: '端口',
     dataIndex: 'port'
+  },
+  {
+    title: '状态',
+    dataIndex: 'status',
+    scopedSlots: { customRender: 'status' }
   },
   {
     title: '日志上报',
@@ -182,11 +200,24 @@ export default {
     },
 
     onClickMore(key, id) {
-      if (key == 1) {
-        this.doSwitchLogUploadStatus(id)
-      }
-      if (key == 2) {
-        this.doDelete(id)
+      // if (key == 1) {
+      //   this.doSwitchLogUploadStatus(id)
+      // }
+      // if (key == 2) {
+      //   this.doDelete(id)
+      // }
+      switch (key) {
+        case 1:
+          this.doSwitchStatus(id)
+          break
+        case 2:
+          this.doDelete(id)
+          break
+        case 3:
+          this.doSwitchLogUploadStatus(id)
+          break
+        default:
+          break
       }
     },
 
@@ -217,6 +248,22 @@ export default {
         onCancel() {}
       })
     },
+
+    doSwitchStatus(id) {
+      SwitchStatus(id)
+        .then(res => {
+          if (res.code == 0) {
+            this.$message.success('任务添加成功！')
+            this.getList()
+          } else {
+            this.$message.error(res.msg)
+          }
+        })
+        .catch(err => {
+          this.$message.error('网络异常，请稍候再试')
+        })
+    },
+
     doSwitchLogUploadStatus(id) {
       SwitchLogUpload(id)
         .then(res => {

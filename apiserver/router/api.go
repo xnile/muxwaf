@@ -105,6 +105,7 @@ func Init() *gin.Engine {
 		api.DELETE("/nodes/:id", node.DelNode)
 		api.GET("/nodes", node.GetNodeList)
 		api.PUT("/nodes/:id/sync", node.SyncConfigs)
+		api.PUT("/nodes/:id/status", node.SwitchStatus)
 		api.PUT("/nodes/:id/sampled_log_upload", node.SwitchSampledLogUpload)
 
 		// 攻击日志

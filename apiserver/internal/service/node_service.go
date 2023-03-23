@@ -20,6 +20,7 @@ type INodeService interface {
 	Sync(nodeID int64) error
 	Del(id int64) error
 	SwitchSampledLogUpload(id int64) error
+	SwitchStatus(id int64) error
 }
 
 type nodeService struct {
@@ -325,5 +326,13 @@ func (svc *nodeService) Sync(id int64) error {
 		svc.eventBus.PushEvent(event.All, event.OpTypeSync, guardConfigs, id)
 	}()
 	//svc.eventBus.PushEvent(event.All, event.OpTypeSync, guardConfigs)
+	return nil
+}
+
+func (svc *nodeService) SwitchStatus(id int64) error {
+	if err := svc.gDB.Model(&model.NodeModel{}).Where("id = ?", id).UpdateColumn("status", gorm.Expr("ABS(status - ?)", 1)).Error; err != nil {
+		logx.Error("[node] Failed to update node status: ", err.Error())
+		return ecode.InternalServerError
+	}
 	return nil
 }
