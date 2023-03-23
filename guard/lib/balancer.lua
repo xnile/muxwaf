@@ -11,7 +11,6 @@ local tab_new       = table.new
 local string_format = string.format
 
 local HTTP_BAD_GATEWAY          = ngx.HTTP_BAD_GATEWAY
-local DEFAULT_UPSTREAM_SERVER   = "127.0.0.1:9000"
 
 local upstreams = {}
 
@@ -68,7 +67,7 @@ function _M.balance(self, ctx)
         return ngx_exit(HTTP_BAD_GATEWAY)
     end
 
-    log.info("[peer->", peer, "]")
+    log.debug("current upstream peer \"", peer, "\"")
 
     local ok, err = ngx_balancer.set_current_peer(peer)
     if not ok then

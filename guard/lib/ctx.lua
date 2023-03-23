@@ -26,7 +26,6 @@ local io_open            = io.open
 local io_close           = io.close
 local table_new          = table.new
 local setmetatable       = setmetatable
-local string_format      = string.format
 local string_upper       = string.upper
 local JSON_NULL          = cjson.null
 
@@ -111,7 +110,7 @@ local function get_real_client_ip(host, remote_addr)
 
   local raw_header_ip = ngx.req.get_headers()[real_ip_header]
   if not raw_header_ip then
-    log.warn(string_format("failed to get ip from http header: '%s' header does not found, fallback to use remote_addr", string_upper(real_ip_header)))
+    log.warn("failed to get client ip from http header, \"", string_upper(real_ip_header), "\" header does not found, fallback to use remote_addr")
     return remote_addr
   end
 
@@ -131,7 +130,7 @@ local function get_real_client_ip(host, remote_addr)
   end
 
   if not net.is_valid_ip(real_client_ip) then
-    log.warn(string_format("failed to get ip from http header: ip '%s' is invalid, fallback to use remote_addr", real_client_ip))
+    log.warn("failed to get client ip from http header: ip \"", real_client_ip, "\" is invalid, fallback to use remote_addr")
     return remote_addr
   end
 
@@ -222,7 +221,7 @@ function _M.new()
   ctx.location = get_ip_location(ctx.real_client_ip)
   
   --TODO: move to set func
-  ctx.var.upstream_x_real_ip = ctx.real_client_ip
+  ctx.var.x_real_ip = ctx.real_client_ip
   ctx.var.upstream_scheme = ctx.upstream_scheme
   return setmetatable(ctx, _mt)
 end

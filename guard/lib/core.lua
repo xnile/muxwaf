@@ -26,7 +26,7 @@ end
 
 local function check_site_is_exist(ctx)
   if not sites.is_exist(ctx.var.host) then
-    log.warn("site ", ctx.var.host, " is not exist")
+    log.warn("site \"", ctx.var.host, "\" is not exist")
     return ctx.say_410()
   end
 end
