@@ -53,6 +53,7 @@ func Init() *gin.Engine {
 		api.PUT("/blacklist/ip/:id/status", blacklist.UpdateIPStatus)
 		api.DELETE("/blacklist/ip/:id", blacklist.DeleteIP)
 		api.GET("/blacklist/ip/isIncluded", blacklist.IsIncluded)
+		api.POST("/blacklist/ip/batch", blacklist.BatchAdd)
 
 		// 白名单
 		api.POST("/whitelist/ip", whitelist.AddIP)

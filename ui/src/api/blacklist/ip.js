@@ -52,3 +52,11 @@ export function IsIncluded(ip) {
     }
   })
 }
+
+export function BatchAdd(data) {
+  return request({
+    url: '/api/blacklist/ip/batch',
+    method: 'post',
+    data: data
+  })
+}

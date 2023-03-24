@@ -95,3 +95,15 @@ func UpdateIP(c *gin.Context) {
 	err := service.SVC.BlacklistIP.Update(c, id, &payload)
 	handler.ResponseBuilder(c, err, err)
 }
+
+func BatchAdd(c *gin.Context) {
+	var payload model.BlacklistBatchAddReq
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		logx.Warnf("request parameter error: %v", err)
+		handler.ResponseBuilder(c, ecode.ErrParam, nil)
+		return
+	}
+
+	err := service.SVC.BlacklistIP.BatchAdd(c, &payload)
+	handler.ResponseBuilder(c, err, err)
+}

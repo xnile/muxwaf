@@ -22,6 +22,7 @@ type IBlacklistIPService interface {
 	UpdateStatus(id int64) error
 	Delete(id int64) error
 	IsIncluded(ip string) (bool, error)
+	BatchAdd(c *gin.Context, payload *model.BlacklistBatchAddReq) error
 }
 
 type blacklistIPService struct {
@@ -79,8 +80,9 @@ func (svc *blacklistIPService) Add(c *gin.Context) error {
 				return ecode.ErrIPAlreadyExisted
 			}
 			_prefix := _netIP.Net.Masked()
-			entity.IP = _prefix.String()
-			_netIP.Net = &_prefix
+
+			entity.IP = _prefix.String() // 10.0.0.1/8 -> 10.1.0.0/8
+			_netIP.Net = &_prefix        // 处理后的新Net
 		}
 	}
 
@@ -267,4 +269,79 @@ func (svc *blacklistIPService) isExist(id int64) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func ipValidator(ipSet *netipx.IPSet, ip string) (*utils.IPNet, error) {
+	ipNet := utils.ParseIPorCIDR(ip)
+	if !ipNet.V4 && !ipNet.V6 {
+		return nil, ecode.ErrIPInvalid
+	}
+
+	if ipNet.V6 {
+		return nil, ecode.ErrIPv6NotSupportedYet
+	}
+	if ipNet.IP != nil {
+		if ipSet.Contains(*ipNet.IP) {
+			return nil, ecode.ErrIPAlreadyExisted
+		}
+	}
+	if ipNet.Net != nil {
+		if ipSet.ContainsPrefix(*ipNet.Net) {
+			return nil, ecode.ErrIPAlreadyExisted
+		}
+		_prefix := ipNet.Net.Masked()
+		ipNet.Net = &_prefix
+	}
+	return &ipNet, nil
+}
+
+func (svc *blacklistIPService) BatchAdd(c *gin.Context, payload *model.BlacklistBatchAddReq) error {
+	var ipSet *netipx.IPSet
+	var err error
+
+	ipSet, err = svc.ipSetBuilder.IPSet()
+	if err != nil {
+		logx.Error("[blacklist ip] failed to create ip set err: ", err)
+		return ecode.InternalServerError
+	}
+
+	ipNetList := make([]*utils.IPNet, 0)
+	for _, ip := range payload.IPList {
+		ipNet, err := ipValidator(ipSet, ip)
+		if err != nil {
+			return err
+		}
+		ipNetList = append(ipNetList, ipNet)
+	}
+
+	tx := svc.repo.DB.Begin()
+	for _, ipNet := range ipNetList {
+		var ip string
+		if ipNet.IP != nil {
+			ip = ipNet.IP.String()
+		} else if ipNet.Net != nil {
+			ip = ipNet.Net.Masked().String()
+		}
+
+		if err := tx.Create(&model.BlacklistIPModel{
+			IP:     ip,
+			Status: 1,
+			Remark: payload.Remark,
+		}).Error; err != nil {
+			logx.Error("[blacklist ip] failed to batch add: ", err)
+			tx.Rollback()
+			return ecode.InternalServerError
+		}
+
+		//// 更新IPSet
+		//if ipNet.IP != nil {
+		//	svc.ipSetBuilder.Add(*ipNet.IP)
+		//} else if ipNet.Net != nil {
+		//	svc.ipSetBuilder.AddPrefix(*ipNet.Net)
+		//}
+	}
+	if err := tx.Commit().Error; err != nil {
+		logx.Error("[blacklist ip] failed to commit: ", err)
+	}
+	return nil
 }
