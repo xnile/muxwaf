@@ -90,28 +90,29 @@ local function update_log_config(cfg)
 end
 
 local function sampled(ctx, rule_type, action)
-  local raw = {
-    host            = ctx.var.host,
-    site_id         = ctx.site_id,
-    real_client_ip  = ctx.real_client_ip,
-    request_id      = ctx.var.request_id,    
-    remote_addr     = ctx.var.remote_addr,
-    request_path    = ctx.var.request_uri,
-    request_method  = ctx.var.request_method,
-    request_time    = math.floor(ctx.start_time /1000 /1000),
-    process_time    = time.now() - ctx.start_time,
-    rule_type       = rule_type,
-    action          = action or "block",
-    worker_id       = ctx.worker_id,
-  }
+    local now = time.now()
+    local raw = {
+        host            = ctx.var.host,
+        site_id         = ctx.site_id,
+        real_client_ip  = ctx.real_client_ip,
+        request_id      = ctx.var.request_id,    
+        remote_addr     = ctx.var.remote_addr,
+        request_path    = ctx.var.request_uri,
+        request_method  = ctx.var.request_method,
+        request_time    = math.floor(ctx.waf_start_time /1000 /1000),  -- TODO: change to waf_start_time
+        process_time    = now - ctx.waf_start_time,          -- TODO: change to waf_process_time
+        rule_type       = rule_type,
+        action          = action or "block",
+        worker_id       = ctx.worker_id,
+      }
 
-  local json_log = ctx.encode(raw)
-  if not json_log then
-    ngx_log(ngx.WARN,"faild to encode sampled log")
-    return
-  end
+    local json_log = ctx.encode(raw)
+    if not json_log then
+        ngx_log(ngx.WARN,"faild to encode sampled log")
+        return
+    end
 
-  shm_log:rpush("sample", json_log)
+    shm_log:rpush("sample", json_log)
 end
 
 function _M.init()
@@ -163,7 +164,7 @@ function _M.iterator()
 
     sample_log_file_fd:write(log)
     sample_log_file_fd:write("\r\n")
-    sample_log_file_fd:flush()
+    -- sample_log_file_fd:flush()
 
     if config.is_sampled_log_upload == 1 then
         upload_sample_log(log)

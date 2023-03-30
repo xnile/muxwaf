@@ -10,3 +10,8 @@ type WhitelistIPModel struct {
 func (WhitelistIPModel) TableName() string {
 	return "whitelist_ip"
 }
+
+type WhitelistIPBatchAddReq struct {
+	IPList []string `json:"ip_list" binding:"required"`
+	Remark string   `json:"remark"`
+}

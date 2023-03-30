@@ -54,6 +54,7 @@ func Init() *gin.Engine {
 		api.DELETE("/blacklist/ip/:id", blacklist.DeleteIP)
 		api.GET("/blacklist/ip/isIncluded", blacklist.IsIncluded)
 		api.POST("/blacklist/ip/batch", blacklist.BatchAdd)
+		api.GET("/blacklist/ip/export", blacklist.ExportIPList)
 
 		// 白名单
 		api.POST("/whitelist/ip", whitelist.AddIP)
@@ -67,6 +68,7 @@ func Init() *gin.Engine {
 		api.DELETE("/whitelist/url/:id", whitelist.DeleteURL)
 		api.PUT("/whitelist/url/:id", whitelist.UpdateURL)
 		api.PUT("/whitelist/url/:id/status", whitelist.UpdateURLStatus)
+		api.POST("/whitelist/ip/batch", whitelist.BatchAddIP)
 
 		// 频率限止
 		api.POST("/rate-limit", ratelimit.Add)

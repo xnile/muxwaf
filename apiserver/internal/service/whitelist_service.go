@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/xnile/muxwaf/internal/ecode"
 	"github.com/xnile/muxwaf/internal/event"
@@ -27,6 +28,7 @@ type IWhitelistService interface {
 	UpdateURL(id int64, m *model.WhitelistURLModel) error
 	UpdateIP(c *gin.Context, id int64, payload *model.WhitelistIPModel) error
 	IsIpIncluded(ip string) (bool, error)
+	BatchAddIP(c *gin.Context, payload *model.WhitelistIPBatchAddReq) error
 }
 
 type whitelistService struct {
@@ -443,4 +445,96 @@ func (svc *whitelistService) isExist(id int64) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+func (svc *whitelistService) ipValidator(ipSet *netipx.IPSet, ip string) (*utils.IPNet, error) {
+	ipNet := utils.ParseIPorCIDR(ip)
+	if !ipNet.V4 && !ipNet.V6 {
+		return nil, errors.New(fmt.Sprintf("\"%s\" 无效IP", ip))
+	}
+
+	if ipNet.V6 {
+		return nil, errors.New(fmt.Sprintf("\"%s\" 暂不支持IPV6", ip))
+	}
+	if ipNet.IP != nil {
+		if ipSet.Contains(*ipNet.IP) {
+			return nil, errors.New(fmt.Sprintf("\"%s\" 已经在白名单中", ip))
+		}
+	}
+	if ipNet.Net != nil {
+		if ipSet.ContainsPrefix(*ipNet.Net) {
+			return nil, errors.New(fmt.Sprintf("\"%s\" 已经在白名单中", ip))
+		}
+		_prefix := ipNet.Net.Masked()
+		ipNet.Net = &_prefix
+	}
+	return &ipNet, nil
+}
+
+func (svc *whitelistService) BatchAddIP(c *gin.Context, payload *model.WhitelistIPBatchAddReq) error {
+	var ipSet *netipx.IPSet
+	var err error
+	guardData := make([]*model.WhitelistIPGuard, 0) // 更新guard数据
+
+	ipSet, err = svc.ipSetBuilder.IPSet()
+	if err != nil {
+		logx.Error("[whitelist] failed to create ip set err: ", err)
+		return ecode.InternalServerError
+	}
+
+	ipNetList := make([]*utils.IPNet, 0)
+	for _, ip := range payload.IPList {
+		ipNet, err := svc.ipValidator(ipSet, ip)
+		if err != nil {
+			return err
+		}
+		ipNetList = append(ipNetList, ipNet)
+	}
+
+	tx := svc.repo.DB.Begin()
+	for _, ipNet := range ipNetList {
+		var ip string
+		if ipNet.IP != nil {
+			ip = ipNet.IP.String()
+		} else if ipNet.Net != nil {
+			ip = ipNet.Net.Masked().String()
+		}
+
+		{
+			entity := model.WhitelistIPModel{
+				IP:     ip,
+				Status: 1,
+				Remark: payload.Remark,
+			}
+
+			if err := tx.Create(&entity).Error; err != nil {
+				logx.Error("[whitelist] failed to batch add ip whitelist: ", err)
+				tx.Rollback()
+				return ecode.InternalServerError
+			}
+
+			guardData = append(guardData, &model.WhitelistIPGuard{
+				IP:   ip,
+				UUID: entity.UUID,
+			})
+		}
+	}
+	if err := tx.Commit().Error; err != nil {
+		logx.Error("[whitelist] failed to commit transaction: ", err)
+		return ecode.InternalServerError
+	}
+
+	// 更新IPSet
+	for _, ipNet := range ipNetList {
+		if ipNet.IP != nil {
+			svc.ipSetBuilder.Add(*ipNet.IP)
+		} else if ipNet.Net != nil {
+			svc.ipSetBuilder.AddPrefix(*ipNet.Net)
+		}
+	}
+
+	// update guard
+	svc.eventBus.PushEvent(event.WhitelistIP, event.OpTypeAdd, guardData)
+
+	return nil
 }

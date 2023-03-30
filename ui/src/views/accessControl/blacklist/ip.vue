@@ -58,7 +58,7 @@
         </template>
         <template slot="action" slot-scope="text, record">
           <a-button type="link" @click="updateItemStatus(record)">{{ record.status === 1 ? '停用' : '启用' }}</a-button>
-          <a-button type="link" size="small" @click="updateItem(record)">编辑</a-button>
+          <a-button type="link" size="small" @click="updateItem(record)">修改备注</a-button>
           <a-button type="link" size="small" @click="deleteItem(record.id)">删除</a-button>
         </template>
       </a-table>
@@ -151,7 +151,7 @@
         :wrapper-col="{ span: 15 }"
       >
         <a-form-model-item label="IP" prop="ipList">
-          <a-textarea :rows="5" placeholder="请输入IP" v-model="batchAddForm.ipList"></a-textarea>
+          <a-textarea :rows="5" placeholder="请输入IP或CIDR，一行一个" v-model="batchAddForm.ipList"></a-textarea>
         </a-form-model-item>
         <a-form-model-item label="备注" prop="remark">
           <a-textarea :rows="1" placeholder="请输入备注" v-model="batchAddForm.remark"></a-textarea>
@@ -319,6 +319,7 @@ export default {
         .then(res => {
           if (res.code == 0) {
             this.$message.success('添加成功')
+            this.$refs.batchAddForm.resetFields()
             this.batchAddVisible = false
             this.doGetList()
           } else {
@@ -389,47 +390,6 @@ export default {
       this.$refs.form.resetFields()
     },
 
-    // onOk() {
-    //   if (this.modalType == 'create') {
-    //     this.form.validateFields((err, values) => {
-    //       if (!err) {
-    //         InsertBlacklistIP(values)
-    //           .then(res => {
-    //             // console.log(res)
-    //             if (res.code === 0) {
-    //               this.visible = false
-    //               this.doGetList()
-    //             } else {
-    //               this.$message.error(res.msg)
-    //             }
-    //           })
-    //           .catch(err => {
-    //             this.$message.error(err.message)
-    //           })
-    //       }
-    //     })
-    //   } else {
-    //     this.form.validateFields((err, values) => {
-    //       if (!err) {
-    //         const id = values.id
-    //         delete values.id
-    //         UpdateBlacklistIP(id, values)
-    //           .then(res => {
-    //             if (res.code === 0) {
-    //               this.$message.success('修改成功！')
-    //               this.visible = false
-    //               this.doGetList()
-    //             } else {
-    //               this.$message.error(res.msg)
-    //             }
-    //           })
-    //           .catch(() => {
-    //             this.$message.error('网络异常，请稍后再试')
-    //           })
-    //       }
-    //     })
-    //   }
-    // },
     onOk() {
       this.$refs.form.validate(valid => {
         if (valid) {

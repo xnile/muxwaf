@@ -53,3 +53,12 @@ export function IsIncluded(ip) {
     }
   })
 }
+
+// 批量添加IP白名单
+export function BatchAddIP(data) {
+  return request({
+    url: '/api/whitelist/ip/batch',
+    method: 'post',
+    data: data
+  })
+}

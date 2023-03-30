@@ -43,6 +43,7 @@
         :scroll="{ x: 1300 }"
         :rowKey="record => record.id"
         :pagination="false"
+        :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
       >
         <template slot="index" slot-scope="text, record, index">{{ index + 1 }}</template>
         <span slot="created_at" slot-scope="text">{{ text | moment }}</span>
@@ -56,13 +57,19 @@
         </template>
         <template slot="operation" slot-scope="text, record">
           <a-button type="link" @click="onUpdateStatus(record)">{{ record.status === 1 ? '停用' : '启用' }}</a-button>
-          <a-button type="link" size="small" @click="onUpdate(record)">编辑</a-button>
+          <a-button type="link" size="small" @click="onUpdate(record)">修改备注</a-button>
           <a-button type="link" size="small" @click="onDelete(record)">删除</a-button>
         </template>
       </a-table>
 
       <a-row :style="{ marginTop: '10px' }" v-if="meta.total">
-        <a-col :span="24">
+        <a-col :span="4">
+          <a-space>
+            <a-button :disabled="selectedRowKeys.length == 0" @click="onBatchDel">删除</a-button>
+            <a-button @click="onBatchAdd">批量添加</a-button>
+          </a-space>
+        </a-col>
+        <a-col :span="20">
           <a-pagination
             style="float: right"
             show-size-changer
@@ -98,12 +105,35 @@
         </a-form-model-item>
       </a-form-model>
     </a-modal>
+    <!-- 批量添加 -->
+    <a-modal
+      :width="700"
+      v-model="batchAddVisible"
+      title="批量添加IP白名单"
+      @ok="onBatchAddOK"
+      @cancel="onBatchAddCancel"
+    >
+      <a-form-model
+        ref="batchAddForm"
+        :model="batchAddForm"
+        :rules="batchAddRules"
+        :label-col="{ span: 5 }"
+        :wrapper-col="{ span: 15 }"
+      >
+        <a-form-model-item label="IP" prop="ipList">
+          <a-textarea :rows="5" placeholder="请输入IP或CIDR，一行一个" v-model="batchAddForm.ipList"></a-textarea>
+        </a-form-model-item>
+        <a-form-model-item label="备注" prop="remark">
+          <a-textarea :rows="1" placeholder="请输入备注" v-model="batchAddForm.remark"></a-textarea>
+        </a-form-model-item>
+      </a-form-model>
+    </a-modal>
   </page-header-wrapper>
 </template>
 
 <script>
 import moment from 'moment'
-import { GetIPList, AddIP, UpdateIP, UpdateIPStatus, DeleteIP, IsIncluded } from '@/api/whitelist/ip'
+import { GetIPList, AddIP, UpdateIP, UpdateIPStatus, DeleteIP, IsIncluded, BatchAddIP } from '@/api/whitelist/ip'
 
 const columns = [
   {
@@ -157,7 +187,15 @@ export default {
       time: ['', ''],
       showTime: {
         defaultValue: [moment('00:00:00', 'HH:mm:ss'), moment('23:59:59', 'HH:mm:ss')]
-      }
+      },
+
+      selectedRowKeys: [],
+      batchAddVisible: false,
+      batchAddForm: {
+        ipList: '',
+        remark: ''
+      },
+      batchAddRules: {}
     }
   },
   methods: {
@@ -280,6 +318,66 @@ export default {
         .catch(() => {
           this.$message.error('网络异常，请稍后再试')
         })
+    },
+
+    onSelectChange(selectedRowKeys) {
+      // console.log('selectedRowKeys changed: ', selectedRowKeys)
+      this.selectedRowKeys = selectedRowKeys
+    },
+
+    onBatchAdd() {
+      this.batchAddVisible = true
+    },
+
+    onBatchAddOK() {
+      let data = {
+        ip_list: this.batchAddForm.ipList.replace(/^\s*$(?:\r\n?|\n)/gm, '').split(/,|\n|\r\n/),
+        remark: this.batchAddForm.remark
+      }
+      // let ipList = this.batchAddForm.ipList.replace(/^\s*$(?:\r\n?|\n)/gm, '').split(/,|\n|\r\n/)
+
+      BatchAddIP(data)
+        .then(res => {
+          if (res.code == 0) {
+            this.$message.success('添加成功')
+            this.$refs.batchAddForm.resetFields()
+            this.batchAddVisible = false
+            this.doGetList()
+          } else {
+            this.$message.error(res.msg)
+          }
+        })
+        .catch(err => {
+          this.$message.error(err.message)
+        })
+    },
+
+    onBatchAddCancel() {},
+
+    onBatchDel() {
+      let _this = this
+      this.$confirm({
+        title: '确定要删除所选的' + _this.selectedRowKeys.length + '个IP白名单',
+        onOk() {
+          _this.selectedRowKeys.forEach(item => {
+            DeleteIP(item)
+              .then(res => {
+                if (res.code == 0) {
+                  _this.$message.success('删除成功!')
+                  _this.doGetList()
+                } else {
+                  _this.$message.error(res.msg)
+                }
+              })
+              .catch(err => {
+                _this.$message.error(err.message)
+              })
+          })
+          _this.selectedRowKeys = []
+          // _this.doGetList()
+        },
+        onCancel() {}
+      })
     },
 
     doAdd(values) {

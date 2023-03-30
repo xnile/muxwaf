@@ -88,3 +88,15 @@ func IsIpIncluded(c *gin.Context) {
 	handler.ResponseBuilder(c, err, ok)
 
 }
+
+func BatchAddIP(c *gin.Context) {
+	var payload model.WhitelistIPBatchAddReq
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		logx.Warnf("request parameter error: %v", err)
+		handler.ResponseBuilder(c, ecode.ErrParam, nil)
+		return
+	}
+
+	err := service.SVC.Whitelist.BatchAddIP(c, &payload)
+	handler.ResponseBuilder(c, err, err)
+}

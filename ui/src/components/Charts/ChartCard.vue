@@ -17,11 +17,13 @@
         </slot>
       </div>
     </div>
+    <!--
     <div class="chart-card-content">
       <div class="content-fix">
         <slot></slot>
       </div>
     </div>
+    -->
     <div class="chart-card-footer">
       <div class="field">
         <slot name="footer"></slot>

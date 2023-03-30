@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/xnile/muxwaf/internal/ecode"
 	"github.com/xnile/muxwaf/internal/event"
@@ -23,6 +24,7 @@ type IBlacklistIPService interface {
 	Delete(id int64) error
 	IsIncluded(ip string) (bool, error)
 	BatchAdd(c *gin.Context, payload *model.BlacklistBatchAddReq) error
+	ExportIPList(c *gin.Context) ([]string, error)
 }
 
 type blacklistIPService struct {
@@ -274,20 +276,25 @@ func (svc *blacklistIPService) isExist(id int64) (bool, error) {
 func ipValidator(ipSet *netipx.IPSet, ip string) (*utils.IPNet, error) {
 	ipNet := utils.ParseIPorCIDR(ip)
 	if !ipNet.V4 && !ipNet.V6 {
-		return nil, ecode.ErrIPInvalid
+		//return nil, ecode.ErrIPInvalid
+		//return nil, errors.New(fmt.Sprintf("\"%s\" is not a valid ip", ip))
+		return nil, errors.New(fmt.Sprintf("\"%s\" 无效IP", ip))
 	}
 
 	if ipNet.V6 {
-		return nil, ecode.ErrIPv6NotSupportedYet
+		//return nil, ecode.ErrIPv6NotSupportedYet
+		return nil, errors.New(fmt.Sprintf("\"%s\" 暂不支持IPV6", ip))
 	}
 	if ipNet.IP != nil {
 		if ipSet.Contains(*ipNet.IP) {
-			return nil, ecode.ErrIPAlreadyExisted
+			//return nil, ecode.ErrIPAlreadyExisted
+			return nil, errors.New(fmt.Sprintf("\"%s\" 已经在黑名单中", ip))
 		}
 	}
 	if ipNet.Net != nil {
 		if ipSet.ContainsPrefix(*ipNet.Net) {
-			return nil, ecode.ErrIPAlreadyExisted
+			//return nil, ecode.ErrIPAlreadyExisted
+			return nil, errors.New(fmt.Sprintf("\"%s\" 已经在黑名单中", ip))
 		}
 		_prefix := ipNet.Net.Masked()
 		ipNet.Net = &_prefix
@@ -298,6 +305,7 @@ func ipValidator(ipSet *netipx.IPSet, ip string) (*utils.IPNet, error) {
 func (svc *blacklistIPService) BatchAdd(c *gin.Context, payload *model.BlacklistBatchAddReq) error {
 	var ipSet *netipx.IPSet
 	var err error
+	guardData := make([]*model.BlacklistIPGuard, 0) // 更新guard数据
 
 	ipSet, err = svc.ipSetBuilder.IPSet()
 	if err != nil {
@@ -323,25 +331,56 @@ func (svc *blacklistIPService) BatchAdd(c *gin.Context, payload *model.Blacklist
 			ip = ipNet.Net.Masked().String()
 		}
 
-		if err := tx.Create(&model.BlacklistIPModel{
-			IP:     ip,
-			Status: 1,
-			Remark: payload.Remark,
-		}).Error; err != nil {
-			logx.Error("[blacklist ip] failed to batch add: ", err)
-			tx.Rollback()
-			return ecode.InternalServerError
-		}
+		{
+			entity := model.BlacklistIPModel{
+				IP:     ip,
+				Status: 1,
+				Remark: payload.Remark,
+			}
 
-		//// 更新IPSet
-		//if ipNet.IP != nil {
-		//	svc.ipSetBuilder.Add(*ipNet.IP)
-		//} else if ipNet.Net != nil {
-		//	svc.ipSetBuilder.AddPrefix(*ipNet.Net)
-		//}
+			if err := tx.Create(&entity).Error; err != nil {
+				logx.Error("[blacklist ip] failed to batch add: ", err)
+				tx.Rollback()
+				return ecode.InternalServerError
+			}
+
+			guardData = append(guardData, &model.BlacklistIPGuard{
+				IP:   ip,
+				UUID: entity.UUID,
+			})
+		}
 	}
 	if err := tx.Commit().Error; err != nil {
 		logx.Error("[blacklist ip] failed to commit: ", err)
+		return ecode.InternalServerError
 	}
+
+	// 更新IPSet
+	for _, ipNet := range ipNetList {
+		if ipNet.IP != nil {
+			svc.ipSetBuilder.Add(*ipNet.IP)
+		} else if ipNet.Net != nil {
+			svc.ipSetBuilder.AddPrefix(*ipNet.Net)
+		}
+	}
+
+	// update guard
+	svc.eventBus.PushEvent(event.BlacklistIP, event.OpTypeAdd, guardData)
+
 	return nil
+}
+
+func (svc *blacklistIPService) ExportIPList(_ *gin.Context) ([]string, error) {
+	ipList := make([]string, 0)
+	ipSet, err := svc.ipSetBuilder.IPSet()
+	if err != nil {
+		logx.Error("[blacklist ip] failed to create ip set err: ", err)
+		return ipList, ecode.InternalServerError
+	}
+
+	for _, prefix := range ipSet.Prefixes() {
+		ip := prefix.String()
+		ipList = append(ipList, ip)
+	}
+	return ipList, nil
 }

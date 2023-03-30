@@ -107,3 +107,8 @@ func BatchAdd(c *gin.Context) {
 	err := service.SVC.BlacklistIP.BatchAdd(c, &payload)
 	handler.ResponseBuilder(c, err, err)
 }
+
+func ExportIPList(c *gin.Context) {
+	data, err := service.SVC.BlacklistIP.ExportIPList(c)
+	handler.ResponseBuilder(c, err, data)
+}
