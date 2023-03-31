@@ -17,5 +17,5 @@ type AttackLogModel struct {
 }
 
 func (AttackLogModel) TableName() string {
-	return "sampled_log"
+	return "sample_log"
 }

@@ -19,7 +19,7 @@ type INodeService interface {
 	List(pageNum, pageSize int64) (*model.ListResp, error)
 	Sync(nodeID int64) error
 	Del(id int64) error
-	SwitchSampledLogUpload(id int64) error
+	SwitchSampleLogUpload(id int64) error
 	SwitchStatus(id int64) error
 }
 
@@ -41,7 +41,7 @@ func (svc *nodeService) Add(payload *model.NodeModel) error {
 		return errors.New("节点已经存在")
 	}
 
-	payload.SampledLogUploadAPIToken = strings.ToUpper(xid.New().String())
+	payload.SampleLogUploadAPIToken = strings.ToUpper(xid.New().String())
 	if err := svc.gDB.Create(payload).Error; err != nil {
 		return ecode.InternalServerError
 	}
@@ -79,7 +79,7 @@ func (svc *nodeService) List(pageNum, pageSize int64) (*model.ListResp, error) {
 	return rsp, nil
 }
 
-func (svc *nodeService) SwitchSampledLogUpload(id int64) error {
+func (svc *nodeService) SwitchSampleLogUpload(id int64) error {
 	entity := new(model.NodeModel)
 
 	if err := svc.gDB.Where("id = ?", id).First(entity).Error; err != nil {
@@ -89,7 +89,7 @@ func (svc *nodeService) SwitchSampledLogUpload(id int64) error {
 		return ecode.InternalServerError
 	}
 
-	if err := svc.gDB.Model(&model.NodeModel{}).Where("id = ?", id).UpdateColumn("IsSampledLogUpload", gorm.Expr("ABS(is_sampled_log_upload - ?)", 1)).Error; err != nil {
+	if err := svc.gDB.Model(&model.NodeModel{}).Where("id = ?", id).UpdateColumn("IsSampleLogUpload", gorm.Expr("ABS(is_sample_log_upload - ?)", 1)).Error; err != nil {
 		logx.Error("[node] Failed to update sampled log upload status: ", err.Error())
 		return ecode.InternalServerError
 	}
@@ -97,18 +97,18 @@ func (svc *nodeService) SwitchSampledLogUpload(id int64) error {
 	// update guard
 	{
 		sampledLogUploadApi := "http://" + utils.GetOutboundIP().String() + ":" + viper.GetString("port") + "/logs/sampled"
-		cfg := model.SampledLogUploadGuard{
-			IsSampledLogUpload:       0,
-			SampledLogUploadAPI:      "",
-			SampledLogUploadAPIToken: "",
+		cfg := model.SampleLogUploadGuard{
+			IsSampleLogUpload:       0,
+			SampleLogUploadAPI:      "",
+			SampleLogUploadAPIToken: "",
 		}
-		if entity.IsSampledLogUpload == 0 {
-			cfg.IsSampledLogUpload = 1
-			//cfg.SampledLogUploadAPI = "http://" + utils.GetOutboundIP().String() + ":" + viper.GetString("port") + "/logs/sampled"
-			cfg.SampledLogUploadAPI = sampledLogUploadApi
-			cfg.SampledLogUploadAPIToken = entity.SampledLogUploadAPIToken
+		if entity.IsSampleLogUpload == 0 {
+			cfg.IsSampleLogUpload = 1
+			//cfg.SampleLogUploadAPI = "http://" + utils.GetOutboundIP().String() + ":" + viper.GetString("port") + "/logs/sampled"
+			cfg.SampleLogUploadAPI = sampledLogUploadApi
+			cfg.SampleLogUploadAPIToken = entity.SampleLogUploadAPIToken
 		}
-		svc.eventBus.PushEvent(event.SampledLogUpload, event.OpTypeUpdate, cfg, id)
+		svc.eventBus.PushEvent(event.SampleLogUpload, event.OpTypeUpdate, cfg, id)
 	}
 	return nil
 }
@@ -220,7 +220,7 @@ func (svc *nodeService) Sync(id int64) error {
 		mapArraySiteGuardOrigin[origin.SiteID] = append(mapArraySiteGuardOrigin[origin.SiteID], &guardOrigin)
 	}
 
-	logCfgGuard := new(model.SampledLogUploadGuard)
+	logCfgGuard := new(model.SampleLogUploadGuard)
 	arrayBlacklistIPGuard := make([]*model.BlacklistIPGuard, 0)
 	arraySiteRegionBlacklistGuard := make([]*model.SiteRegionBlacklistGuard, 0)
 	arrayWhitelistIPGuard := make([]*model.WhitelistIPGuard, 0)
@@ -296,10 +296,10 @@ func (svc *nodeService) Sync(id int64) error {
 		arraySiteRegionBlacklistGuard = append(arraySiteRegionBlacklistGuard, &siteRegionBlacklistGuard)
 	}
 
-	//logCfgGuard := model.SampledLogUploadGuard{
-	//	IsSampledLogUpload:       0,
-	//	SampledLogUploadAPI:      "",
-	//	SampledLogUploadAPIToken: "",
+	//logCfgGuard := model.SampleLogUploadGuard{
+	//	IsSampleLogUpload:       0,
+	//	SampleLogUploadAPI:      "",
+	//	SampleLogUploadAPIToken: "",
 	//}
 
 	rules := model.RulesGuard{
@@ -311,7 +311,7 @@ func (svc *nodeService) Sync(id int64) error {
 	}
 
 	sampledLogUploadApi := "http://" + utils.GetOutboundIP().String() + ":" + viper.GetString("port") + "/api/logs/sampled"
-	logCfgGuard.SampledLogUploadAPI = sampledLogUploadApi
+	logCfgGuard.SampleLogUploadAPI = sampledLogUploadApi
 
 	guardConfigs := model.GuardConfigs{
 		Log:          logCfgGuard,

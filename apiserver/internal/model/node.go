@@ -8,9 +8,9 @@ type NodeModel struct {
 	Status                   int8   `json:"status" gorm:"not null;default:1"`
 	LastSyncAt               int64  `json:"last_sync_at" gorm:"not null;default:0"`
 	LastSyncStatus           int8   `json:"last_sync_status" gorm:"not null;default:0"`
-	IsSampledLogUpload       int8   `json:"is_sampled_log_upload" gorm:"not null;default:0"`
-	SampledLogUploadAPI      string `json:"sampled_log_upload_api" gorm:"not null;default:''"`
-	SampledLogUploadAPIToken string `json:"sampled_log_upload_api_token" gorm:"not null;default:''"`
+	IsSampleLogUpload       int8   `json:"is_sample_log_upload" gorm:"not null;default:0"`
+	SampleLogUploadAPI      string `json:"sample_log_upload_api" gorm:"not null;default:''"`
+	SampleLogUploadAPIToken string `json:"sample_log_upload_api_token" gorm:"not null;default:''"`
 }
 
 func (NodeModel) TableName() string {

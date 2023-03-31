@@ -1,5 +1,5 @@
 local require       = require
-local log           = require("log")
+local sample_log    = require("sample_log")
 local events        = require("events")
 local metrics       = require("metrics")
 local constants     = require("constants")
@@ -19,10 +19,10 @@ local _M = {
   _VERSION = 0.1
 }
 
-local function save_logs()
+local function pop_sample_logs()
     -- just need one worker
     if ngx_worker_id() == 0 then
-        local ok, err = every(LOG_SYNC_INTERVAL, log.iterator)
+        local ok, err = every(LOG_SYNC_INTERVAL, sample_log.iterator)
         assert(ok, "failed to setting up timer for save logs: " .. tostring(err))        
     end
 end
@@ -44,7 +44,7 @@ end
 
 function _M.run(_)
     sync_config()
-    save_logs()
+    pop_sample_logs()
     calc_qps()
 end
 

@@ -2,6 +2,7 @@ local require        = require
 local ditcs          = require("constants").DICTS
 local cjson          = require("cjson.safe")
 local log            = require("log")
+local sample_log     = require("sample_log")
 local ngx_timer_at   = ngx.timer.at
 local io_open        = io.open
 local io_close       = io.close
@@ -60,9 +61,9 @@ setmetatable(rules, {
 
 local configs = {
     certificates = require("certificates"),
-    sites = require("sites"),
-    log = log,
-    rules = rules
+    sites        = require("sites"),
+    sample_log   = sample_log,
+    rules        = rules
 }
 
 setmetatable(configs, {

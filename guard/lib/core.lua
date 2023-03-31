@@ -1,6 +1,7 @@
 local rules       = require("configs").rules
 local sites       = require("configs").sites
 local constants   = require("constants")
+local sample_log  = require("sample_log")
 local log         = require("log")
 local ngx         = ngx
 local ngx_re      = ngx.re
@@ -37,7 +38,7 @@ local function check_blacklist_ip(ctx)
   local rule = rules.blacklist_ip
   local matched, rule_id, err = rule:match(client_ip)
   if matched then
-    log.block(ctx, RULE_TYPE.BLACKLIST_IP)
+    sample_log.block(ctx, RULE_TYPE.BLACKLIST_IP)
     return ctx:say_block()
   end
   if err then
@@ -50,7 +51,7 @@ local function check_blacklist_region(ctx)
   local mather = rules.blacklist_region
   -- if mather.match(ctx.site_id, client_ip) then
   if mather.match(ctx) then
-    log.block(ctx, RULE_TYPE.BLACKLIST_REGION)
+    sample_log.block(ctx, RULE_TYPE.BLACKLIST_REGION)
     return ctx:say_block()
   end
 end
@@ -61,7 +62,7 @@ local function check_whitelist_ip(ctx)
   local rule = rules.whitelist_ip
   local matched, rule_id, err = rule:match(client_ip)
   if matched then
-    log.bypass(ctx, RULE_TYPE.WHITELIST_IP)
+    sample_log.bypass(ctx, RULE_TYPE.WHITELIST_IP)
     return ngx_exit(NGX_OK)
   end
   if err then
@@ -83,7 +84,7 @@ local function check_whitelist_url(ctx)
   local rule = rules.whitelist_url
   local rule_id = rule:match(host, path)
   if rule_id then
-    log.bypass(ctx, RULE_TYPE.WHITELIST_URL)
+    sample_log.bypass(ctx, RULE_TYPE.WHITELIST_URL)
     return ngx_exit(NGX_OK)
   end
   return
@@ -109,7 +110,7 @@ local function check_ratelimit(ctx)
   local delay, err = rate_limit:incomming(rule_id, count_key)
   if not delay then
     if err == "rejected" then
-      log.block(ctx, RULE_TYPE.RATELIMIT)
+      sample_log.block(ctx, RULE_TYPE.RATELIMIT)
       return ctx:say_block()
     end
     log.error("rate limit check failed")

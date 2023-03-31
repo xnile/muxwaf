@@ -32,7 +32,7 @@ export function SyncCfg(id) {
 
 export function SwitchLogUpload(id) {
   return request({
-    url: `/api/nodes/${id}/sampled_log_upload`,
+    url: `/api/nodes/${id}/sample_log_upload`,
     method: 'put'
   })
 }

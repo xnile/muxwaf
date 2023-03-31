@@ -62,7 +62,7 @@
                   删除
                 </a-menu-item>
                 <a-menu-item :key="3">
-                  {{ record.is_sampled_log_upload === 1 ? '关闭日志上报' : '开启日志上报' }}
+                  {{ record.is_sample_log_upload === 1 ? '关闭日志上报' : '开启日志上报' }}
                 </a-menu-item>
               </a-menu>
             </a-dropdown>
@@ -109,7 +109,7 @@ const columns = [
   },
   {
     title: '日志上报',
-    dataIndex: 'is_sampled_log_upload',
+    dataIndex: 'is_sample_log_upload',
     scopedSlots: { customRender: 'isSampledLogUpload' }
   },
   {

@@ -109,7 +109,7 @@ func Init() *gin.Engine {
 		api.GET("/nodes", node.GetNodeList)
 		api.PUT("/nodes/:id/sync", node.SyncConfigs)
 		api.PUT("/nodes/:id/status", node.SwitchStatus)
-		api.PUT("/nodes/:id/sampled_log_upload", node.SwitchSampledLogUpload)
+		api.PUT("/nodes/:id/sample_log_upload", node.SwitchSampleLogUpload)
 
 		// 攻击日志
 		api.GET("/sampled-logs", attack_log.GetLogList)

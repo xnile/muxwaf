@@ -29,7 +29,7 @@ r:POST("/rate-limit", configs.rate_limit.add)
 r:PUT("/rate-limit", configs.rate_limit.update)
 r:DELETE("/rate-limit", configs.rate_limit.del)
 
-r:PUT("/sys/configs/sampled_log_upload",configs.log.update)
+r:PUT("/sys/configs/sample_log_upload",configs.sample_log.update)
 r:GET("/sys/configs", configs.this.show)
 r:POST("/sys/configs", configs.this.full_sync)
 r:GET("/sys/metrics", metrics.get)

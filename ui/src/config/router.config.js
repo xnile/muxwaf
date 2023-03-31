@@ -194,7 +194,7 @@ export const asyncRouterMap = [
         path: '/attacklog',
         name: 'AttackLog',
         // component: RouteView,
-        component: () => import('@/views/sampledLog'),
+        component: () => import('@/views/sampleLog'),
         meta: { title: '防护日志', icon: 'audit', permission: ['超级管理员', '管理员'] }
       },
 

@@ -101,7 +101,7 @@
 
 <script>
 import moment from 'moment'
-import { ListAttackLog } from '@/api/sampledLog'
+import { ListAttackLog } from '@/api/sampleLog'
 import { ListSite } from '@/api/site'
 
 const columns = [

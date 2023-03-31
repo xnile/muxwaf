@@ -43,10 +43,10 @@ type CertificateGuard struct {
 	Key  string `json:"key"`
 }
 
-type SampledLogUploadGuard struct {
-	IsSampledLogUpload       int8   `json:"is_sampled_log_upload"`
-	SampledLogUploadAPI      string `json:"sampled_log_upload_api"`
-	SampledLogUploadAPIToken string `json:"sampled_log_upload_api_token"`
+type SampleLogUploadGuard struct {
+	IsSampleLogUpload       int8   `json:"is_sample_log_upload"`
+	SampleLogUploadAPI      string `json:"sample_log_upload_api"`
+	SampleLogUploadAPIToken string `json:"sample_log_upload_api_token"`
 }
 
 type SiteConfigGuard struct {
@@ -87,7 +87,7 @@ type RulesGuard struct {
 }
 
 type GuardConfigs struct {
-	Log          *SampledLogUploadGuard `json:"log"`
+	Log          *SampleLogUploadGuard `json:"log"`
 	Sites        []*SiteGuard           `json:"sites"`
 	Certificates []*CertificateGuard    `json:"certificates"`
 	Rules        *RulesGuard            `json:"rules"`

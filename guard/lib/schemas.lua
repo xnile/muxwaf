@@ -370,16 +370,16 @@ do
     log_cfg_schema = {
         type = "object",
         properties = {
-            is_sampled_log_upload = {
+            is_sample_log_upload = {
                 type = "integer",
                 enum = { 0, 1 },
                 default = 0,           
             },
-            sampled_log_upload_api        = { type = "string" },
-            sampled_log_upload_api_token  = { type = "string" }
+            sample_log_upload_api        = { type = "string" },
+            sample_log_upload_api_token  = { type = "string" }
         },
         additionalProperties = false,
-        required = { "is_sampled_log_upload", "sampled_log_upload_api", "sampled_log_upload_api_token"}
+        required = { "is_sample_log_upload", "sample_log_upload_api", "sample_log_upload_api_token"}
     }
     log_cfg_validator = {
         update = jsonschema.generate_validator(log_cfg_schema)
@@ -425,7 +425,7 @@ end
 local validator = {
     this             = full_validator,
     sites            = site_validator,
-    log              = log_cfg_validator,
+    sample_log       = log_cfg_validator,
     certificates     = certificate_validator,
     blacklist_ip     = blacklist_ip_validator,
     whitelist_ip     = whitelist_ip_validator,

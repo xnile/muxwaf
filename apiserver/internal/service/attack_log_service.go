@@ -26,7 +26,7 @@ func NewAttackLogService(db *gorm.DB) IAttackLogService {
 func (svc *attackLogService) Add(c *gin.Context, entity *model.AttackLogModel) {
 	token := c.GetHeader("Token")
 
-	if err := svc.db.Where("sampled_log_upload_api_token = ?", token).First(new(model.NodeModel)).Error; err != nil {
+	if err := svc.db.Where("sample_log_upload_api_token = ?", token).First(new(model.NodeModel)).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(403, gin.H{"code": 403, "message": "Permission denied"})
 			c.Abort()
@@ -62,7 +62,7 @@ func (svc *attackLogService) List(pageNum, pageSize, startTime, endTime, siteID 
 	if siteID > 0 {
 		var siteUUID string
 		if err := svc.db.Table("site").Select("uuid").Where("id = ?", siteID).Scan(&siteUUID).Error; err != nil {
-			logx.Error("[sampled_log] Failed to get site uuid: ", err)
+			logx.Error("[sample_log] Failed to get site uuid: ", err)
 		} else {
 			gDB = gDB.Where("site_id = ?", siteUUID)
 		}

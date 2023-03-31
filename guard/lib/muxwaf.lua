@@ -5,6 +5,7 @@ local tablepool    = require("resty.tablepool")
 local ipdb_parser  = require("resty.ipdb.city")
 local constants    = require("constants")
 local page_500     = require("page.500")
+local sample_log   = require("sample_log")
 local apis         = require("apis")
 local time         = require("time")
 local metrics      = require("metrics")
@@ -35,7 +36,8 @@ function _M.init_phase()
     end    
   end
 
-  require("log").init()
+  -- require("log").init()
+  sample_log.init()
 end
 
 function _M.init_worker_phase()
@@ -44,8 +46,8 @@ function _M.init_worker_phase()
 end
 
 function _M.exit_worker_phase()
-  local log = require("log")
-  log.worker_exit()
+  -- local sample_log = require("log")
+  sample_log.worker_exit()
 end
 
 

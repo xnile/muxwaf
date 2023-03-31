@@ -52,13 +52,13 @@ func SyncConfigs(c *gin.Context) {
 	handler.ResponseBuilder(c, err, nil)
 }
 
-func SwitchSampledLogUpload(c *gin.Context) {
+func SwitchSampleLogUpload(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id < 1 {
 		handler.ResponseBuilder(c, ecode.ErrParam, nil)
 		return
 	}
-	err = service.SVC.Node.SwitchSampledLogUpload(id)
+	err = service.SVC.Node.SwitchSampleLogUpload(id)
 	handler.ResponseBuilder(c, err, nil)
 }
 
