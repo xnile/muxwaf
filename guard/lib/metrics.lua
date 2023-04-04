@@ -15,7 +15,8 @@ local _M = {
     _VERSION = 0.1
 }
 
-local CALC_QPS_INTERVAL = constants.CALC_QPS_INTERVAL
+local CALC_QPS_INTERVAL       = constants.CALC_QPS_INTERVAL
+local CALC_BANDWIDTH_INTERVAL = constants.CALC_BANDWIDTH_INTERVAL
 local RULE_TYPE         = constants.RULE_TYPE
 local BLOCK_RULE_TYPE   = { RULE_TYPE.BLACKLIST_IP, RULE_TYPE.BLACKLIST_REGION, RULE_TYPE.RATELIMIT }
 
@@ -31,6 +32,10 @@ local KEY_RSP_STS_CODE_PREFIX      = "rsp_sts_code_"
 local KEY_UPSTREAM_STS_CODE_PREFIX = "upstream_sts_code_"
 local KEY_TRAFFIC_IN               = "traffic_in"
 local KEY_TRAFFIC_OUT              = "traffic_out"
+local KEY_LAST_TRAFFIC_IN          = "last_trffic_in"
+local KEY_LAST_TRAFFIC_OUT         = "last_trffic_out"
+local KEY_BANDWIDTH_IN             = "bandwidth_in"
+local KEY_BANDWIDTH_OUT            = "bandwidth_out"
 
 
 local DICTS       = constants.DICTS
@@ -67,8 +72,8 @@ local function get_shm_status(pretty)
 
         if pretty then
             status[dict] = {
-                capacity = utils.format_capacity(shm:capacity()),
-                free     = utils.format_capacity(shm:free_space()),
+                capacity = utils.pretty_bytes(shm:capacity()),
+                free     = utils.pretty_bytes(shm:free_space()),
             }
         else
             status[dict] = {
@@ -105,7 +110,7 @@ end
 
 
 function _M.calc_qps()
-    local last_total_requests = shm_metrics:get("last_total_requests")
+    local last_total_requests = shm_metrics:get("KEY_LAST_TOTAL_REQUESTS")
     last_total_requests = last_total_requests or 0
 
     local total_requests = tonumber(C.ngx_stat_requests[0])
@@ -212,12 +217,69 @@ function _M.incr_traffic()
     end
 end
 
-local function get_traffic()
+local function get_traffic(pretty)
     local into = shm_metrics:get(KEY_TRAFFIC_IN) or 0
     local out  = shm_metrics:get(KEY_TRAFFIC_OUT) or 0
+
+    if pretty then
+        into = utils.pretty_bytes(into)
+        out  = utils.pretty_bytes(out)
+    end
+
     return {
         ["in"] = into,
-        out  = out
+        out    = out
+    }
+end
+
+function _M.calc_bandwidth()
+    local traffic_in       = shm_metrics:get(KEY_TRAFFIC_IN) or 0
+    local traffic_out      = shm_metrics:get(KEY_TRAFFIC_OUT) or 0
+    local last_traffic_in  = shm_metrics:get(KEY_LAST_TRAFFIC_IN) or 0
+    local last_traffic_out = shm_metrics:get(KEY_LAST_TRAFFIC_OUT) or 0
+
+
+    local bandwidth_in  = (traffic_in - last_traffic_in) / CALC_BANDWIDTH_INTERVAL *8
+    local bandwidth_out = (traffic_out - last_traffic_out) / CALC_BANDWIDTH_INTERVAL *8
+
+    do
+        local ok, err = shm_metrics:set(KEY_BANDWIDTH_IN, bandwidth_in)
+        if not ok then
+            log.error("failed to set bandwidth in: ", tostring(err))
+        end
+    end
+
+    do
+        local ok, err = shm_metrics:set(KEY_BANDWIDTH_OUT, bandwidth_out)
+        if not ok then
+            log.error("failed to set bandwidth out: ", tostring(err))
+        end
+    end
+
+
+    do
+        local ok, err = shm_metrics:set(KEY_LAST_TRAFFIC_IN, traffic_in)
+        if not ok then
+            log.error("failed to set last traffic in: ", tostring(err))
+        end
+    end
+
+    do
+        local ok, err = shm_metrics:set(KEY_LAST_TRAFFIC_OUT, traffic_out)
+        if not ok then
+            log.error("failed to set last traffic out: ", tostring(err))
+        end
+    end
+
+end
+
+
+local  function get_bandwidth()
+    local bandwidth_in  = shm_metrics:get(KEY_BANDWIDTH_IN) or 0
+    local bandwidth_out = shm_metrics:get(KEY_BANDWIDTH_OUT) or 0
+    return {
+        ["in"]  = bandwidth_in,
+        ["out"] = bandwidth_out,
     }
 end
 
@@ -226,7 +288,7 @@ end
 local function get_lua_vm(pretty)
     local lua_vm = collectgarbage("count") *1024
     if pretty then
-        return utils.format_capacity(lua_vm)
+        return utils.pretty_bytes(lua_vm)
     else
         return lua_vm
     end
@@ -250,7 +312,8 @@ function _M.show(ctx)
         worker_id         = ngx.worker.id(),
         rsp_sts_code      = get_resp_sts_code_count(),
         upstream_sts_code = get_upstream_sts_code_count(),
-        traffic           = get_traffic()
+        traffic           = get_traffic(pretty),
+        bandwidth         = get_bandwidth(),
     }
 end
 

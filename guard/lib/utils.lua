@@ -6,7 +6,7 @@ local _M = {
   _VERSION = 0.1
 }
 
-function _M.format_capacity(c)
+function _M.pretty_bytes(c)
     if c > 1024 * 1024 then
         return string.format('%.2f', c / 1024 / 1024) .. 'M'
     elseif c > 1024 then

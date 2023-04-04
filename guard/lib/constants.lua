@@ -51,6 +51,7 @@ return {
   CONFIG_SYNC_INTERVAL = 5, -- in seconds
   LOG_SYNC_INTERVAL = 5,  -- in seconds
   CALC_QPS_INTERVAL = 10,
+  CALC_BANDWIDTH_INTERVAL = 10,
 
   DICTS =  {
     LOG         = 'muxwaf_log',

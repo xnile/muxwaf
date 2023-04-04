@@ -11,9 +11,10 @@ local io_open       = io.open
 local tostring      = tostring
 local assert        = assert
 
-local CONFIG_SYNC_INTERVAL  = constants.CONFIG_SYNC_INTERVAL
-local LOG_SYNC_INTERVAL     = constants.LOG_SYNC_INTERVAL
-local CALC_QPS_INTERVAL     = constants.CALC_QPS_INTERVAL
+local CONFIG_SYNC_INTERVAL        = constants.CONFIG_SYNC_INTERVAL
+local LOG_SYNC_INTERVAL           = constants.LOG_SYNC_INTERVAL
+local CALC_QPS_INTERVAL           = constants.CALC_QPS_INTERVAL
+local CALC_BANDWIDTH_INTERVAL     = constants.CALC_BANDWIDTH_INTERVAL
 
 local _M = {
   _VERSION = 0.1
@@ -35,6 +36,14 @@ local function calc_qps()
     end
 end
 
+local function calc_bandwidth()
+    -- just need one worker
+    if ngx_worker_id() == 0 then
+        local ok, err = every(CALC_BANDWIDTH_INTERVAL, metrics.calc_bandwidth)
+        assert(ok, "failed to setting up timer for calculate bandwidth: " .. tostring(err))        
+    end
+end
+
 
 local function sync_config()
     local ok, err = every(CONFIG_SYNC_INTERVAL, events.pop, ngx_worker_id())
@@ -46,6 +55,7 @@ function _M.run(_)
     sync_config()
     pop_sample_logs()
     calc_qps()
+    calc_bandwidth()
 end
 
 return _M
