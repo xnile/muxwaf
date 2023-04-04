@@ -107,42 +107,42 @@ import { ListSite } from '@/api/site'
 const columns = [
   {
     title: '网站',
-    dataIndex: 'host',
+    dataIndex: 'content.host',
     width: '10%'
   },
   {
     title: '路径',
-    dataIndex: 'request_path',
+    dataIndex: 'content.request_path',
     width: '15%'
   },
   {
     title: '方法',
-    dataIndex: 'request_method',
+    dataIndex: 'content.request_method',
     width: '5%'
   },
   {
     title: '规则',
-    dataIndex: 'rule_type',
+    dataIndex: 'content.rule_type',
     width: '8%'
   },
   {
     title: '防护动作',
-    dataIndex: 'action',
+    dataIndex: 'content.action',
     width: '8%',
     scopedSlots: { customRender: 'action' }
   },
   {
     title: 'IP',
-    dataIndex: 'real_client_ip',
+    dataIndex: 'content.real_client_ip',
     width: '10%'
   },
   {
     title: '请求ID',
-    dataIndex: 'request_id'
+    dataIndex: 'content.request_id'
   },
   {
     title: '时间',
-    dataIndex: 'request_time',
+    dataIndex: 'content.request_time',
     scopedSlots: { customRender: 'time' }
   }
 ]

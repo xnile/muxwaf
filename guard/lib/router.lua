@@ -20,7 +20,7 @@ end
 
 
 local function start(self, ctx)
-    local uri = ctx.var.request_uri
+    local uri = ctx.var.uri
     local method = ctx.var.request_method
 
     if not self.mux[method] then

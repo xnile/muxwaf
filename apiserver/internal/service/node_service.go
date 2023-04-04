@@ -14,6 +14,8 @@ import (
 	"strings"
 )
 
+const sampleLogAPIURL = "/api/logs/sample"
+
 type INodeService interface {
 	Add(payload *model.NodeModel) error
 	List(pageNum, pageSize int64) (*model.ListResp, error)
@@ -96,7 +98,7 @@ func (svc *nodeService) SwitchSampleLogUpload(id int64) error {
 
 	// update guard
 	{
-		sampledLogUploadApi := "http://" + utils.GetOutboundIP().String() + ":" + viper.GetString("port") + "/logs/sampled"
+		sampledLogUploadApi := "http://" + utils.GetOutboundIP().String() + ":" + viper.GetString("port") + sampleLogAPIURL
 		cfg := model.SampleLogUploadGuard{
 			IsSampleLogUpload:       0,
 			SampleLogUploadAPI:      "",
@@ -310,7 +312,7 @@ func (svc *nodeService) Sync(id int64) error {
 		RateLimit:       arrayRateLimitGuard,
 	}
 
-	sampledLogUploadApi := "http://" + utils.GetOutboundIP().String() + ":" + viper.GetString("port") + "/api/logs/sampled"
+	sampledLogUploadApi := "http://" + utils.GetOutboundIP().String() + ":" + viper.GetString("port") + sampleLogAPIURL
 	logCfgGuard.SampleLogUploadAPI = sampledLogUploadApi
 
 	guardConfigs := model.GuardConfigs{

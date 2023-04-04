@@ -2,16 +2,18 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/xnile/muxwaf/internal/ecode"
 	"github.com/xnile/muxwaf/internal/model"
 	"github.com/xnile/muxwaf/pkg/logx"
 	"github.com/xnile/muxwaf/pkg/utils"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
 type IAttackLogService interface {
-	Add(c *gin.Context, entity *model.AttackLogModel)
+	Add(c *gin.Context, entity *model.SampleLogModel)
 	List(pageNum, pageSize, startTime, endTime, siteID int64, action int8, content string) (*model.ListResp, error)
 }
 
@@ -23,7 +25,7 @@ func NewAttackLogService(db *gorm.DB) IAttackLogService {
 	return &attackLogService{db: db}
 }
 
-func (svc *attackLogService) Add(c *gin.Context, entity *model.AttackLogModel) {
+func (svc *attackLogService) Add(c *gin.Context, entity *model.SampleLogModel) {
 	token := c.GetHeader("Token")
 
 	if err := svc.db.Where("sample_log_upload_api_token = ?", token).First(new(model.NodeModel)).Error; err != nil {
@@ -48,27 +50,38 @@ func (svc *attackLogService) Add(c *gin.Context, entity *model.AttackLogModel) {
 
 func (svc *attackLogService) List(pageNum, pageSize, startTime, endTime, siteID int64, action int8, content string) (*model.ListResp, error) {
 	rsp := new(model.ListResp)
-	entities := make([]*model.AttackLogModel, 0)
+	entities := make([]*model.SampleLogModel, 0)
 	var count int64
 	pageNum, pageSize = utils.CheckPageSizeNum(pageNum, pageSize)
 
-	gDB := svc.db.Model(&model.AttackLogModel{})
+	gDB := svc.db.Model(&model.SampleLogModel{})
 	if startTime > 0 && endTime > 0 {
 		gDB = gDB.Where("created_at >= ? AND created_at <= ?", startTime, endTime)
 	}
+	//if action != -1 {
+	//	gDB = gDB.Where("action = ?", action)
+	//}
+	//gDB.Where(datatypes.JSONQuery("content").Equals(action, "action"))
+
 	if action != -1 {
-		gDB = gDB.Where("action = ?", action)
+		//gDB.Where(datatypes.JSONQuery("content").Equals(action, "action"))
+		cond := fmt.Sprintf("\"content\"::jsonb @> '{\"action\": %d}'::jsonb", action)
+		gDB.Where(cond)
 	}
+
 	if siteID > 0 {
 		var siteUUID string
 		if err := svc.db.Table("site").Select("uuid").Where("id = ?", siteID).Scan(&siteUUID).Error; err != nil {
 			logx.Error("[sample_log] Failed to get site uuid: ", err)
 		} else {
-			gDB = gDB.Where("site_id = ?", siteUUID)
+			gDB.Where(datatypes.JSONQuery("content").Equals(siteUUID, "site_id"))
 		}
 	}
 	if len(content) > 0 {
-		gDB.Where("request_path LIKE ? or real_client_ip = ? or request_id = ?", content+"%", content, content)
+		//cond := fmt.Sprintf("select * from \"sample_log\" join jsonb_each_text(sample_log.content) e on true where e.value = '%s'", content)
+		//gDB.Raw(cond)
+
+		gDB.Joins("join jsonb_each_text(sample_log.content) e on true").Where("e.value = ?", content)
 	}
 
 	if err := gDB.Count(&count).Error; err != nil {

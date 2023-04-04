@@ -1,3 +1,4 @@
+local log            = require("log")
 local time           = require("time")
 local metrics        = require("metrics")
 local constants      = require("constants")
@@ -99,24 +100,27 @@ end
 
 local function sampled(ctx, rule_type, action)
     local now = time.now()
-    local raw = {
-        host            = ctx.var.host,
-        site_id         = ctx.site_id,
-        real_client_ip  = ctx.real_client_ip,
-        request_id      = ctx.var.request_id,    
-        remote_addr     = ctx.var.remote_addr,
-        request_path    = ctx.var.request_uri,
-        request_method  = ctx.var.request_method,
-        request_time    = math.floor(ctx.waf_start_time /1000 /1000),  -- TODO: change to waf_start_time
-        process_time    = now - ctx.waf_start_time,          -- TODO: change to waf_process_time
-        rule_type       = rule_type,
-        action          = action or "block",
-        worker_id       = ctx.worker_id,
-      }
+    local raw_log = {
+        content = {
+            host               = ctx.var.host,
+            site_id            = ctx.site_id,
+            real_client_ip     = ctx.real_client_ip,
+            request_id         = ctx.var.request_id,    
+            remote_addr        = ctx.var.remote_addr,
+            request_path       = ctx.var.request_uri,
+            request_method     = ctx.var.request_method,
+            request_time       = math.floor(ctx.var.msec),
+            waf_start_time     = math.floor(ctx.waf_start_time /1000 /1000),
+            waf_process_time   = now - ctx.waf_start_time,
+            rule_type          = rule_type,
+            action             = action or -1,
+            ngx_worker_id      = ctx.worker_id,
+        }
+    }
 
-    local json_log = ctx.encode(raw)
+    local json_log = ctx.encode(raw_log)
     if not json_log then
-        ngx_log(ngx.WARN,"faild to encode sampled log")
+        ngx_log(ngx.WARN, "faild to encode sampled log")
         return
     end
 

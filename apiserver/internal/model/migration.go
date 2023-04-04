@@ -33,7 +33,7 @@ func AutoMigrate(db *gorm.DB) (err error) {
 	if err = db.AutoMigrate(new(CertModel)); err != nil {
 		return err
 	}
-	if err = db.AutoMigrate(new(AttackLogModel)); err != nil {
+	if err = db.AutoMigrate(new(SampleLogModel)); err != nil {
 		return err
 	}
 	if err = db.AutoMigrate(new(NodeModel)); err != nil {

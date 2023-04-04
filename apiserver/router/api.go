@@ -3,11 +3,11 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/xnile/muxwaf/handler"
-	"github.com/xnile/muxwaf/handler/attack_log"
 	"github.com/xnile/muxwaf/handler/blacklist"
 	"github.com/xnile/muxwaf/handler/certificate"
 	"github.com/xnile/muxwaf/handler/node"
 	"github.com/xnile/muxwaf/handler/ratelimit"
+	"github.com/xnile/muxwaf/handler/sample_log"
 	"github.com/xnile/muxwaf/handler/site"
 	"github.com/xnile/muxwaf/handler/user"
 	"github.com/xnile/muxwaf/handler/whitelist"
@@ -33,7 +33,7 @@ func Init() *gin.Engine {
 	{
 		r.POST("/api/auth/login", user.Login)
 		r.POST("/api/auth/logout", user.Logout)
-		r.POST("/api/logs/sampled", attack_log.AddLog)
+		r.POST("/api/logs/sample", sample_log.AddLog)
 	}
 
 	api := r.Group("api")
@@ -112,7 +112,7 @@ func Init() *gin.Engine {
 		api.PUT("/nodes/:id/sample_log_upload", node.SwitchSampleLogUpload)
 
 		// 攻击日志
-		api.GET("/sampled-logs", attack_log.GetLogList)
+		api.GET("/sample-logs", sample_log.GetLogList)
 
 	}
 	return r

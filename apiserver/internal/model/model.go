@@ -11,7 +11,7 @@ type Model struct {
 	ID        int64  `json:"id" gorm:"primaryKey;autoIncrement"`
 	UUID      string `json:"uuid" gorm:"index;type:char(20)" `
 	CreatedAt int64  `json:"created_at" gorm:"type:bigint;not null"`
-	UpdatedAt int64  `json:"updatedAt" gorm:"type:bigint"`
+	UpdatedAt int64  `json:"updated_at" gorm:"type:bigint"`
 }
 
 func (m *Model) BeforeCreate(tx *gorm.DB) error {

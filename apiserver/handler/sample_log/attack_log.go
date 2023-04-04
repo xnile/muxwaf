@@ -1,4 +1,4 @@
-package attack_log
+package sample_log
 
 import (
 	"github.com/gin-gonic/gin"
@@ -12,7 +12,7 @@ import (
 )
 
 func AddLog(c *gin.Context) {
-	var payload model.AttackLogModel
+	var payload model.SampleLogModel
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		logx.Warnf("request parameter error: %v", err)
 		handler.ResponseBuilder(c, ecode.ErrParam, nil)
@@ -38,10 +38,10 @@ func GetLogList(c *gin.Context) {
 
 	var action int8
 	switch c.Query("action") {
-	case "0":
-		action = 0
 	case "1":
 		action = 1
+	case "2":
+		action = 2
 	default:
 		action = -1
 	}

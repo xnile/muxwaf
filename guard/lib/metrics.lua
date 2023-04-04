@@ -20,13 +20,17 @@ local RULE_TYPE         = constants.RULE_TYPE
 local BLOCK_RULE_TYPE   = { RULE_TYPE.BLACKLIST_IP, RULE_TYPE.BLACKLIST_REGION, RULE_TYPE.RATELIMIT }
 
 -- response status codes that need to be counted
-local RSP_STS_CODE_COUNTED = { '200', '400', '403' ,'404', '413', '499', '500', '502', '504', 'other' }
+local RSP_STS_CODE_COUNTED      = { '200', '400', '403' ,'404', '413', '499', '500', '502', '504', 'other' }
+local UPSTREAM_STS_CODE_COUNTED = { '200', '400', '403' ,'404', '413', '499', '500', '502', '504', 'other' }
 
 -- shm keys
-local KEY_QPS                 = "qps"
-local KEY_LAST_TOTAL_REQUESTS = "last_total_requests"
-local KEY_BLOCK_COUNT_PREFIX  = "block_count_"
-local KEY_RSP_STS_CODE_PREFIX = "rsp_sts_code_"
+local KEY_QPS                      = "qps"
+local KEY_LAST_TOTAL_REQUESTS      = "last_total_requests"
+local KEY_BLOCK_COUNT_PREFIX       = "block_count_"
+local KEY_RSP_STS_CODE_PREFIX      = "rsp_sts_code_"
+local KEY_UPSTREAM_STS_CODE_PREFIX = "upstream_sts_code_"
+local KEY_TRAFFIC_IN               = "traffic_in"
+local KEY_TRAFFIC_OUT              = "traffic_out"
 
 
 local DICTS       = constants.DICTS
@@ -56,28 +60,26 @@ local function get_nginx_status()
     }
 end
 
-local function get_shm_status()
+local function get_shm_status(pretty)
     local status = table_new(0, 3)
     for _, dict in pairs(DICTS) do
         local shm = ngx_shared[dict]
-        status[dict] = {
-            capacity = utils.format_capacity(shm:capacity()),
-            free     = utils.format_capacity(shm:free_space()),
-        }
+
+        if pretty then
+            status[dict] = {
+                capacity = utils.format_capacity(shm:capacity()),
+                free     = utils.format_capacity(shm:free_space()),
+            }
+        else
+            status[dict] = {
+                capacity = shm:capacity(),
+                free     = shm:free_space(),
+            }
+        end            
     end
     return status
 end
 
-
--- local function get_block_count()
-
---     local count, err = shm_metrics:get("block_count")
---     if err then
---         log.error("Failed to get the number of blocks: ", tostring(err))
---     end
---     count = count or 0
---     return count
--- end
 
 local function get_block_count()
     local block_count = {}
@@ -93,14 +95,6 @@ local function get_block_count()
 end
 
 
--- function _M.incr_block_count()
---     local _, err = shm_metrics:incr("block_count", 1, 0, 0)
---     if err then
---         log.error("Failed to increase the number of blocks: ", tostring(err))
---     end
--- end
-
-
 function _M.incr_block_count(rule_type)
     local _, err = shm_metrics:incr("block_count_" .. rule_type, 1, 0, 0)
     if err then
@@ -109,28 +103,25 @@ function _M.incr_block_count(rule_type)
 end
 
 
--- local qps = 0
--- do
---     last_requests = 0
-    function _M.calc_qps()
-        local last_total_requests = shm_metrics:get("last_total_requests")
-        last_total_requests = last_total_requests or 0
 
-        local total_requests = tonumber(C.ngx_stat_requests[0])
-        local incr_requests = total_requests - last_total_requests
-        local qps = math.floor(incr_requests / CALC_QPS_INTERVAL + 0.5)
+function _M.calc_qps()
+    local last_total_requests = shm_metrics:get("last_total_requests")
+    last_total_requests = last_total_requests or 0
 
-        local ok, err = shm_metrics:set(KEY_QPS, qps)
-        if not ok then
-            log.error("failed to set qps: ", tostring(err))
-        end
+    local total_requests = tonumber(C.ngx_stat_requests[0])
+    local incr_requests = total_requests - last_total_requests
+    local qps = math.floor(incr_requests / CALC_QPS_INTERVAL + 0.5)
 
-        local ok, err = shm_metrics:set("last_total_requests", total_requests)
-        if not ok then
-            log.error("failed to set last total requests: ", tostring(err))
-        end
+    local ok, err = shm_metrics:set(KEY_QPS, qps)
+    if not ok then
+        log.error("failed to set qps: ", tostring(err))
     end
--- end
+
+    local ok, err = shm_metrics:set("last_total_requests", total_requests)
+    if not ok then
+        log.error("failed to set last total requests: ", tostring(err))
+    end
+end
 
 
 local function get_qps()
@@ -139,7 +130,6 @@ local function get_qps()
 end
 
 
--- TODO: better it
 function _M.incr_resp_sts_code()
     local code = ngx.var.status
     if code == '204' then
@@ -161,7 +151,6 @@ function _M.incr_resp_sts_code()
     end
 end
 
-
 local function get_resp_sts_code_count()
     local r = {}
     for _, key in ipairs(RSP_STS_CODE_COUNTED)do
@@ -171,16 +160,97 @@ local function get_resp_sts_code_count()
     return r
 end
 
-function _M.show()
+
+function _M.incr_upstream_sts_code()
+    local code = ngx.var.upstream_status
+    if not code then return end
+
+    if code == '204' then
+        return  -- ignore 204 status code
+    end
+
+    local shm_key = UPSTREAM_STS_CODE_COUNTED[#UPSTREAM_STS_CODE_COUNTED]
+
+    for _, c in ipairs(UPSTREAM_STS_CODE_COUNTED) do
+        if code == c then
+            shm_key = code
+        end
+    end
+
+    local _, err = shm_metrics:incr(KEY_UPSTREAM_STS_CODE_PREFIX .. shm_key, 1, 0, 0)
+    if err then
+        log.error("failed to increase response status code: ", tostring(err))
+    end
+end
+
+local function get_upstream_sts_code_count()
+    local r = {}
+    for _, key in ipairs(UPSTREAM_STS_CODE_COUNTED)do
+        local c = shm_metrics:get(KEY_UPSTREAM_STS_CODE_PREFIX .. key)
+        r[key] = c or 0
+    end
+    return r
+end
+
+
+function _M.incr_traffic()
+    local i = tonumber(ngx.var.request_length) or 0
+    local o = tonumber(ngx.var.bytes_sent) or 0
+
+    do
+        local _, err = shm_metrics:incr(KEY_TRAFFIC_IN, i, 0, 0)
+        if err then
+            log.error("failed to increase traffic in: ", tostring(err))
+        end
+    end
+
+    do
+        local _, err = shm_metrics:incr(KEY_TRAFFIC_OUT, o, 0, 0)
+        if err then
+            log.error("failed to increase traffic out: ", tostring(err))
+        end
+    end
+end
+
+local function get_traffic()
+    local into = shm_metrics:get(KEY_TRAFFIC_IN) or 0
+    local out  = shm_metrics:get(KEY_TRAFFIC_OUT) or 0
     return {
-        nginx_status = get_nginx_status(),
-        shm_status   = get_shm_status(),
-        block_count  = get_block_count(),
-        qps          = get_qps(),
-        -- TODO: collect all worker lua vm
-        lua_vm       = utils.format_capacity(collectgarbage("count") *1024),
-        worker_id    = ngx.worker.id(),
-        rsp_sts_code = get_resp_sts_code_count(),
+        ["in"] = into,
+        out  = out
+    }
+end
+
+
+-- TODO: collect all worker lua vm
+local function get_lua_vm(pretty)
+    local lua_vm = collectgarbage("count") *1024
+    if pretty then
+        return utils.format_capacity(lua_vm)
+    else
+        return lua_vm
+    end
+end
+
+
+
+function _M.show(ctx)
+    local args, err = ngx.req.get_uri_args()
+    if err then
+        log.error("failed to get request args: ", tostring(err))
+    end
+    local pretty = args["pretty"] or false
+
+    return {
+        nginx_status      = get_nginx_status(),
+        shm_status        = get_shm_status(pretty),
+        block             = get_block_count(),
+        qps               = get_qps(),
+        lua_vm            = get_lua_vm(pretty),
+        worker_id         = ngx.worker.id(),
+        rsp_sts_code      = get_resp_sts_code_count(),
+        upstream_sts_code = get_upstream_sts_code_count(),
+        traffic           = get_traffic()
     }
 end
 
