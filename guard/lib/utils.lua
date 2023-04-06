@@ -16,6 +16,25 @@ function _M.pretty_bytes(c)
     end
 end
 
+function _M.pretty_bandwidth(c)
+    if c > 1024 * 1024 then
+        return string.format('%.2f', c / 1024 / 1024) .. 'Mbps'
+    elseif c > 1024 then
+        return string.format('%.2f', c / 1024) .. 'Kbps'
+    else
+        return string.format('%.2f', c) .. 'bps'
+    end
+end
+
+
+local function _M.pretty_number(num)
+    if not num then return 0 end
+    if math.abs(num) < 1000 then return num end
+    local neg = num < 0 and "-" or ""
+    local left, mid, right = tostring(math.abs(num)):match("^([^%d]*%d)(%d*)(.-)$")
+    return ("%s%s%s%s"):format(neg, left, mid:reverse():gsub("(%d%d%d)", "%1,"):reverse(), right)
+end
+
 
 -- @param old table, kv like table
 -- @param new table, array like table

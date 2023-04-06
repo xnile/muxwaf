@@ -69,18 +69,10 @@ local function get_shm_status(pretty)
     local status = table_new(0, 3)
     for _, dict in pairs(DICTS) do
         local shm = ngx_shared[dict]
-
-        if pretty then
-            status[dict] = {
-                capacity = utils.pretty_bytes(shm:capacity()),
-                free     = utils.pretty_bytes(shm:free_space()),
-            }
-        else
-            status[dict] = {
-                capacity = shm:capacity(),
-                free     = shm:free_space(),
-            }
-        end            
+        status[dict] = {
+            capacity = pretty and utils.pretty_bytes(shm:capacity()) or shm:capacity(),
+            free     = pretty and utils.pretty_bytes(shm:free_space()) or shm:free_space()
+        }
     end
     return status
 end
@@ -221,14 +213,9 @@ local function get_traffic(pretty)
     local into = shm_metrics:get(KEY_TRAFFIC_IN) or 0
     local out  = shm_metrics:get(KEY_TRAFFIC_OUT) or 0
 
-    if pretty then
-        into = utils.pretty_bytes(into)
-        out  = utils.pretty_bytes(out)
-    end
-
     return {
-        ["in"] = into,
-        out    = out
+        ["in"]  = pretty and utils.pretty_bytes(into) or into,
+        ["out"] = pretty and utils.pretty_bytes(out) or out,
     }
 end
 
@@ -274,12 +261,13 @@ function _M.calc_bandwidth()
 end
 
 
-local  function get_bandwidth()
+local  function get_bandwidth(pretty)
     local bandwidth_in  = shm_metrics:get(KEY_BANDWIDTH_IN) or 0
     local bandwidth_out = shm_metrics:get(KEY_BANDWIDTH_OUT) or 0
+
     return {
-        ["in"]  = bandwidth_in,
-        ["out"] = bandwidth_out,
+        ["in"]  = pretty and utils.pretty_bandwidth(bandwidth_in)  or bandwidth_in,
+        ["out"] = pretty and utils.pretty_bandwidth(bandwidth_out) or bandwidth_out,
     }
 end
 
@@ -287,11 +275,7 @@ end
 -- TODO: collect all worker lua vm
 local function get_lua_vm(pretty)
     local lua_vm = collectgarbage("count") *1024
-    if pretty then
-        return utils.pretty_bytes(lua_vm)
-    else
-        return lua_vm
-    end
+    return pretty and utils.pretty_bytes(lua_vm) or lua_vm
 end
 
 
@@ -313,7 +297,7 @@ function _M.show(ctx)
         rsp_sts_code      = get_resp_sts_code_count(),
         upstream_sts_code = get_upstream_sts_code_count(),
         traffic           = get_traffic(pretty),
-        bandwidth         = get_bandwidth(),
+        bandwidth         = get_bandwidth(pretty),
     }
 end
 

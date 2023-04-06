@@ -413,8 +413,8 @@ local function match_ipv4(self, ip)
     for _, mask in ipairs(self.ipv4_mask_arr) do
         local valid_inet_addr = bit.rshift(ip, 32 - mask)           
 
-        log.debug("ipv4 mask: ", mask,
-                 " valid inet: ", valid_inet_addr)
+        -- log.debug("ipv4 mask: ", mask,
+        --          " valid inet: ", valid_inet_addr)
 
         value = ipv4_mask[mask][valid_inet_addr]
         if value ~= nil then

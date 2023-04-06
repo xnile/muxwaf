@@ -11,6 +11,7 @@ local tab_new       = table.new
 local string_format = string.format
 
 local HTTP_BAD_GATEWAY          = ngx.HTTP_BAD_GATEWAY
+local HTTP_GATEWAY_TIMEOUT      = ngx.HTTP_GATEWAY_TIMEOUT
 
 local upstreams = {}
 
@@ -60,6 +61,11 @@ end
 
 
 function _M.balance(self, ctx)
+    if not ctx.var.host then
+        log.error("failed to get host")
+        return ngx_exit(HTTP_GATEWAY_TIMEOUT)
+    end
+
     ngx_balancer.set_more_tries(1)
 
     local peer = pick_upstream_peer(ctx.var.host, ctx.upstream_scheme)
