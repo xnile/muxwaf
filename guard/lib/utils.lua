@@ -27,7 +27,7 @@ function _M.pretty_bandwidth(c)
 end
 
 
-local function _M.pretty_number(num)
+function _M.pretty_number(num)
     if not num then return 0 end
     if math.abs(num) < 1000 then return num end
     local neg = num < 0 and "-" or ""
