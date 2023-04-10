@@ -15,6 +15,14 @@ local _M = {
     _VERSION = 0.1
 }
 
+local prometheus
+
+-- prometheus metrics
+local prom_metric_requests
+local prom_metric_latency
+local prom_metric_connections
+
+
 local CALC_QPS_INTERVAL       = constants.CALC_QPS_INTERVAL
 local CALC_BANDWIDTH_INTERVAL = constants.CALC_BANDWIDTH_INTERVAL
 local RULE_TYPE         = constants.RULE_TYPE
@@ -127,7 +135,7 @@ local function get_qps()
 end
 
 
-function _M.incr_resp_sts_code()
+local function incr_resp_sts_code()
     local code = ngx.var.status
     if code == '204' then
         return  -- ignore 204 status code
@@ -158,7 +166,7 @@ local function get_resp_sts_code_count()
 end
 
 
-function _M.incr_upstream_sts_code()
+local function incr_upstream_sts_code()
     local code = ngx.var.upstream_status
     if not code then return end
 
@@ -190,7 +198,7 @@ local function get_upstream_sts_code_count()
 end
 
 
-function _M.incr_traffic()
+local function incr_traffic()
     local i = tonumber(ngx.var.request_length) or 0
     local o = tonumber(ngx.var.bytes_sent) or 0
 
@@ -279,15 +287,40 @@ local function get_lua_vm(pretty)
 end
 
 
+function _M.init_worker()
+    prometheus = require("resty.prometheus").init("muxwaf_metrics")
 
-function _M.show(ctx)
+    prom_metric_requests = prometheus:counter("nginx_http_requests_total", "Number of HTTP requests", {"host", "status"})
+    prom_metric_latency = prometheus:histogram("nginx_http_request_duration_seconds", "HTTP request latency", {"host"})
+    prom_metric_connections = prometheus:gauge("nginx_http_connections", "Number of HTTP connections", {"state"})
+end
+
+
+function _M.log_phase()
+    incr_resp_sts_code()
+    incr_upstream_sts_code()
+    incr_traffic()
+
+    prom_metric_requests:inc(1, {ngx.var.host, ngx.var.status})
+    prom_metric_latency:observe(tonumber(ngx.var.request_time), {ngx.var.host})
+    prom_metric_connections:set(tonumber(C.ngx_stat_active[0]), {"active"})
+    prom_metric_connections:set(tonumber(C.ngx_stat_handled[0]), {"handled"})
+end
+
+
+function _M.collect(ctx)
     local args, err = ngx.req.get_uri_args()
     if err then
         log.error("failed to get request args: ", tostring(err))
     end
-    local pretty = args["pretty"] or false
 
-    return {
+    local format = args["format"] or ""
+    if format == "prom" then
+        return prometheus:collect()
+    end
+
+    local pretty = args["pretty"] or false
+    return ctx.say_json({
         nginx_status      = get_nginx_status(),
         shm_status        = get_shm_status(pretty),
         block             = get_block_count(),
@@ -298,7 +331,7 @@ function _M.show(ctx)
         upstream_sts_code = get_upstream_sts_code_count(),
         traffic           = get_traffic(pretty),
         bandwidth         = get_bandwidth(pretty),
-    }
+    })
 end
 
 return _M

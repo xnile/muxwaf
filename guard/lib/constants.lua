@@ -57,7 +57,7 @@ return {
     LOG         = 'muxwaf_log',
     RATELIMIT   = 'muxwaf_ratelimit',
     EVENTS      = 'muxwaf_events',
-    METRICS     = 'mwxwaf_metrics',
+    METRICS     = 'muxwaf_metrics',
   },
 
   RULE_TYPE = {

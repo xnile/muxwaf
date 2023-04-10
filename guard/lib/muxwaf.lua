@@ -43,6 +43,7 @@ end
 function _M.init_worker_phase()
   require("tasks").run()
   require("configs").init()
+  require("metrics").init_worker()
 end
 
 function _M.exit_worker_phase()
@@ -75,9 +76,10 @@ end
 
 function _M.log_phase()
   tablepool.release("pool_ctx", ctx)
-  metrics.incr_resp_sts_code()
-  metrics.incr_upstream_sts_code()
-  metrics.incr_traffic()
+  metrics.log_phase()
+  -- metrics.incr_resp_sts_code()
+  -- metrics.incr_upstream_sts_code()
+  -- metrics.incr_traffic()
 end
 
 function _M.api_serve()
