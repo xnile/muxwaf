@@ -45,10 +45,17 @@ local function calc_bandwidth()
 end
 
 
+local function collect_lua_mem_alloc()
+    local ok, err = every(2, metrics.collect_lua_mem_alloc_timer_callback)
+    assert(ok, "failed to setting up timer for collect lua memory allocated: " .. tostring(err))
+end
+
 local function sync_config()
     local ok, err = every(CONFIG_SYNC_INTERVAL, events.pop, ngx_worker_id())
     assert(ok, "failed to setting up timer for config sync: " .. tostring(err))
 end
+
+
 
 
 function _M.run(_)
@@ -56,6 +63,7 @@ function _M.run(_)
     pop_sample_logs()
     calc_qps()
     calc_bandwidth()
+    collect_lua_mem_alloc()
 end
 
 return _M

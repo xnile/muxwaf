@@ -19,8 +19,14 @@ local prometheus
 
 -- prometheus metrics
 local prom_metric_requests
-local prom_metric_latency
+local prom_metric_requests_total
+local prom_metric_request_duration_seconds
 local prom_metric_connections
+-- local prom_metric_connections_total
+local prom_metric_bytes_response_total
+local prom_metric_bytes_request_total
+local prom_metric_attacks_blocked
+local prom_metric_lua_memstats_alloc_bytes
 
 
 local CALC_QPS_INTERVAL       = constants.CALC_QPS_INTERVAL
@@ -44,6 +50,7 @@ local KEY_LAST_TRAFFIC_IN          = "last_trffic_in"
 local KEY_LAST_TRAFFIC_OUT         = "last_trffic_out"
 local KEY_BANDWIDTH_IN             = "bandwidth_in"
 local KEY_BANDWIDTH_OUT            = "bandwidth_out"
+local KEY_LUA_MEM_ALLOC_PREFIX     = "lua_mem_alloc_worker_id_"
 
 
 local DICTS       = constants.DICTS
@@ -286,13 +293,38 @@ local function get_lua_vm(pretty)
     return pretty and utils.pretty_bytes(lua_vm) or lua_vm
 end
 
+function _M.collect_lua_mem_alloc_timer_callback()
+    local worker_id = ngx.worker.id()
+    local mem_alloc = collectgarbage("count") *1024
+    local ok, err = shm_metrics:set(KEY_LUA_MEM_ALLOC_PREFIX .. worker_id, mem_alloc)
+    if not ok then
+        log.error("failed to set lua memory allocated: ", tostring(err))
+    end
+
+    prom_metric_lua_memstats_alloc_bytes:set(mem_alloc, {worker_id})
+end
+
+
+local function collect_lua_mem_alloc()
+    local status = {}
+    local count = ngx.worker.count()
+    for i = 0, count -1 do
+        status[i] = shm_metrics:get(KEY_LUA_MEM_ALLOC_PREFIX .. i) or -1
+    end
+    return status
+end
 
 function _M.init_worker()
     prometheus = require("resty.prometheus").init("muxwaf_metrics")
 
-    prom_metric_requests = prometheus:counter("nginx_http_requests_total", "Number of HTTP requests", {"host", "status"})
-    prom_metric_latency = prometheus:histogram("nginx_http_request_duration_seconds", "HTTP request latency", {"host"})
-    prom_metric_connections = prometheus:gauge("nginx_http_connections", "Number of HTTP connections", {"state"})
+    prom_metric_requests = prometheus:counter("muxwaf_requests", "The total number of client requests", {"host", "status", "upstream_status"})
+    prom_metric_requests_total = prometheus:counter("muxwaf_requests_total", "The total number of client requests")
+    prom_metric_request_duration_seconds = prometheus:histogram("muxwaf_request_duration_second", "The request processing time in milliseconds", {"host"})
+    prom_metric_connections = prometheus:gauge("muxwaf_connections", "current number of client connections with state {active, reading, writing, waiting}", {"state"})
+    prom_metric_bytes_request_total = prometheus:counter("muxwaf_bytes_request_total", "total number of bytes request")
+    prom_metric_bytes_response_total = prometheus:counter("muxwaf_bytes_response_total", "total number of bytes response")
+    prom_metric_attacks_blocked = prometheus:counter("muxwaf_attacks_blocked", "number of attacks blocked", {"rule_type"})
+    prom_metric_lua_memstats_alloc_bytes = prometheus:gauge("muxwaf_lua_memstats_alloc_bytes", "Number of bytes allocated and still in use", {"worker_id"})
 end
 
 
@@ -301,10 +333,17 @@ function _M.log_phase()
     incr_upstream_sts_code()
     incr_traffic()
 
-    prom_metric_requests:inc(1, {ngx.var.host, ngx.var.status})
-    prom_metric_latency:observe(tonumber(ngx.var.request_time), {ngx.var.host})
+    local upstream_status = ngx.var.upstream_status or "-"
+
+    prom_metric_requests:inc(1, {ngx.var.host, ngx.var.status, upstream_status})
+    prom_metric_requests_total:inc(1)
+    prom_metric_request_duration_seconds:observe(tonumber(ngx.var.request_time), {ngx.var.host})
     prom_metric_connections:set(tonumber(C.ngx_stat_active[0]), {"active"})
-    prom_metric_connections:set(tonumber(C.ngx_stat_handled[0]), {"handled"})
+    prom_metric_connections:set(tonumber(C.ngx_stat_reading[0]), {"reading"})
+    prom_metric_connections:set(tonumber(C.ngx_stat_writing[0]), {"writing"})
+    prom_metric_connections:set(tonumber(C.ngx_stat_waiting[0]), {"waiting"})
+    prom_metric_bytes_request_total:inc(tonumber(ngx.var.request_length))
+    prom_metric_bytes_response_total:inc(tonumber(ngx.var.bytes_sent))
 end
 
 
@@ -325,7 +364,8 @@ function _M.collect(ctx)
         shm_status        = get_shm_status(pretty),
         block             = get_block_count(),
         qps               = get_qps(),
-        lua_vm            = get_lua_vm(pretty),
+        -- lua_vm            = get_lua_vm(pretty),
+        lua_vm            = collect_lua_mem_alloc(),
         worker_id         = ngx.worker.id(),
         rsp_sts_code      = get_resp_sts_code_count(),
         upstream_sts_code = get_upstream_sts_code_count(),
