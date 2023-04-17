@@ -23,10 +23,12 @@ local prom_metric_requests_total
 local prom_metric_request_duration_seconds
 local prom_metric_connections
 -- local prom_metric_connections_total
-local prom_metric_bytes_response_total
-local prom_metric_bytes_request_total
+local prom_metric_response_bytes_total
+local prom_metric_request_bytes_total
 local prom_metric_attacks_blocked
 local prom_metric_lua_memstats_alloc_bytes
+local prom_metric_shm_total_bytes
+local prom_metric_shm_free_bytes
 
 
 local CALC_QPS_INTERVAL       = constants.CALC_QPS_INTERVAL
@@ -108,6 +110,9 @@ end
 
 
 function _M.incr_block_count(rule_type)
+    prom_metric_attacks_blocked:inc(1, {rule_type})
+
+
     local _, err = shm_metrics:incr("block_count_" .. rule_type, 1, 0, 0)
     if err then
         log.error("failed to increase the number of blocks: ", tostring(err))
@@ -117,8 +122,7 @@ end
 
 
 function _M.calc_qps()
-    local last_total_requests = shm_metrics:get("KEY_LAST_TOTAL_REQUESTS")
-    last_total_requests = last_total_requests or 0
+    local last_total_requests = shm_metrics:get("KEY_LAST_TOTAL_REQUESTS") or 0
 
     local total_requests = tonumber(C.ngx_stat_requests[0])
     local incr_requests = total_requests - last_total_requests
@@ -129,7 +133,7 @@ function _M.calc_qps()
         log.error("failed to set qps: ", tostring(err))
     end
 
-    local ok, err = shm_metrics:set("last_total_requests", total_requests)
+    local ok, err = shm_metrics:set(KEY_LAST_TOTAL_REQUESTS, total_requests)
     if not ok then
         log.error("failed to set last total requests: ", tostring(err))
     end
@@ -287,7 +291,6 @@ local  function get_bandwidth(pretty)
 end
 
 
--- TODO: collect all worker lua vm
 local function get_lua_vm(pretty)
     local lua_vm = collectgarbage("count") *1024
     return pretty and utils.pretty_bytes(lua_vm) or lua_vm
@@ -321,10 +324,12 @@ function _M.init_worker()
     prom_metric_requests_total = prometheus:counter("muxwaf_requests_total", "The total number of client requests")
     prom_metric_request_duration_seconds = prometheus:histogram("muxwaf_request_duration_second", "The request processing time in milliseconds", {"host"})
     prom_metric_connections = prometheus:gauge("muxwaf_connections", "current number of client connections with state {active, reading, writing, waiting}", {"state"})
-    prom_metric_bytes_request_total = prometheus:counter("muxwaf_bytes_request_total", "total number of bytes request")
-    prom_metric_bytes_response_total = prometheus:counter("muxwaf_bytes_response_total", "total number of bytes response")
+    prom_metric_request_bytes_total = prometheus:counter("muxwaf_request_bytes_total", "total number of bytes request")
+    prom_metric_response_bytes_total = prometheus:counter("muxwaf_response_bytes_total", "total number of bytes response")
     prom_metric_attacks_blocked = prometheus:counter("muxwaf_attacks_blocked", "number of attacks blocked", {"rule_type"})
     prom_metric_lua_memstats_alloc_bytes = prometheus:gauge("muxwaf_lua_memstats_alloc_bytes", "Number of bytes allocated and still in use", {"worker_id"})
+    prom_metric_shm_total_bytes = prometheus:gauge("muxwaf_shm_total_bytes", "The shm-based dictionary capacity", {"name"})
+    prom_metric_shm_free_bytes = prometheus:gauge("muxwaf_shm_free_bytes", "The shm-based dictionary free bytes", {"name"})
 end
 
 
@@ -333,17 +338,32 @@ function _M.log_phase()
     incr_upstream_sts_code()
     incr_traffic()
 
+    local host            = ngx.var.host or "-"
+    local status          = ngx.var.status or "-"
     local upstream_status = ngx.var.upstream_status or "-"
+    local request_time    = tonumber(ngx.var.request_time) or -1
+    local request_length  = tonumber(ngx.var.request_length) or -1
+    local response_length = tonumber(ngx.var.bytes_sent) or -1
 
-    prom_metric_requests:inc(1, {ngx.var.host, ngx.var.status, upstream_status})
+
+
+    prom_metric_requests:inc(1, {host, status, upstream_status})
     prom_metric_requests_total:inc(1)
-    prom_metric_request_duration_seconds:observe(tonumber(ngx.var.request_time), {ngx.var.host})
+    prom_metric_request_duration_seconds:observe(request_time, {host})
     prom_metric_connections:set(tonumber(C.ngx_stat_active[0]), {"active"})
     prom_metric_connections:set(tonumber(C.ngx_stat_reading[0]), {"reading"})
     prom_metric_connections:set(tonumber(C.ngx_stat_writing[0]), {"writing"})
     prom_metric_connections:set(tonumber(C.ngx_stat_waiting[0]), {"waiting"})
-    prom_metric_bytes_request_total:inc(tonumber(ngx.var.request_length))
-    prom_metric_bytes_response_total:inc(tonumber(ngx.var.bytes_sent))
+    prom_metric_request_bytes_total:inc(request_length)
+    prom_metric_response_bytes_total:inc(response_length)
+
+    -- TODO: move to timer
+    for _, dict in pairs(DICTS) do
+        local shm = ngx_shared[dict]
+        prom_metric_shm_total_bytes:set(shm:capacity(), {dict})
+        prom_metric_shm_free_bytes:set(shm:free_space(), {dict})
+
+    end
 end
 
 
