@@ -1,6 +1,5 @@
 local require      = require
 local _            = require("cjson.safe").encode_empty_table_as_object(false)
--- local _            = require("utils.table.deepcopy")
 local tablepool    = require("resty.tablepool")
 local ipdb_parser  = require("resty.ipdb.city")
 local constants    = require("constants")
@@ -31,8 +30,8 @@ end
 
 function _M.init_phase()
   do
-    for _, dict in pairs(constants.DICTS) do
-      assert(ngx.shared[dict], "the lua_shared_dict '" .. dict .. "' undefined")
+    for _, shdict_name in pairs(constants.DICTS) do
+      assert(ngx.shared[shdict_name], "shared dict \"" .. (shdict_name or "nil") .. "\" not defined")
     end    
   end
 
@@ -75,11 +74,8 @@ function _M.ssl_certificate_phase()
 end
 
 function _M.log_phase()
-  tablepool.release("pool_ctx", ctx)
   metrics.log_phase()
-  -- metrics.incr_resp_sts_code()
-  -- metrics.incr_upstream_sts_code()
-  -- metrics.incr_traffic()
+  tablepool.release("pool_ctx", ctx)
 end
 
 function _M.api_serve()

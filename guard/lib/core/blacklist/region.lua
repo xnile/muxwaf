@@ -79,7 +79,7 @@ function _M.del(_, items)
         end
 
         matcher[site_id] = nil
-        log.info(string_format("delete region blacklist '%s' success", site_id))
+        log.debug(string_format("delete region blacklist '%s' success", site_id))
         ::continue::
     end
 end
@@ -88,7 +88,7 @@ end
 function _M.full_sync(_, items)
     table_clear(matcher)  --TODO: diff and delete
     update_with_add(items)
-    log.info("full sync region blacklist success")
+    log.debug("full sync region blacklist success")
 end
 
 -- @param site_id string

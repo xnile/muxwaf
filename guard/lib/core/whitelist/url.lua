@@ -43,7 +43,7 @@ function _M.add(self, items)
     end
 
     cache[id] = table_clone(item)
-    log.info(string_format("successfully added url whitelist: host '%s' and path '%s' and match mode '%s'", host, path, match_mode))
+    log.debug(string_format("successfully added url whitelist: host '%s' and path '%s' and match mode '%s'", host, path, match_mode))
   end
 
   ::continue::
@@ -64,20 +64,20 @@ function _M.del(self, items)
       if not ok then
         log.error(string_format("faild to delete url whitelist: %s", err))
       end
-      log.info(string_format("remove '%s' from url radix tree success", path))
+      log.debug(string_format("remove '%s' from url radix tree success", path))
     elseif match_mode == 2 then
       local ok, err = tree[host].exact:remove(path)
       if not ok then
         log.error(string_format("faild to delete url whitelist: %s", err))
       end
-      log.info(string_format("remove '%s' from url exact tree success", path))
+      log.debug(string_format("remove '%s' from url exact tree success", path))
     else
       log.error(string_format("faild to delete url whitelist: match mode '%s' not supported", match_mode))
       goto continue
     end
 
     cache[id] = nil
-    log.info(string_format("delete url whitelist '%s' success", id))
+    log.debug(string_format("delete url whitelist '%s' success", id))
     ::continue::
   end
 end
@@ -115,7 +115,7 @@ function _M.full_sync(_, items)
       this:update({item })
     end
   end
-  log.info("full sync URL whitelist success")
+  log.debug("full sync URL whitelist success")
 end
 
 

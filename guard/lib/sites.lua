@@ -50,7 +50,7 @@ function _M.add(_, items)
 
         sites[id] = table_clone(item)
         host_matcher[host] = id
-        log.info(string_format("add site '%s' success", host))
+        log.debug(string_format("add site '%s' success", host))
         ::continue::
     end
 end

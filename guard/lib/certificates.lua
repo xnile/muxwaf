@@ -89,7 +89,7 @@ function _M.full_sync(_, items)
     end
     certificates = new_certificates
     cache = certificates
-    log.info("full sync certificates success")
+    log.debug("full sync certificates success")
 end
 
 function _M.get(id)

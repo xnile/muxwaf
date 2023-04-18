@@ -87,7 +87,7 @@ end
 
 function _M.full_sync(_, cfg)
     update_log_config(cfg)
-    ngx_log(ngx.INFO, "full sync log configuration success")
+    ngx_log(ngx.DEBUG, "full sync log configuration success")
 end
 
 function _M.reset(_)

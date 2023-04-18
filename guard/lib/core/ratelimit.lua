@@ -41,13 +41,13 @@ function _M.add(self, items)
       if not ok then
         log.error("failed to add rate limit: ", err)
       end
-      log.info(string_format("add '%s' to radix tree success", path))
+      log.debug(string_format("add '%s' to radix tree success", path))
     elseif match_mode == 2 then -- exact
       local ok,err = tree[host].exact:insert(path, id)
       if not ok then
         log.error("failed to add rate limit: ", err)
       end
-      log.info(string_format("add '%s' to exact tree success", path))
+      log.debug(string_format("add '%s' to exact tree success", path))
     else
       log.warn("unsupported match mode '", match_mode, "'")
       goto continue
@@ -73,20 +73,20 @@ function _M.del(self, items)
       if not ok then
         log.error(string_format("faild to delete rate limit: %s", err))
       end
-      log.info(string_format("remove '%s' from url radix tree success", path))
+      log.debug(string_format("remove '%s' from url radix tree success", path))
     elseif match_mode == 2 then
       local ok, err = tree[host].exact:remove(path)
       if not ok then
         log.error(string_format("faild to delete rate limit: %s", err))
       end
-      log.info(string_format("remove '%s' from url exact tree success", path))
+      log.debug(string_format("remove '%s' from url exact tree success", path))
     else
       log.error(string_format("failed to delete rate limit: match mode '%s' not supported", match_mode))
       goto continue
     end
 
     cache[id] = nil
-    log.info(string_format("delete rate limit '%s' success", id))
+    log.debug(string_format("delete rate limit '%s' success", id))
     ::continue::
   end
 end
@@ -131,7 +131,7 @@ function _M.full_sync(_, items)
       this:update({item })
     end
   end
-  log.info("full sync rate limit success")
+  log.debug("full sync rate limit success")
 end
 
 

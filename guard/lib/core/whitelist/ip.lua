@@ -29,7 +29,7 @@ function _M.add(self, items)
     end
 
     cache[id] = table_clone(item)
-    log.info(string_format("add whitelist ip '%s' success", ip))
+    log.debug(string_format("add whitelist ip '%s' success", ip))
 
     ::continue::
   end
@@ -55,7 +55,7 @@ function _M.del(self, items)
     end
 
     cache[id] = nil
-    log.info("delete whitelist ip '%s' success", ip)
+    log.debug("delete whitelist ip '%s' success", ip)
 
     ::continue::
   end
@@ -77,7 +77,7 @@ function _M.full_sync(_, items)
   end
   cache = new_cache
   tree = new_tree
-  log.info("full sync whitelist ip success")
+  log.debug("full sync whitelist ip success")
 end
 
 

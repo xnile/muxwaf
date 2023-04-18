@@ -61,9 +61,9 @@ end
 function _M.run(_)
     sync_config()
     pop_sample_logs()
-    calc_qps()
-    calc_bandwidth()
-    collect_lua_mem_alloc()
+    -- calc_qps()
+    -- calc_bandwidth()
+    -- collect_lua_mem_alloc()
 end
 
 return _M
