@@ -60,7 +60,7 @@ local function get_upstream(host, protocol)
 end
 
 
-function _M.balance(self, ctx)
+function _M.balance(ctx)
     if not ctx.var.host then
         log.error("failed to get host")
         return ngx_exit(HTTP_GATEWAY_TIMEOUT)

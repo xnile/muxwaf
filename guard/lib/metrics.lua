@@ -26,6 +26,7 @@ ffi.cdef[[
 
 local DICTS       = constants.DICTS
 local shm_metrics = ngx_shared[DICTS.METRICS]
+local DEFAULT_API_LISTEN_PORT = constants.DEFAULT_API_LISTEN_PORT
 
 local prometheus
 
@@ -92,7 +93,7 @@ end
 
 function _M.log_phase(_)
     -- ignore self
-    if ngx.var.server_port == "8083" and ngx.var.uri == "/api/sys/metrics" then return end
+    if ngx.var.server_port == tostring(DEFAULT_API_LISTEN_PORT) and ngx.var.uri == "/api/sys/metrics" then return end
 
     local host            = ngx.var.host or "-"
     local status          = ngx.var.status or "-"

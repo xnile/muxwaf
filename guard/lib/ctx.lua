@@ -224,6 +224,7 @@ function _M.new()
   --TODO: move to set func
   ctx.var.x_real_ip = ctx.real_client_ip
   ctx.var.upstream_scheme = ctx.upstream_scheme
+  ctx.sample_log = {}
   return setmetatable(ctx, _mt)
 end
 

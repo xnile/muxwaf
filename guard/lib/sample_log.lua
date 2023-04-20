@@ -9,18 +9,25 @@ local ngx_log        = ngx.log
 local ngx_shared     = ngx.shared
 local ngx_get_phase  = ngx.get_phase
 local ngx_cfg_prefix = ngx.config.prefix
+local ngx_re_sub     = ngx.re.sub
 local assert         = assert
 local io_open        = io.open
 local io_close       = io.close
+local table_new      = table.new
+local table_clear    = table.clear
+local table_concat   = table.concat
 local table_clone    = require("table.clone")
 
 local _M = {
   _VERSION = 0.1
 }
-
-local shm_log = ngx_shared[constants.DICTS.LOG]
+-- The number of log entries sent in each batch
+local BATCH_SIZE = 10000
 local ACTION_TYPES = constants.ACTION_TYPES
 local SAMPLE_LOG_FILE = ngx_cfg_prefix() .. "logs/sampled.log"
+
+local shm_log = ngx_shared[constants.DICTS.LOG]
+local sample_log_batch = table_new(BATCH_SIZE +2, 0)
 local sample_log_file_fd
 
 
@@ -31,11 +38,11 @@ local config = {
 }
 
 
-local function upload_sample_log(log)
+local function send_sample_log(log)
     -- local uri = "http://127.0.0.1:8001/api/attack-logs"
     local url = config.sample_log_upload_api
     if not url or url == "" then
-        ngx_log(ngx.ERR, "failed to update sample log: ", "api url is empty.")
+        ngx_log(ngx.ERR, "failed to post sample log: ", "api url is empty")
         return
     end
 
@@ -50,7 +57,7 @@ local function upload_sample_log(log)
     })
 
     if not res then
-        ngx_log(ngx.ERR, "failed to update sample log: ", err)
+        ngx_log(ngx.ERR, "failed to post sample log: ", err)
     end
 end
 
@@ -98,69 +105,104 @@ function _M.get_raw(_)
     return table_clone(config)
 end
 
-local function sampled(ctx, rule_type, action)
-    local now = time.now()
-    local raw_log = {
-        content = {
-            host               = ctx.var.host,
-            site_id            = ctx.site_id,
-            real_client_ip     = ctx.real_client_ip,
-            request_id         = ctx.var.request_id,    
-            remote_addr        = ctx.var.remote_addr,
-            request_path       = ctx.var.request_uri,
-            request_method     = ctx.var.request_method,
-            request_time       = math.floor(ctx.var.msec),
-            waf_start_time     = math.floor(ctx.waf_start_time /1000 /1000),
-            waf_process_time   = now - ctx.waf_start_time,
-            rule_type          = rule_type,
-            action             = action or -1,
-            ngx_worker_id      = ctx.worker_id,
-        }
+local function sampled(ctx, rule_type, action, rule_id)
+    ctx.sample_log =  {
+        host               = ctx.var.host,
+        site_id            = ctx.site_id,
+        real_client_ip     = ctx.real_client_ip,
+        request_id         = ctx.var.request_id,    
+        remote_addr        = ctx.var.remote_addr,
+        request_path       = ctx.var.request_uri,
+        request_method     = ctx.var.request_method,
+        request_time       = math.floor(ctx.var.msec),
+        waf_start_time     = math.floor(ctx.waf_start_time /1000 /1000),
+        waf_process_time   = time.now() - ctx.waf_start_time,
+        rule_type          = rule_type,
+        action             = action or -1,
+        ngx_worker_id      = ctx.worker_id,
+        rule_id            = rule_id,
     }
-
-    local json_log = ctx.encode(raw_log)
-    if not json_log then
-        ngx_log(ngx.WARN, "faild to encode sampled log")
-        return
-    end
-
-    shm_log:rpush("sample", json_log)
 end
 
-function _M.block(ctx, rule_type)
+function _M.block(ctx, rule_type, rule_id)
     if not metrics then
         metrics = require("metrics")
     end
     metrics.incr_block_count(rule_type)
-    sampled(ctx, rule_type, ACTION_TYPES.BLOCK)
+    sampled(ctx, rule_type, ACTION_TYPES.BLOCK, rule_id)
 end
 
-function _M.bypass(ctx, rule_type)
-    sampled(ctx, rule_type, ACTION_TYPES.BYPASS)
+function _M.bypass(ctx, rule_type, rule_id)
+    sampled(ctx, rule_type, ACTION_TYPES.BYPASS, rule_id)
 end
 
+
+-- TODO: make it better
+local iterator_running = false
 function _M.iterator()
-  local len = shm_log:llen("sample")
-  for i = 1, len do
-    local log, err = shm_log:lpop("sample")
-    if not log then
-      ngx_log(ngx.WARN, "failed to pop sampled log from shm: ", err)
-      goto continue
+    if iterator_running then return end
+
+    iterator_running = true
+    local len = shm_log:llen("sample")
+    ngx_log(ngx.DEBUG, "have ", tostring(len), " log")
+
+    if #sample_log_batch == 0 then
+        sample_log_batch[1] = "["
+    end
+    for i = 1, len do
+        local log, err = shm_log:lpop("sample")
+        if not log then
+            ngx_log(ngx.WARN, "failed to pop sample log from shm: ", err)
+            goto continue
+        end
+
+        local len = #sample_log_batch
+        sample_log_batch[l+1] = log .. ","
+
+        if len + 2 == BATCH_SIZE + 2 then
+            sample_log_batch[len+1] = log
+            sample_log_batch[len+2] = "]"
+            local payload = table_concat(sample_log_batch)
+            send_sample_log(payload)
+            table_clear(sample_log_batch)
+            sample_log_batch[1] = "["
+        end
+
+        ::continue::
     end
 
-    sample_log_file_fd:write(log)
+    if #sample_log_batch > 1 then
+        local last = ngx_re_sub(sample_log_batch[#sample_log_batch], "(.*),$", "$1")
+        sample_log_batch[#sample_log_batch] = last
+        sample_log_batch[#sample_log_batch+1] = "]"
+        local payload = table_concat(sample_log_batch)
+        send_sample_log(payload)
+        table_clear(sample_log_batch)
+    end
+
+    iterator_running = false
+end
+
+function _M.log_phase(ctx)
+    if not ctx.sample_log or not next(ctx.sample_log) then return end
+
+    sample_log_file_fd:write(ctx.encode(ctx.sample_log))
     sample_log_file_fd:write("\r\n")
-    sample_log_file_fd:flush()
+    -- sample_log_file_fd:flush()
 
+    local raw_log = {
+        content = ctx.sample_log
+    }
     if config.is_sample_log_upload == 1 then
-        upload_sample_log(log)
+        local _, err = shm_log:rpush("sample", ctx.encode(raw_log))
+        if err then
+            ngx_log(ngx.ERR,"failed to push sample log to shm: ", err)
+        end
     end
-
-  ::continue::
-  end
 end
 
 function _M.worker_exit(self)
+    sample_log_file_fd:flush()
     io_close(sample_log_file_fd)
 end
 

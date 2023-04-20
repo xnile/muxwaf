@@ -12,7 +12,7 @@ import (
 )
 
 func AddLog(c *gin.Context) {
-	var payload model.SampleLogModel
+	var payload = make([]*model.SampleLogModel, 0)
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		logx.Warnf("request parameter error: %v", err)
 		handler.ResponseBuilder(c, ecode.ErrParam, nil)
@@ -25,7 +25,7 @@ func AddLog(c *gin.Context) {
 	//	logx.Warnf("add blacklist ip err, %v", err)
 	//}
 	//handler.ResponseBuilder(c, err, nil)
-	service.SVC.AttackLog.Add(c, &payload)
+	service.SVC.AttackLog.Add(c, payload)
 }
 
 func GetLogList(c *gin.Context) {

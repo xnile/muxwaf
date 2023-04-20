@@ -48,10 +48,11 @@ HI3vtDka9mK1SFEYyZoq0SwYNYkjvytepHAzQi9JP3HU2KhLJYPoMAuoa3MYdXeh
 return {
   
   DEFAULT_CERT = default_cert_and_pri_key,
-  CONFIG_SYNC_INTERVAL = 5, -- in seconds
-  LOG_SYNC_INTERVAL = 5,  -- in seconds
-  CALC_QPS_INTERVAL = 10,
-  CALC_BANDWIDTH_INTERVAL = 10,
+  DEFAULT_API_LISTEN_PORT = 8083,
+  CONFIG_SYNC_INTERVAL = 2, -- in seconds
+  LOG_SYNC_INTERVAL = 1,  -- in seconds
+  -- CALC_QPS_INTERVAL = 10,
+  -- CALC_BANDWIDTH_INTERVAL = 10,
 
   DICTS =  {
     LOG         = 'muxwaf_log',

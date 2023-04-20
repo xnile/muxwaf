@@ -7,19 +7,21 @@ local ngx         = ngx
 local ngx_re      = ngx.re
 local ngx_exit    = ngx.exit
 local get_headers = ngx.req.get_headers
+local tostring    = tostring
 
 local NGX_OK                      = ngx.OK
 local HTTP_GONE                   = ngx.HTTP_GONE
 local HTTP_INTERNAL_SERVER_ERROR  = ngx.HTTP_INTERNAL_SERVER_ERROR
 
 local RULE_TYPE = constants.RULE_TYPE
+local DEFAULT_API_LISTEN_PORT = constants.DEFAULT_API_LISTEN_PORT
 
 local _M = {
   _VERSION = 0.1
 }
 
 local function bypass_admin_apis(ctx)
-  if ctx.var.server_port == '8083' then
+  if ctx.var.server_port == tostring(DEFAULT_API_LISTEN_PORT) then
     return ngx_exit(NGX_OK)
   end
 end
@@ -38,7 +40,7 @@ local function check_blacklist_ip(ctx)
   local rule = rules.blacklist_ip
   local matched, rule_id, err = rule:match(client_ip)
   if matched then
-    sample_log.block(ctx, RULE_TYPE.BLACKLIST_IP)
+    sample_log.block(ctx, RULE_TYPE.BLACKLIST_IP, rule_id)
     return ctx:say_block()
   end
   if err then
@@ -51,7 +53,7 @@ local function check_blacklist_region(ctx)
   local mather = rules.blacklist_region
   -- if mather.match(ctx.site_id, client_ip) then
   if mather.match(ctx) then
-    sample_log.block(ctx, RULE_TYPE.BLACKLIST_REGION)
+    sample_log.block(ctx, RULE_TYPE.BLACKLIST_REGION, nil)
     return ctx:say_block()
   end
 end
@@ -62,7 +64,7 @@ local function check_whitelist_ip(ctx)
   local rule = rules.whitelist_ip
   local matched, rule_id, err = rule:match(client_ip)
   if matched then
-    sample_log.bypass(ctx, RULE_TYPE.WHITELIST_IP)
+    sample_log.bypass(ctx, RULE_TYPE.WHITELIST_IP, rule_id)
     return ngx_exit(NGX_OK)
   end
   if err then
@@ -84,7 +86,7 @@ local function check_whitelist_url(ctx)
   local rule = rules.whitelist_url
   local rule_id = rule:match(host, path)
   if rule_id then
-    sample_log.bypass(ctx, RULE_TYPE.WHITELIST_URL)
+    sample_log.bypass(ctx, RULE_TYPE.WHITELIST_URL, rule_id)
     return ngx_exit(NGX_OK)
   end
   return
@@ -110,7 +112,7 @@ local function check_ratelimit(ctx)
   local delay, err = rate_limit:incomming(rule_id, count_key)
   if not delay then
     if err == "rejected" then
-      sample_log.block(ctx, RULE_TYPE.RATELIMIT)
+      sample_log.block(ctx, RULE_TYPE.RATELIMIT, rule_id)
       return ctx:say_block()
     end
     log.error("rate limit check failed")

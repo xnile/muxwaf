@@ -64,7 +64,7 @@ end
 
 function _M.balance_phase()
   local balancer = require("balancer")
-  balancer:balance(ctx)
+  balancer.balance(ctx)
 end
 
  -- before access phase, ctx not ready
@@ -74,7 +74,8 @@ function _M.ssl_certificate_phase()
 end
 
 function _M.log_phase()
-  metrics.log_phase()
+  sample_log.log_phase(ctx)
+  metrics.log_phase(ctx)
   tablepool.release("pool_ctx", ctx)
 end
 

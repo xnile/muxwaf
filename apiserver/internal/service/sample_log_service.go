@@ -13,7 +13,7 @@ import (
 )
 
 type IAttackLogService interface {
-	Add(c *gin.Context, entity *model.SampleLogModel)
+	Add(c *gin.Context, entity []*model.SampleLogModel)
 	List(pageNum, pageSize, startTime, endTime, siteID int64, action int8, content string) (*model.ListResp, error)
 }
 
@@ -25,7 +25,7 @@ func NewAttackLogService(db *gorm.DB) IAttackLogService {
 	return &attackLogService{db: db}
 }
 
-func (svc *attackLogService) Add(c *gin.Context, entity *model.SampleLogModel) {
+func (svc *attackLogService) Add(c *gin.Context, entity []*model.SampleLogModel) {
 	token := c.GetHeader("Token")
 
 	if err := svc.db.Where("sample_log_upload_api_token = ?", token).First(new(model.NodeModel)).Error; err != nil {
