@@ -6,7 +6,6 @@ local ratelimit      = require("resty.ratelimit")
 local pairs          = pairs
 local ipairs         = ipairs
 local setmetatable   = setmetatable
-local string_format  = string.format
 local table_new      = table.new
 local table_clear    = table.clear
 local table_clone    = require("table.clone")
@@ -39,17 +38,17 @@ function _M.add(self, items)
     if match_mode == 1 then -- prefix
       local ok, err = tree[host].prefix:insert(path, id)
       if not ok then
-        log.error("failed to add rate limit: ", err)
+        log.error("failed to add rate limit with ID \"", id, "\", ", err)
       end
-      log.debug(string_format("add '%s' to radix tree success", path))
+      log.debug("successed to add rate limit, id \"", id, "\", host \"", host, "\", URL \"", path, "\", match mode \"", match_mode, "\"")
     elseif match_mode == 2 then -- exact
       local ok,err = tree[host].exact:insert(path, id)
       if not ok then
-        log.error("failed to add rate limit: ", err)
+        log.error("failed to add rate limit with ID \"", id, "\", ", err)
       end
-      log.debug(string_format("add '%s' to exact tree success", path))
+      log.debug("successed to add rate limit, id \"", id, "\", host \"", host, "\", URL \"", path, "\", match mode \"", match_mode, "\"")
     else
-      log.warn("unsupported match mode '", match_mode, "'")
+      log.warn("failed to add rate limit, unsupported match mode \"", match_mode, "\"")
       goto continue
     end
   end
@@ -63,7 +62,7 @@ function _M.del(self, items)
   for _, id in pairs(items) do
     local rule = cache[id]
     if not rule then
-      log.warn(string_format("faild to delete rate limit: the rule id '%s' does not exist", id))
+      log.warn("faild to delete rate limit, the rule with ID \'", id, "\' does not exist")
       goto continue
     end
 
@@ -71,22 +70,22 @@ function _M.del(self, items)
     if match_mode == 1 then
       local ok, err = tree[host].prefix:remove(path)
       if not ok then
-        log.error(string_format("faild to delete rate limit: %s", err))
+        log.error("failed to delete rate limit with ID \"", id, "\", ", err)
       end
-      log.debug(string_format("remove '%s' from url radix tree success", path))
+      log.debug("successed to delete rate limit, id \"", id, "\", host \"", host, "\", URL \"", path, "\", match mode \"", match_mode, "\"")
     elseif match_mode == 2 then
       local ok, err = tree[host].exact:remove(path)
       if not ok then
-        log.error(string_format("faild to delete rate limit: %s", err))
+        log.error("failed to delete rate limit with ID \"", id, "\", ", err)
       end
-      log.debug(string_format("remove '%s' from url exact tree success", path))
+      log.debug("successed to delete rate limit, id \"", id, "\", host \"", host, "\", URL \"", path, "\", match mode \"", match_mode, "\"")
     else
-      log.error(string_format("failed to delete rate limit: match mode '%s' not supported", match_mode))
+      log.debug("failed to delete rate limit: match mode \'", match_mode, "\' not supported")
       goto continue
     end
 
     cache[id] = nil
-    log.debug(string_format("delete rate limit '%s' success", id))
+    log.debug("succeeded to delete the rate limit rule with ID \'", id, "\'")
     ::continue::
   end
 end
@@ -98,7 +97,7 @@ function _M.update(self, items)
     local id, host, path, match_mode = item.id, item.host, item.path, item.match_mode
     local old = cache[id]
     if not old then
-      log.warn(string_format("faild to update rate limit: the rule with id '%s' does not exist", id))
+      log.warn("faild to update rate limit, the rule with ID \'", id, "\' does not exist")
       goto continue
     end
 
@@ -131,7 +130,6 @@ function _M.full_sync(_, items)
       this:update({item })
     end
   end
-  log.debug("full sync rate limit success")
 end
 
 

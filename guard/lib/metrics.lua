@@ -83,7 +83,7 @@ function _M.init_worker()
 
     do 
         if worker_id == 0 then 
-            log.debug("start timer for collect shm memory allocated on worker ", worker_id)
+            log.debug("start timer for collect shm-based dictionary allocated on worker ", worker_id)
             local ok, err = ngx_timer_every(15, collect_shm_mem_alloc)
             assert(ok, "failed to setting up timer for collect shm memory allocated: " .. tostring(err))
         end

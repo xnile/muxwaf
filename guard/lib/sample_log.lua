@@ -21,6 +21,7 @@ local table_clone    = require("table.clone")
 local _M = {
   _VERSION = 0.1
 }
+
 -- The number of log entries sent in each batch
 local BATCH_SIZE = 10000
 local ACTION_TYPES = constants.ACTION_TYPES
@@ -39,7 +40,6 @@ local config = {
 
 
 local function send_sample_log(log)
-    -- local uri = "http://127.0.0.1:8001/api/attack-logs"
     local url = config.sample_log_upload_api
     if not url or url == "" then
         ngx_log(ngx.ERR, "failed to post sample log: ", "api url is empty")
@@ -69,7 +69,7 @@ end
 
 local function update_log_config(cfg)
     if not cfg.is_sample_log_upload or not cfg.sample_log_upload_api or not cfg.sample_log_upload_api_token then
-        ngx_log(ngx.ERR, "failed to update log configuration: parameter error")
+        ngx_log(ngx.ERR, "failed to update sample log configuration: parameter error")
         return
     end
     config = table_clone(cfg)
@@ -121,6 +121,8 @@ local function sampled(ctx, rule_type, action, rule_id)
         action             = action or -1,
         ngx_worker_id      = ctx.worker_id,
         rule_id            = rule_id,
+        location           = ctx.location,
+        time_local         = ctx.var.time_local,
     }
 end
 
@@ -133,7 +135,8 @@ function _M.block(ctx, rule_type, rule_id)
 end
 
 function _M.bypass(ctx, rule_type, rule_id)
-    sampled(ctx, rule_type, ACTION_TYPES.BYPASS, rule_id)
+    -- the bypass actions are not logged, TODO: configurable
+    -- #sampled(ctx, rule_type, ACTION_TYPES.BYPASS, rule_id)
 end
 
 
@@ -144,7 +147,7 @@ function _M.iterator()
 
     iterator_running = true
     local len = shm_log:llen("sample")
-    ngx_log(ngx.DEBUG, "have ", tostring(len), " log")
+    -- ngx_log(ngx.DEBUG, "have ", tostring(len), "sample log")
 
     if #sample_log_batch == 0 then
         sample_log_batch[1] = "["
@@ -157,7 +160,7 @@ function _M.iterator()
         end
 
         local len = #sample_log_batch
-        sample_log_batch[l+1] = log .. ","
+        sample_log_batch[len+1] = log .. ","
 
         if len + 2 == BATCH_SIZE + 2 then
             sample_log_batch[len+1] = log
@@ -194,6 +197,11 @@ function _M.log_phase(ctx)
         content = ctx.sample_log
     }
     if config.is_sample_log_upload == 1 then
+        if shm_log:free_space() < 2 *1024*1024 then
+            ngx_log(ngx.WARN, "omitting sample log, as the shm-based dictionary free page size is not enough.")
+            return
+        end
+
         local _, err = shm_log:rpush("sample", ctx.encode(raw_log))
         if err then
             ngx_log(ngx.ERR,"failed to push sample log to shm: ", err)

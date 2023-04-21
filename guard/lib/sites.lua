@@ -8,7 +8,6 @@ local ipairs         = ipairs
 local table_new      = table.new
 local table_clear    = table.clear
 local table_clone    = require("table.clone")
-local string_format  = string.format
 
 local _M = {
     _VERSION = 0.1,
@@ -39,18 +38,18 @@ function _M.add(_, items)
         local id, host = item.id, item.host
 
         if sites[id] then
-            log.warn(string_format("faild add site: id '%s' already exists", id))
+            log.warn("failed to add site \"", host, "\" with ID \"", id, "\" the site already exists")
             goto continue
         end
 
         if host_matcher[host] then
-            log.warn(string_format("failed add site: conflicting host '%s'", host))
+            log.warn("failed to add site \"", host, "\" with ID \"", id, "\" conflicting host \"", host, "\"")
             goto continue
         end
 
         sites[id] = table_clone(item)
         host_matcher[host] = id
-        log.debug(string_format("add site '%s' success", host))
+        log.debug("successed to add site \"", host, "\" with ID \"", id, "\"")
         ::continue::
     end
 end
@@ -59,7 +58,7 @@ function _M.del(_, items)
     for _, id in ipairs(items) do
         local candidate = sites[id]
         if not candidate then
-            log.warn(string_format("faild to delete site: id '%s' does not exist", id))
+            log.warn("failed to delete site with ID \"", id, "\" the site does not exist")
             goto continue
         end
         local host = candidate.host
@@ -77,12 +76,13 @@ function _M.update(_, items)
 
         local candidate = cache[id]
         if not candidate then
-            log.warn(string_format("faild to update site: id '%s' does not exist", id))
+            log.warn("failed to update site with ID \"", id, "\"the site does not exist")
             goto continue
         end
 
         if host ~= candidate.host then
-            log.warn("faild to update site: update host is not supported")
+            -- log.warn("failed to update site wh update host is not supported")
+            log.warn("failed to update site with ID \"", id, "\" update site domain is not supported")
             goto continue
         end
 

@@ -9,7 +9,6 @@ local ipairs         = ipairs
 local table_new      = table.new
 local table_clear    = table.clear
 local table_clone    = require("table.clone")
-local string_format  = string.format
 
 local cache  = table_new(0, 50)
 local tree = table_new(0, 10)
@@ -22,7 +21,7 @@ function _M.add(self, items)
     local id, host, path, match_mode = item.id, item.host, item.path, item.match_mode
 
     if cache[id] then
-      log.warn(string_format("faild add URL whitelist: the rule id '%s' already exists", id))
+      log.warn("failed add URL whitelist, the rule id \"", id, "\" already exists")
       goto continue
     end    
 
@@ -38,12 +37,12 @@ function _M.add(self, items)
     elseif match_mode == 2 then -- exact
       tree[host].exact:insert(path, id)
     else
-      log.warn("unsupported match mode '", match_mode, "'")
+      log.warn("unsupported match mode \"", match_mode, "\"")
       goto continue
     end
 
     cache[id] = table_clone(item)
-    log.debug(string_format("successfully added url whitelist: host '%s' and path '%s' and match mode '%s'", host, path, match_mode))
+    log.debug("successed to add url whitelist, host is \"", host, "\", URL is \"", path, "\", matching mode is \"", match_mode, "\"")
   end
 
   ::continue::
@@ -54,7 +53,7 @@ function _M.del(self, items)
   for _, id in ipairs(items) do
     local rule = cache[id]
     if not rule then
-      log.warn(string_format("faild to delete url whitelist: the rule id '%s' does not exist", id))
+      log.warn("failed to delete URL whitelist, the rule with ID \"", id, "\" does not exist")
       goto continue
     end
 
@@ -62,22 +61,21 @@ function _M.del(self, items)
     if match_mode == 1 then
       local ok, err = tree[host].prefix:remove(path)
       if not ok then
-        log.error(string_format("faild to delete url whitelist: %s", err))
+        log.error("Failed to delete the URL whitelist with ID \"", id, "\"", err)
       end
-      log.debug(string_format("remove '%s' from url radix tree success", path))
+      log.debug("successed to delete the URL whitelist, id \"", id, "\", host \"", host, "\", URL \"", path, "\", match mode \"", match_mode, "\"")
     elseif match_mode == 2 then
       local ok, err = tree[host].exact:remove(path)
       if not ok then
-        log.error(string_format("faild to delete url whitelist: %s", err))
+        log.error("Failed to delete the URL whitelist with ID \"", id, "\"", err)
       end
-      log.debug(string_format("remove '%s' from url exact tree success", path))
+      log.debug("successed to delete the URL whitelist, id \"", id, "\", host \"", host, "\", URL \"", path, "\", match mode \"", match_mode, "\"")
     else
-      log.error(string_format("faild to delete url whitelist: match mode '%s' not supported", match_mode))
+      log.error("Failed to delete the URL whitelist with ID \"", id, "\", the match mode \"", tostring(match_mode), " does not supported")
       goto continue
     end
 
     cache[id] = nil
-    log.debug(string_format("delete url whitelist '%s' success", id))
     ::continue::
   end
 end
@@ -87,7 +85,7 @@ function _M.update(self, items)
   for _,item in ipairs(items)do
     local id = item.id
     if not cache[id] then
-      log.warn(string_format("faild to update URL whitelist, the rule id '%s' does not exist", id))
+      log.warn("failed to update URL whitelist, the rule with ID \"", id, "\" does not exist")
       goto continue
     end
 
@@ -115,7 +113,6 @@ function _M.full_sync(_, items)
       this:update({item })
     end
   end
-  log.debug("full sync URL whitelist success")
 end
 
 

@@ -8,7 +8,7 @@ local table_clear    = table.clear
 local table_new      = table.new
 local table_clone    = require("table.clone")
 
-local cache = table_new(0, 100)
+local cache = table_new(0, 1000)
 local tree  = ipmatcher.new()
 
 local _M = {}
@@ -18,18 +18,18 @@ function _M.add(self, items)
     local id, ip = item.id, item.ip
 
     if cache[id] then
-      log.warn(string_format("faild add whitelist ip '%s': the rule id '%s' already exists",ip, id))
+      log.warn("Failed to add the IP address \"",ip, "\" to the IP whitelist, the rule with ID \"",id, "\" already exists")
       goto continue
     end
 
     local ok, err = tree:insert(ip, id)
     if not ok then
-      log.warn(string_format("faild add whitelist ip '%s': '%s'",ip, err))
+      log.warn("Failed to add the IP address \"",ip, "\" to the IP whitelist, ", err)
       goto continue
     end
 
     cache[id] = table_clone(item)
-    log.debug(string_format("add whitelist ip '%s' success", ip))
+    log.debug("successed to add the IP address \"", ip, "\" to the IP whitelist")
 
     ::continue::
   end
@@ -43,19 +43,20 @@ function _M.del(self, items)
     local item = cache[id]
 
     if not item then
-      log.warn(string_format("faild add whitelist ip, the rule id '%s' does not exist", id))
+      log.warn("failed to remove IP whitelist, the rule with ID \"", id, "\" does not exist")
       goto continue
     end
 
-    local ok, err = tree:remove(item.ip)
+    local ip = item.ip
+    local ok, err = tree:remove(ip)
     
     if not ok then
-      log.error(string_format("faild delete whitelist ip %s: %s", ip, err))
+      log.error("failed to remove the IP address \"", ip, "\" from the IP whitelist, ", err)
       goto continue
     end
 
     cache[id] = nil
-    log.debug("delete whitelist ip '%s' success", ip)
+    log.debug("successed to remove the IP address \"", ip, "\" from the IP whitelist")
 
     ::continue::
   end
@@ -71,13 +72,13 @@ function _M.full_sync(_, items)
     local ok, err = new_tree:insert(ip, id)
     if ok then
       new_cache[id] = table_clone(item)
+      log.debug("successed to add the IP address \"", ip, "\" to the IP whitelist")
     else
-      log.error(string_format("failed full sync whitelist ip '%s': %s", ip, err))
+      log.error("failed to add the IP address \"", ip, "\" to the IP whitelist") 
     end
   end
   cache = new_cache
   tree = new_tree
-  log.debug("full sync whitelist ip success")
 end
 
 

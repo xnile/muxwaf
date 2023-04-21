@@ -2,7 +2,7 @@
 local log           = require("log")
 local table_new     = table.new
 local table_clear   = table.clear
-local string_format = string.format
+-- local string_format = string.format
 -- local table_clone    = require("table.clone")
 
 local _M  = {
@@ -38,6 +38,7 @@ local MATCH_MODE = {
 local function update_with_add(items)
     if not items then return end
     for _, item in ipairs(items) do
+        local site_id = item.site_id
         if not matcher[item.site_id] then
             matcher[item.site_id] = table_new(0, 5)
         end
@@ -59,6 +60,8 @@ local function update_with_add(items)
             new_regions[region] = empty_table
         end
         candidate.regions = new_regions
+
+        log.debug("successed to update region IP blacklist of site \"", site_id, "\"")
     end
 end
 
@@ -74,12 +77,13 @@ end
 function _M.del(_, items)
     for _, site_id in ipairs(items) do
         if not matcher[site_id] then
-            log.warn(string_format("faild to delete region blacklist: '%s' does not exist", site_id))
+            log.warn("failed to clear region IP blacklist of site \"", site_id, "\" site does not exist")
             goto continue
         end
 
+        log.debug("successed to clear region IP blacklist of site \"", site_id, "\"")
         matcher[site_id] = nil
-        log.debug(string_format("delete region blacklist '%s' success", site_id))
+
         ::continue::
     end
 end
@@ -88,7 +92,6 @@ end
 function _M.full_sync(_, items)
     table_clear(matcher)  --TODO: diff and delete
     update_with_add(items)
-    log.debug("full sync region blacklist success")
 end
 
 -- @param site_id string

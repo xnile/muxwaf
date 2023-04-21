@@ -50,7 +50,7 @@ return {
   DEFAULT_CERT = default_cert_and_pri_key,
   DEFAULT_API_LISTEN_PORT = 8083,
   CONFIG_SYNC_INTERVAL = 2, -- in seconds
-  LOG_SYNC_INTERVAL = 1,  -- in seconds
+  SAMPLE_LOG_SYNC_INTERVAL = 1,  -- in seconds
   -- CALC_QPS_INTERVAL = 10,
   -- CALC_BANDWIDTH_INTERVAL = 10,
 

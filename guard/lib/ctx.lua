@@ -29,6 +29,9 @@ local setmetatable       = setmetatable
 local string_upper       = string.upper
 local JSON_NULL          = cjson.null
 
+
+local IP_LOC_CACHE_SIZE = 1000
+
 local HTTP_GONE              = ngx.HTTP_GONE
 local HTTP_FORBIDDEN         = ngx.HTTP_FORBIDDEN
 local HTTP_NOT_FOUND         = ngx.HTTP_NOT_FOUND
@@ -40,7 +43,7 @@ local _M  = {
 
 local _mt = { __index = _M }
 
-local ip_loc_cache, err = lrucache.new(1000)
+local ip_loc_cache, err = lrucache.new(IP_LOC_CACHE_SIZE)
 if not ip_loc_cache then
     error("failed to create the cache: " .. (err or "unknown"), 2)
 end
