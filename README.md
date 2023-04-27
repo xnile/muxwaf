@@ -4,8 +4,6 @@ MuxWaf是基于OpenResty实现的一款防CC的高性能WAF。
 
 ## MuxWAF能做什么？
 
-![](https://raw.githubusercontent.com/xnile/muxwaf/bd0e1f8578c02d1b78e13ba704cdd62ef50dbc50/screenshot/screen01.png)
-
 * 频率限制防CC
 * 白名单功能
 * IP及地域级IP黑名单功能
@@ -17,7 +15,14 @@ MuxWaf是基于OpenResty实现的一款防CC的高性能WAF。
 * apiserver: 管理后台api，基于golang开发。
 * ui: 管理后台前端页面，基于antdv开发。
 
+## Overview
+
+![](https://raw.githubusercontent.com/xnile/muxwaf/bd0e1f8578c02d1b78e13ba704cdd62ef50dbc50/screenshot/screen01.png)
+
+![](https://raw.githubusercontent.com/xnile/muxwaf/bd0e1f8578c02d1b78e13ba704cdd62ef50dbc50/screenshot/grafana.png)
+
 ## 安装
+
 ### 快速体验
 
 需要docker和docker-compose环境。
