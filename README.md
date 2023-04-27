@@ -17,7 +17,7 @@ MuxWaf是基于OpenResty实现的一款防CC的高性能WAF。
 
 ## Overview
 
-![](https://raw.githubusercontent.com/xnile/muxwaf/master/screenshot/grafana.png)
+![](https://raw.githubusercontent.com/xnile/muxwaf/master/screenshot/screen01.png)
 
 ![](https://raw.githubusercontent.com/xnile/muxwaf/master/screenshot/grafana.png)
 
