@@ -130,7 +130,7 @@ function _M.block(ctx, rule_type, rule_id)
     if not metrics then
         metrics = require("metrics")
     end
-    metrics.incr_block_count(rule_type)
+    metrics.incr_block_count(ctx.var.host, rule_type)
     sampled(ctx, rule_type, ACTION_TYPES.BLOCK, rule_id)
 end
 

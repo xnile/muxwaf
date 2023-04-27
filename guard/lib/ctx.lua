@@ -201,7 +201,7 @@ end
 
 function _M.new()
   local now = time.now()
-  local ctx = tablepool.fetch("pool_ctx", 0, 25)
+  local ctx = tablepool.fetch("pool_ctx", 0, 30)
   -- local ctx = table_new(0, 25)
   ctx.var = vars
   ctx.param = {} -- Parameters in path
@@ -228,6 +228,7 @@ function _M.new()
   ctx.var.x_real_ip = ctx.real_client_ip
   ctx.var.upstream_scheme = ctx.upstream_scheme
   ctx.sample_log = {}
+  ctx.blocked = false
   return setmetatable(ctx, _mt)
 end
 

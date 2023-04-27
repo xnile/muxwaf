@@ -56,7 +56,7 @@
 -- increments. Copied from https://github.com/Kong/lua-resty-counter
 -- local resty_counter_lib = require("prometheus_resty_counter")
 -- local key_index_lib = require("prometheus_keys")
-local resty_counter_lib = require("resty.prometheus.prometheus_resty_counter")
+local resty_counter_lib = require("resty.counter")
 local key_index_lib = require("resty.prometheus.prometheus_keys")
 local ngx = ngx
 local ngx_re_match = ngx.re.match

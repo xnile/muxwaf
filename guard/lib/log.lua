@@ -44,6 +44,9 @@ setmetatable(_M, {
             cmd = function() end
         else
             cmd = function(...)
+                if log_level == ngx_log_levels.error then
+                    require("metrics").incr_errors()
+                end
                 return ngx_log(log_level, ...)
             end
         end

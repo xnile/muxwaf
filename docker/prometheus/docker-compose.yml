@@ -1,0 +1,17 @@
+version: '3.1'
+
+services:
+
+  prom:
+    image: bitnami/prometheus:2.43.0
+    restart: always
+    volumes:
+      - ./prometheus.yml:/opt/bitnami/prometheus/conf/prometheus.yml
+    ports:
+      - 9090:9090
+  grafana:
+    image: grafana/grafana:9.4.7
+    restart: always
+    ports:
+      - 3000:3000
+
