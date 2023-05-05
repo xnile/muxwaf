@@ -115,10 +115,15 @@ function _M.init_worker()
 end
 
 
+local sites
 function _M.log_phase(ctx)
-    local host = ctx.var.host
+    local host = ngx.var.host
     if not host then return end
     -- prom_metric_requests_total:inc(1)
+
+    if not sites then
+        sites = require("configs").sites
+    end
 
     -- Skip non-existent sites
     if ctx.site_id == "" then return end
@@ -126,7 +131,7 @@ function _M.log_phase(ctx)
     -- Skip self
     if ngx.var.server_port == tostring(DEFAULT_API_LISTEN_PORT) and ngx.var.uri == "/api/sys/metrics" then return end
 
-    local host            = ngx.var.host or "-"
+    -- local host            = ngx.var.host or "-"
     local status          = ngx.var.status or "-"
     local upstream_status = ngx.var.upstream_status or "-"
     local request_time    = tonumber(ngx.var.request_time) or -1

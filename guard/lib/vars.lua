@@ -5,6 +5,8 @@ local ipairs    = ipairs
 local table_new = table.new
 local string_format = string.format
 
+local _M = {}
+
 -- local NGX_VARS = {
 --     "uri",
 --     "host",
@@ -54,7 +56,17 @@ local function setter(_, key, value)
     ngx_var[key] = value
 end
 
-return setmetatable({}, {
-    __index = getter,
-    __newindex = setter
-})
+-- return setmetatable({}, {
+--     __index = getter,
+--     __newindex = setter
+-- })
+
+
+function _M.new()
+    return setmetatable({}, {
+        __index = getter,
+        __newindex = setter
+    })
+end
+
+return _M

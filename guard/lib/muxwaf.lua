@@ -1,5 +1,6 @@
 local require      = require
 local _            = require("cjson.safe").encode_empty_table_as_object(false)
+local ctxdump      = require("resty.ctxdump")
 local tablepool    = require("resty.tablepool")
 local ipdb_parser  = require("resty.ipdb.city")
 local constants    = require("constants")
@@ -18,7 +19,6 @@ local _M = {
   _VERSION = 0.1
 }
 
-local ctx
 local IPIPDB_FILE  = ngx.config.prefix() .. "ipdb/ipipfree.ipdb"
 local ipipdb       = ipdb_parser:new(IPIPDB_FILE)
 
@@ -46,7 +46,6 @@ function _M.init_worker_phase()
 end
 
 function _M.exit_worker_phase()
-  -- local sample_log = require("log")
   sample_log.worker_exit()
 end
 
@@ -56,15 +55,16 @@ function _M.access_phase()
   if not mod_ctx then
     mod_ctx = require('ctx')
   end
-  ctx = mod_ctx.new()
-  
+  ngx.ctx.waf_ctx = mod_ctx.new()
+  ngx.var.ctx_ref = ctxdump.stash_ngx_ctx()
+
   local core = require("core")
-  core:access(ctx)
+  core:access(ngx.ctx.waf_ctx)
 end
 
 function _M.balance_phase()
   local balancer = require("balancer")
-  balancer.balance(ctx)
+  balancer.balance(ngx.ctx.waf_ctx)
 end
 
  -- before access phase, ctx not ready
@@ -74,14 +74,25 @@ function _M.ssl_certificate_phase()
 end
 
 function _M.log_phase()
+  local ref = ngx.var.ctx_ref
+  if ref ~= '' then
+    local stash_ctx = ctxdump.apply_ngx_ctx(ref)
+    ngx.var.ctx_ref = ''
+    if not ngx.ctx.waf_ctx then
+      ngx.ctx = stash_ctx
+    end
+  end
+
+  local ctx = ngx.ctx.waf_ctx
+  if not ctx then return end
+
   sample_log.log_phase(ctx)
   metrics.log_phase(ctx)
   tablepool.release("pool_ctx", ctx)
 end
 
 function _M.api_serve()
-  -- ctx = require("ctx").new()
-  apis:start(ctx)
+  apis:start(ngx.ctx.waf_ctx)
 end
 
 function _M.say_500()

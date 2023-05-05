@@ -200,10 +200,9 @@ function _M.set_param(self, param)
 end
 
 function _M.new()
-  local now = time.now()
   local ctx = tablepool.fetch("pool_ctx", 0, 30)
   -- local ctx = table_new(0, 25)
-  ctx.var = vars
+  ctx.var = vars.new()
   ctx.param = {} -- Parameters in path
   ctx.say_ok = say_ok
   ctx.say_err = say_err
@@ -215,7 +214,7 @@ function _M.new()
   ctx.decode = cjson.decode
   ctx.get_body_data = get_body_data
   ctx.get_and_decode_body_data = get_and_decode_body_data  
-  ctx.waf_start_time = now
+  ctx.waf_start_time = time.now()
   ctx.worker_id = ngx_worker_id()
   ctx.request_path = ctx.var.uri
   ctx.request_url = decode_url(ctx.var.request_uri)
