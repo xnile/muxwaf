@@ -5,6 +5,7 @@ local C               = ffi.C
 local tonumber        = tonumber
 local tostring        = tostring
 local ngx             = ngx
+local ngx_var         = ngx.var
 local ngx_shared      = ngx.shared
 local ngx_timer_every = ngx.timer.every
 local ngx_worker_id   = ngx.worker.id
@@ -117,21 +118,17 @@ end
 
 local sites
 function _M.log_phase(ctx)
-    local host = ngx.var.host
-    if not host then return end
+    if not ctx or not ctx.host then return end
     -- prom_metric_requests_total:inc(1)
-
-    if not sites then
-        sites = require("configs").sites
-    end
 
     -- Skip non-existent sites
     if ctx.site_id == "" then return end
     
     -- Skip self
-    if ngx.var.server_port == tostring(DEFAULT_API_LISTEN_PORT) and ngx.var.uri == "/api/sys/metrics" then return end
+    if ctx.server_port == tostring(DEFAULT_API_LISTEN_PORT) and ctx.request_path == "/api/sys/metrics" then return end
 
     -- local host            = ngx.var.host or "-"
+    local host            = ctx.host
     local status          = ngx.var.status or "-"
     local upstream_status = ngx.var.upstream_status or "-"
     local request_time    = tonumber(ngx.var.request_time) or -1

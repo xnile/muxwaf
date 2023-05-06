@@ -20,8 +20,8 @@ end
 
 
 local function start(self, ctx)
-    local uri = ctx.var.uri
-    local method = ctx.var.request_method
+    local uri = ctx.request_path
+    local method = ctx.request_method
 
     if not self.mux[method] then
         return ctx.say_404()

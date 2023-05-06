@@ -20,16 +20,17 @@ local _M = {
   _VERSION = 0.1
 }
 
-local function bypass_admin_apis(ctx)
-  if ctx.var.server_port == tostring(DEFAULT_API_LISTEN_PORT) then
+local function skip_check_apis(ctx)
+  if ctx.server_port == tostring(DEFAULT_API_LISTEN_PORT) then
+    log.debug("allow apis to pass through")
     return ngx_exit(NGX_OK)
   end
 end
 
 
 local function check_site_is_exist(ctx)
-  if not sites.is_exist(ctx.var.host) then
-    log.warn("site \"", ctx.var.host, "\" is not exist")
+  if not sites.is_exist(ctx.host) then
+    log.warn("site \"", ctx.host, "\" is not exist")
     return ctx.say_410()
   end
 end
@@ -75,7 +76,7 @@ end
 
 
 local function check_whitelist_url(ctx)
-  local host = ctx.var.host
+  local host = ctx.host
 
   local path = ctx.request_path
   if not path then
@@ -95,7 +96,7 @@ end
 
 local function check_ratelimit(ctx)
   local client_ip = ctx.real_client_ip
-  local host = ctx.var.host
+  local host = ctx.host
   local path = ctx.request_path
   if not path then
     log.error("faild to fetching request url path")
@@ -123,7 +124,7 @@ end
 
 
 function _M.access(_, ctx)
-  bypass_admin_apis(ctx)
+  skip_check_apis(ctx)
   check_site_is_exist(ctx)
   check_whitelist_ip(ctx)
   check_whitelist_url(ctx)

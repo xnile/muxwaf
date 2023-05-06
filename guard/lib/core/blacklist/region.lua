@@ -1,9 +1,6 @@
--- local lrucache      = require "resty.lrucache.pureffi"
 local log           = require("log")
 local table_new     = table.new
 local table_clear   = table.clear
--- local string_format = string.format
--- local table_clone    = require("table.clone")
 
 local _M  = {
   _VERSION = 0.1,
@@ -15,25 +12,6 @@ local MATCH_MODE = {
     BLACKLIST = 0,
     WHITELIST = 1,
 }
-
--- local ip_geo_cache, err = lrucache.new(1000)
--- if not ip_geo_cache then
---     error("failed to create the cache: " .. (err or "unknown"), 2)
--- end
-
--- local ipdb
--- local function find_ip_location(ip)
---     if not ipdb then
---         ipdb = muxwaf.get_ipdb()
---     end
---     local location = ip_geo_cache:get(ip)
---     if not location then
---         -- {"country_name":"中国","region_name":"北京","city_name":"北京"}
---         location = ipdb.ipip:find(ip, "CN")
---         ip_geo_cache:set(ip, location, 3600)
---     end
---     return location
--- end
 
 local function update_with_add(items)
     if not items then return end
@@ -104,8 +82,7 @@ function _M.match(ctx)
         return false
     end
 
-    -- local location = find_ip_location(ip)
-    local location = ctx.location
+    local location = ctx.ip_location
     local country = location.country_name
     local region  = location.region_name
 

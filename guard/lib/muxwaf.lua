@@ -29,10 +29,8 @@ function _M.get_ipdb()
 end
 
 function _M.init_phase()
-  do
-    for _, shdict_name in pairs(constants.DICTS) do
-      assert(ngx.shared[shdict_name], "shared dict \"" .. (shdict_name or "nil") .. "\" not defined")
-    end    
+  for _, shdict_name in pairs(constants.DICTS) do
+    assert(ngx.shared[shdict_name], "shared dict \"" .. (shdict_name or "nil") .. "\" not defined")
   end
 
   -- require("log").init()
@@ -92,6 +90,7 @@ function _M.log_phase()
 end
 
 function _M.api_serve()
+  local ctx = ngx.ctx.waf_ctx
   apis:start(ngx.ctx.waf_ctx)
 end
 

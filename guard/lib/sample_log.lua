@@ -5,6 +5,7 @@ local constants      = require("constants")
 local http           = require("resty.http")
 local ngx_errlog     = require("ngx.errlog")
 local ngx            = ngx
+local ngx_var        = ngx.var
 local ngx_log        = ngx.log
 local ngx_shared     = ngx.shared
 local ngx_get_phase  = ngx.get_phase
@@ -107,22 +108,22 @@ end
 
 local function sampled(ctx, rule_type, action, rule_id)
     ctx.sample_log =  {
-        host               = ctx.var.host,
+        host               = ctx.host,
         site_id            = ctx.site_id,
         real_client_ip     = ctx.real_client_ip,
-        request_id         = ctx.var.request_id,    
-        remote_addr        = ctx.var.remote_addr,
-        request_path       = ctx.var.request_uri,
-        request_method     = ctx.var.request_method,
-        request_time       = math.floor(ctx.var.msec),
+        request_id         = ctx.request_id,    
+        remote_addr        = ctx.remote_addr,
+        request_path       = ctx.request_uri,
+        request_method     = ctx.request_method,
+        request_time       = math.floor(ngx_var.msec),
         waf_start_time     = math.floor(ctx.waf_start_time /1000 /1000),
         waf_process_time   = time.now() - ctx.waf_start_time,
         rule_type          = rule_type,
         action             = action or -1,
         ngx_worker_id      = ctx.worker_id,
         rule_id            = rule_id,
-        location           = ctx.location,
-        time_local         = ctx.var.time_local,
+        ip_location        = ctx.ip_location,
+        time_local         = ngx_var.time_local,
     }
 end
 
@@ -130,7 +131,7 @@ function _M.block(ctx, rule_type, rule_id)
     if not metrics then
         metrics = require("metrics")
     end
-    metrics.incr_block_count(ctx.var.host, rule_type)
+    metrics.incr_block_count(ctx.host, rule_type)
     sampled(ctx, rule_type, ACTION_TYPES.BLOCK, rule_id)
 end
 
@@ -187,7 +188,7 @@ function _M.iterator()
 end
 
 function _M.log_phase(ctx)
-    if not ctx.sample_log or not next(ctx.sample_log) then return end
+    if not ctx or not ctx.sample_log or not next(ctx.sample_log) then return end
 
     sample_log_file_fd:write(ctx.encode(ctx.sample_log))
     sample_log_file_fd:write("\r\n")

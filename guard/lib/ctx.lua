@@ -5,7 +5,7 @@ local page_410           = require("page.410")
 local sites              = require("sites")
 local ssl                = require("ssl")
 local net                = require("utils.net")
-local vars               = require("vars")
+-- local vars               = require("vars")
 local time               = require("time")
 local log                = require("log")
 -- local metrics            = require("metrics")
@@ -14,6 +14,7 @@ local tablepool          = require("resty.tablepool")
 local cjson              = require("cjson.safe")
 local stringx            = require("utils.stringx")
 local ngx                = ngx
+local ngx_var            = ngx.var
 local ngx_say            = ngx.say
 local ngx_worker_id      = ngx.worker.id
 -- local str_sub            = ngx.re.sub
@@ -143,7 +144,7 @@ end
 local function say_block(ctx)
   -- metrics.incr_block_count()
 
-  local request_id = ctx.var.request_id
+  local request_id = ctx.request_id
   local page_403 = page_403
   page_403[2] = request_id
   ngx.header["Content-Type"] = 'text/html'  -- should before ngx.status
@@ -194,16 +195,46 @@ local function decode_url(url)
 end
 
 
+local function set_vars(ctx)
+  ngx_var.x_real_ip = ctx.real_client_ip
+  ngx_var.upstream_scheme = ctx.upstream_scheme
+end
+
+
 function _M.set_param(self, param)
   self.param = param
   return
 end
 
 function _M.new()
-  local ctx = tablepool.fetch("pool_ctx", 0, 30)
-  -- local ctx = table_new(0, 25)
-  ctx.var = vars.new()
-  ctx.param = {} -- Parameters in path
+  local now = time.now()
+  local ctx = tablepool.fetch("pool_ctx", 0, 26)
+  -- local ctx = table_new(0, 26)
+  -- ctx.var = vars.new()
+
+  ctx.host               = ngx_var.host
+  ctx.scheme             = ngx_var.scheme
+  ctx.request_id         = ngx_var.request_id
+  ctx.remote_addr        = ngx_var.remote_addr
+  ctx.request_method     = ngx_var.request_method
+  ctx.request_uri        = ngx_var.request_uri
+  ctx.request_path       = ngx_var.uri
+  -- ctx.request_time       = ngx_var.msec
+  -- ctx.request_time_local = ngx_var.time_local
+  ctx.server_port        = ngx_var.server_port
+
+  -- Parameters in path
+  ctx.param = {}
+  ctx.sample_log = {}
+  ctx.waf_start_time = now
+  ctx.worker_id = ngx_worker_id()
+  ctx.site_id = sites.get_site_id(ctx.host)
+  ctx.real_client_ip = get_real_client_ip(ctx.host, ctx.remote_addr)  
+  ctx.upstream_scheme = sites.get_origin_protocol(ctx.host, ctx.scheme)
+  ctx.ip_location = get_ip_location(ctx.real_client_ip)
+  -- ctx.unescape_uri = decode_url(ctx.request_uri)
+
+   
   ctx.say_ok = say_ok
   ctx.say_err = say_err
   ctx.say_404 = say_404
@@ -214,20 +245,9 @@ function _M.new()
   ctx.decode = cjson.decode
   ctx.get_body_data = get_body_data
   ctx.get_and_decode_body_data = get_and_decode_body_data  
-  ctx.waf_start_time = time.now()
-  ctx.worker_id = ngx_worker_id()
-  ctx.request_path = ctx.var.uri
-  ctx.request_url = decode_url(ctx.var.request_uri)
-  ctx.site_id = sites.get_site_id(ctx.var.host)
-  ctx.real_client_ip = get_real_client_ip(ctx.var.host, ctx.var.remote_addr)  
-  ctx.upstream_scheme = sites.get_origin_protocol(ctx.var.host, ctx.var.scheme)
-  ctx.location = get_ip_location(ctx.real_client_ip)
-  
-  --TODO: move to set func
-  ctx.var.x_real_ip = ctx.real_client_ip
-  ctx.var.upstream_scheme = ctx.upstream_scheme
-  ctx.sample_log = {}
-  ctx.blocked = false
+
+  set_vars(ctx)
+
   return setmetatable(ctx, _mt)
 end
 

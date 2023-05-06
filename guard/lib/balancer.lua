@@ -2,34 +2,43 @@ local require       = require
 local sites         = require("sites")
 local log           = require("log")
 local ngx_balancer  = require("ngx.balancer")
-local roundrobin    = require "resty.balancer.roundrobin"
+local roundrobin    = require("resty.balancer.roundrobin")
+local lrucache      = require("resty.lrucache")
 local cjson         = require("cjson.safe")
 local ngx           = ngx
 local ngx_exit      = ngx.exit
 local ipairs        = ipairs
 local tab_new       = table.new
-local string_format = string.format
 
 local HTTP_BAD_GATEWAY          = ngx.HTTP_BAD_GATEWAY
 local HTTP_GATEWAY_TIMEOUT      = ngx.HTTP_GATEWAY_TIMEOUT
-
-local upstreams = {}
 
 local _M = { 
   _VERSION = 0.1
 }
 
+local upstreams = {}
+
+local CACHE_TTL  = 60
+local CACHE_SIZE = 100
+local DEFAULT_SERVER_WEIGHT = 10
+
+local cache, err = lrucache.new(CACHE_SIZE * 2)
+if not cache then
+    error("failed to create the cache: " .. (err or "unknown"), 2)
+end
+
+
 local function parse_orgins(origins)
-    local len = #origins
-    local default_weight = 10
-    local servers = tab_new(0, 2)
-    servers.http  = tab_new(0, len)
-    servers.https = tab_new(0, len)
+    local servers = {
+        http  = tab_new(0, #origins),
+        https = tab_new(0, #origins)
+    }
 
     for _, origin in ipairs(origins) do
         local addr_http  = origin.host .. ":" .. origin.http_port
         local addr_https = origin.host .. ":" .. origin.https_port
-        local weight = origin.weight > 0 and origin.weight or default_weight
+        local weight = origin.weight > 0 and origin.weight or DEFAULT_SERVER_WEIGHT
         servers.http[addr_http] = weight
         servers.https[addr_https] = weight
     end
@@ -43,8 +52,18 @@ local function pick_upstream_peer(host, upstream_protocol)
         return nil
     end
 
-    local servers = parse_orgins(origins)
-    local rr = roundrobin:new(servers[upstream_protocol])
+    local servers = cache:get(host)
+    if not servers then
+        servers = parse_orgins(origins)
+        cache:set(host, servers, CACHE_TTL)
+    end
+
+    local candidate = servers[upstream_protocol]
+    if not candidate then
+        return nil
+    end
+
+    local rr = roundrobin:new(candidate)
     local peer = rr:find()
 
     if not peer then
@@ -61,24 +80,24 @@ end
 
 
 function _M.balance(ctx)
-    if not ctx.var.host then
+    if not ctx.host then
         log.error("failed to get host")
         return ngx_exit(HTTP_GATEWAY_TIMEOUT)
     end
 
     ngx_balancer.set_more_tries(1)
 
-    local peer = pick_upstream_peer(ctx.var.host, ctx.upstream_scheme)
+    local peer = pick_upstream_peer(ctx.host, ctx.upstream_scheme)
     if not peer then
         return ngx_exit(HTTP_BAD_GATEWAY)
     end
 
-    log.debug("current upstream peer \"", peer, "\"")
-
     local ok, err = ngx_balancer.set_current_peer(peer)
     if not ok then
-        log.error(string_format("failed to setting current upstream peer %s : %s", peer, err))
+        log.error("failed to setting current upstream peer \"", peer, "\", ", err)
+        return
     end
+    log.debug("current upstream peer \"", peer, "\"")
 end
 
 
