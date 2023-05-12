@@ -14,7 +14,7 @@ local page_410 = [[<!DOCTYPE html>
 <h1>410 Gone</h1>
 <p>您访问的网站不存在</p>
 <hr>
-<p>muxwaf</p>
+<p>MuxWAF</p>
 </body>
 </html>]]
 

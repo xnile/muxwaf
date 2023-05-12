@@ -13,7 +13,7 @@ local NGX_OK                      = ngx.OK
 local HTTP_GONE                   = ngx.HTTP_GONE
 local HTTP_INTERNAL_SERVER_ERROR  = ngx.HTTP_INTERNAL_SERVER_ERROR
 
-local RULE_TYPE = constants.RULE_TYPE
+local RULE_TYPE               = constants.RULE_TYPE
 local DEFAULT_API_LISTEN_PORT = constants.DEFAULT_API_LISTEN_PORT
 
 local _M = {
@@ -29,7 +29,7 @@ end
 
 
 local function check_site_is_exist(ctx)
-  if not sites.is_exist(ctx.host) then
+  if ctx.site_id == "" then
     log.warn("site \"", ctx.host, "\" is not exist")
     return ctx.say_410()
   end

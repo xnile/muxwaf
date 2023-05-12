@@ -47,6 +47,8 @@ local prom_metric_lua_memstats_alloc_bytes
 local prom_metric_shm_total_bytes
 local prom_metric_shm_free_bytes
 local prom_metric_errors_total
+local prom_metric_upstream_response_duration_seconds
+local prom_metric_upstream_connect_duration_seconds
 
 
 local function collect_shm_mem_alloc()
@@ -92,6 +94,8 @@ function _M.init_worker()
     prom_metric_shm_total_bytes = prometheus:gauge("muxwaf_shm_total_bytes", "The shm-based dictionary capacity", {"name"})
     prom_metric_shm_free_bytes = prometheus:gauge("muxwaf_shm_free_bytes", "The shm-based dictionary free bytes", {"name"})
     prom_metric_errors_total = prometheus:counter("muxwaf_errors_total", "Number of muxwaf errors")
+    prom_metric_upstream_response_duration_seconds = prometheus:histogram("muxwaf_upstream_response_duration_second", "The time spent on receiving the response from the upstream server", {"host"})
+    prom_metric_upstream_connect_duration_seconds = prometheus:histogram("muxwaf_upstream_connect_duration_second", "The time spent on establishing a connection with the upstream server", {"host"})
 
     local worker_id  = ngx_worker_id()
 
@@ -132,14 +136,19 @@ function _M.log_phase(ctx)
     local status          = ngx.var.status or "-"
     local upstream_status = ngx.var.upstream_status or "-"
     local request_time    = tonumber(ngx.var.request_time) or -1
-    local request_length  = tonumber(ngx.var.request_length) or 0
-    local response_length = tonumber(ngx.var.bytes_sent) or 0
-
+    local request_length  = tonumber(ngx.var.request_length) or -1
+    local response_length = tonumber(ngx.var.bytes_sent) or -1
+    local upstream_response_time = tonumber(ngx.var.upstream_response_time) or -1
+    local upstream_connect_time  = tonumber(ngx.var.upstream_connect_time) or -1
+    
     prom_metric_requests:inc(1, {host, status, upstream_status})
-    prom_metric_request_duration_seconds:observe(request_time, {host})
-
     prom_metric_request_bytes_total:inc(request_length, {host})
     prom_metric_response_bytes_total:inc(response_length, {host})
+
+
+    prom_metric_request_duration_seconds:observe(request_time, {host})
+    prom_metric_upstream_connect_duration_seconds:observe(upstream_connect_time, {host})
+    prom_metric_upstream_response_duration_seconds:observe(upstream_response_time, {host})
 end
 
 
