@@ -1,9 +1,14 @@
 LDFLAGS := -s -w
 VERSION := 0.0.1
+GOOS ?= darwin
+GOARCH ?= amd64
 build-docker: build-ui build-docker-guard build-docker-apiserver build-docker-ui
 
 build-apiserver:
-	cd apiserver && env CGO_ENABLED=0 go build -trimpath -ldflags "$(LDFLAGS)" -o bin/muxwaf-apiserver .
+	cd apiserver && env CGO_ENABLED=0 GOOS=${GOOS} GOARCH=${GOARCH} go build -trimpath -ldflags "$(LDFLAGS)" -o bin/muxwaf-apiserver .
+
+build-apiserver-linux-amd64:
+	cd apiserver && env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "$(LDFLAGS)" -o bin/muxwaf-apiserver .
 
 build-ui:
 	cd ui && yarn -i && yarn run build

@@ -20,13 +20,29 @@ export const asyncRouterMap = [
       {
         path: '/dashboard',
         name: 'dashboard',
-        component: () => import('@/views/dashboard/index.vue'),
+        // component: () => import('@/views/dashboard/index.vue'),
+        component: RouteView,
         meta: {
           title: '安全总览',
           keepAlive: true,
           icon: bxAnaalyse,
           permission: ['登陆用户', '超级管理员', '管理员']
-        }
+        },
+        // redirect: '/dashboard/analysis',
+        children: [
+          {
+            path: '/dashboard/index',
+            name: 'Analysis',
+            component: () => import('@/views/dashboard/index'),
+            meta: { title: '总览', keepAlive: false, permission: ['超级管理员', '管理员'] },
+            hidden: true
+          },
+          {
+            path: 'http://localhost:3000',
+            name: 'Monitor',
+            meta: { title: '监控', target: '_blank' }
+          }
+        ]
       },
       {
         path: '/site',
