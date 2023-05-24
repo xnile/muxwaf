@@ -113,7 +113,6 @@ local function get_real_client_ip(host, remote_addr)
 
 
   local req_headers = ngx.req.get_headers()
-  setmetatable(req_headers, nil)
   local raw_header_ip = req_headers[real_ip_header]
   if not raw_header_ip then
     log.warn("failed to get client ip from http header, \"", string_upper(real_ip_header), "\" header does not found, fallback to use remote_addr")
@@ -196,7 +195,7 @@ local function decode_url(url)
   return ngx_unescape_uri(url)
 end
 
-
+-- update custom vars
 local function set_vars(ctx)
   ngx_var.x_real_ip = ctx.real_client_ip
   ngx_var.upstream_scheme = ctx.upstream_scheme
