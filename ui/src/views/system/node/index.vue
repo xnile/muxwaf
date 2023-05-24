@@ -78,8 +78,8 @@
       @cancel="onCancel"
     >
       <a-form-model ref="form" :model="form" :rules="rules" :label-col="{ span: 5 }" :wrapper-col="{ span: 15 }">
-        <a-form-model-item label="地址" prop="ip_or_domain">
-          <a-input placeholder="输入guard地址，可以是IP、域名、Hostname" v-model="form.ip_or_domain"></a-input>
+        <a-form-model-item label="IP" prop="ip_or_domain">
+          <a-input placeholder="请输入waf guard节点IP" v-model="form.ip_or_domain"></a-input>
         </a-form-model-item>
         <a-form-model-item label="端口" prop="port">
           <a-input-number placeholder="端口" v-model.number="form.port"></a-input-number>

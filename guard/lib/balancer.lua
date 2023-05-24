@@ -21,7 +21,7 @@ local upstreams = {}
 
 local CACHE_TTL  = 60
 local CACHE_SIZE = 100
-local DEFAULT_SERVER_WEIGHT = 10
+local DEFAULT_SERVER_WEIGHT = 100
 
 local cache, err = lrucache.new(CACHE_SIZE * 2)
 if not cache then
@@ -95,7 +95,7 @@ function _M.balance(ctx)
     local ok, err = ngx_balancer.set_current_peer(peer)
     if not ok then
         log.error("failed to setting current upstream peer \"", peer, "\", ", err)
-        return
+        return ngx_exit(HTTP_BAD_GATEWAY)
     end
     log.debug("current upstream peer \"", peer, "\"")
 end
