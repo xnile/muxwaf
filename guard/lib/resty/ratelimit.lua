@@ -25,14 +25,14 @@ function _M.incomming(self, key, limit, window)
   local dict = self.dict
   local remaining, err = dict:incr(key, -1, limit, window)
   if not remaining then
-    return nil, err
+    return false, err
   end
 
   if remaining < 0 then
-    return nil, "rejected"
+    return false, "rejected"
   end
 
-  return 0, remaining
+  return true, remaining
 end
 
 

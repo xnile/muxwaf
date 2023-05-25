@@ -116,8 +116,9 @@ local function check_ratelimit(ctx)
       sample_log.block(ctx, RULE_TYPE.RATELIMIT, rule_id)
       return ctx:say_block()
     end
-    log.error("rate limit check failed")
-    return ngx_exit(HTTP_INTERNAL_SERVER_ERROR)
+    log.error("Rate limit check failed, ", err)
+    -- return ngx_exit(HTTP_INTERNAL_SERVER_ERROR)
+    return
   end
   return
 end

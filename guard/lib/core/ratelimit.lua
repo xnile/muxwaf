@@ -153,8 +153,10 @@ function _M.url_match(self, host, path)
 end
 
 function _M.incomming(self, id, key)
+  -- the rule has already been deleted
   if not cache[id] then
-    return nil, nil
+    log.debug("The rule with id '", id, "'  has already been deleted")
+    return ok, nil
   end
 
   local limit, window = cache[id].limit, cache[id].window
