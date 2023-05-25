@@ -238,9 +238,16 @@ export default {
       this.$refs.form && this.$refs.form.resetFields()
     },
 
-    onShowSizeChange() {},
+    onShowSizeChange(current, pageSize) {
+      this.queryParams.page_size = pageSize
+      this.queryParams.page_num = 1
+      this.doGetList()
+    },
 
-    onChange() {},
+    onChange(page, pageSize) {
+      this.queryParams.page_num = page
+      this.doGetList()
+    },
 
     onTimeChange() {},
 
