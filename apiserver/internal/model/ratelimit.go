@@ -15,3 +15,12 @@ type RateLimitModel struct {
 func (RateLimitModel) TableName() string {
 	return "rate_limit"
 }
+
+type RateLimitReq struct {
+	SiteID    int64  `json:"site_id"  binding:"required,numeric"`
+	Path      string `json:"path" binding:"required,uri"`
+	Limit     int64  `json:"limit" binding:"required,numeric"`
+	Window    int64  `json:"window" binding:"required,numeric"`
+	MatchMode int16  `json:"match_mode" binding:"required,oneof=1 2"`
+	Remark    string `json:"remark"`
+}

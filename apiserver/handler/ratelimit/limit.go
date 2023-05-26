@@ -12,7 +12,7 @@ import (
 )
 
 func Add(c *gin.Context) {
-	var payload model.RateLimitModel
+	var payload model.RateLimitReq
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		logx.Warnf("request parameter error: %v", err)
 		handler.ResponseBuilder(c, ecode.ErrParam, nil)
@@ -88,6 +88,22 @@ func Update(c *gin.Context) {
 	err := svc.Update(id, &payload)
 	if err != nil {
 		logx.Warnf("update rate limit err, %v", err)
+	}
+	handler.ResponseBuilder(c, err, nil)
+}
+
+func BatchAdd(c *gin.Context) {
+	payload := make([]*model.RateLimitReq, 0)
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		logx.Warnf("request parameter error: %v", err)
+		handler.ResponseBuilder(c, ecode.ErrParam, nil)
+		return
+	}
+
+	svc := service.SVC.RateLimit
+	err := svc.BatchAdd(payload)
+	if err != nil {
+		logx.Warnf("add rate limit err, %v", err)
 	}
 	handler.ResponseBuilder(c, err, nil)
 }

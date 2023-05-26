@@ -76,6 +76,7 @@ func Init() *gin.Engine {
 		api.PUT("/rate-limit/:id", ratelimit.Update)
 		api.DELETE("/rate-limit/:id", ratelimit.Delete)
 		api.PUT("/rate-limit/:id/status", ratelimit.UpdateStatus)
+		api.POST("/rate-limit/batch", ratelimit.BatchAdd)
 
 		// 证书
 		api.GET("/certificates", certificate.GetCertList)

@@ -7,7 +7,13 @@
 
     <a-card title="证书管理">
       <!-- 表格 -->
-      <a-table :columns="columns" :dataSource="list" :rowKey="record => record.id" :pagination="false">
+      <a-table
+        :columns="columns"
+        :dataSource="list"
+        :rowKey="record => record.id"
+        :pagination="false"
+        :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
+      >
         <span slot="end_time" slot-scope="text">{{ text | moment }}</span>
         <template slot="sans" slot-scope="items">
           <div v-for="item in items" :key="item">{{ item }}</div>
@@ -22,9 +28,17 @@
         </template>
       </a-table>
       <!-- 表格end -->
+
       <!-- 分页 -->
       <a-row :style="{ marginTop: '10px' }" v-if="meta.total">
-        <a-col :span="24">
+        <!-- 批量操作 -->
+        <a-col :span="4">
+          <a-space>
+            <a-button :disabled="selectedRowKeys.length == 0" @click="onBatchDel">删除</a-button>
+            <!-- <a-button @click="onBatchAdd">批量添加</a-button> -->
+          </a-space>
+        </a-col>
+        <a-col :span="20">
           <a-pagination
             style="float: right"
             show-size-changer
@@ -126,7 +140,8 @@ export default {
         cert: '',
         key: ''
       },
-      rules: {}
+      rules: {},
+      selectedRowKeys: []
     }
   },
 
@@ -161,7 +176,37 @@ export default {
     },
 
     onShowSizeChange() {},
+
     onChange() {},
+
+    onSelectChange(selectedRowKeys) {
+      this.selectedRowKeys = selectedRowKeys
+    },
+
+    onBatchDel() {
+      let _this = this
+      this.$confirm({
+        title: '确定要删除所选的' + _this.selectedRowKeys.length + '个证书？',
+        onOk() {
+          _this.selectedRowKeys.forEach(item => {
+            DelCert(item)
+              .then(res => {
+                if (res.code == 0) {
+                  _this.$message.success('删除成功!')
+                  _this.getList()
+                } else {
+                  _this.$message.error(res.msg)
+                }
+              })
+              .catch(err => {
+                _this.$message.error(err.message)
+              })
+          })
+          _this.selectedRowKeys = []
+        },
+        onCancel() {}
+      })
+    },
 
     handleOk() {
       // e.preventDefault()

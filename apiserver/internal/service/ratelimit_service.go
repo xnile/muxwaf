@@ -12,11 +12,12 @@ import (
 )
 
 type IRateLimitService interface {
-	Add(entity *model.RateLimitModel) error
+	Add(payload *model.RateLimitReq) error
 	List(pageNum, pageSize, siteID int64, status, matchMode int16, url string) (*model.ListResp, error)
 	UpdateStatus(id int64) error
 	Delete(id int64) error
 	Update(id int64, m *model.RateLimitModel) error
+	BatchAdd(payload []*model.RateLimitReq) error
 }
 
 type rateLimitService struct {
@@ -31,7 +32,7 @@ func NewRateLimitService(repo *repository.Repository, eventBus *event.EventBus) 
 	}
 }
 
-func (svc *rateLimitService) Add(entity *model.RateLimitModel) error {
+func (svc *rateLimitService) Add(payload *model.RateLimitReq) error {
 	//entity := model.RateLimitModel{
 	//	SiteID: siteID,
 	//	Path:   path,
@@ -40,8 +41,17 @@ func (svc *rateLimitService) Add(entity *model.RateLimitModel) error {
 	//	Status: 1,
 	//	Remark: remark,
 	//}
-	entity.ID = 0
-	if err := svc.repo.DB.Create(entity).Error; err != nil {
+	entity := model.RateLimitModel{
+		SiteID:    payload.SiteID,
+		Path:      payload.Path,
+		Limit:     payload.Limit,
+		Window:    payload.Window,
+		MatchMode: payload.MatchMode,
+		Status:    1,
+		Remark:    payload.Remark,
+	}
+
+	if err := svc.repo.DB.Create(&entity).Error; err != nil {
 		return err
 	}
 
@@ -206,6 +216,58 @@ func (svc *rateLimitService) Update(id int64, m *model.RateLimitModel) error {
 			svc.eventBus.PushEvent(event.RateLimit, event.OpTypeUpdate, configs)
 		}
 	}
+
+	return nil
+}
+
+func (svc *rateLimitService) BatchAdd(payload []*model.RateLimitReq) error {
+	entities := make([]*model.RateLimitModel, 0)
+	guardCfg := make([]*model.RateLimitGuard, 0)
+
+	tx := svc.repo.DB.Begin()
+
+	for _, v := range payload {
+		entity := model.RateLimitModel{
+			SiteID:    v.SiteID,
+			Path:      v.Path,
+			Limit:     v.Limit,
+			Window:    v.Window,
+			MatchMode: v.MatchMode,
+			Status:    1,
+			Remark:    v.Remark,
+		}
+		if err := tx.Create(&entity).Error; err != nil {
+			logx.Error("[Rate Limit] Failed to insert : ", err)
+			tx.Rollback()
+			return ecode.InternalServerError
+		}
+		entities = append(entities, &entity)
+	}
+	if err := tx.Commit().Error; err != nil {
+		logx.Error("[Rate Limit] Failed to batch insert: ", err)
+		return ecode.InternalServerError
+	}
+
+	// update guard
+	for _, entity := range entities {
+		siteEntity := model.SiteModel{}
+		if err := svc.repo.DB.Where("id = ?", entity.SiteID).First(&siteEntity).Error; err != nil {
+			logx.Error("[Rate Limit] Failed to fetching site info : ", err)
+			return ecode.InternalServerError
+
+		}
+		guardCfg = append(guardCfg, &model.RateLimitGuard{
+			UUID:      entity.UUID,
+			SiteID:    siteEntity.UUID,
+			Host:      siteEntity.Domain,
+			Path:      entity.Path,
+			Limit:     entity.Limit,
+			Window:    entity.Window,
+			MatchMode: entity.MatchMode,
+		})
+	}
+
+	svc.eventBus.PushEvent(event.RateLimit, event.OpTypeAdd, guardCfg)
 
 	return nil
 }

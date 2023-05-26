@@ -37,3 +37,11 @@ export function Delete(id) {
     method: 'delete'
   })
 }
+
+export function BatchAdd(data) {
+  return request({
+    url: '/api/rate-limit/batch',
+    method: 'post',
+    data: data
+  })
+}

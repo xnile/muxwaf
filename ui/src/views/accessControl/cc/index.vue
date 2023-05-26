@@ -1,7 +1,7 @@
 <template>
   <page-header-wrapper>
     <template v-slot:extra>
-      <a-button type="primary" @click="showModal">添加频率限制</a-button>
+      <a-button type="primary" @click="showModal">添加CC防护</a-button>
     </template>
 
     <a-card>
@@ -51,6 +51,7 @@
         :scroll="{ x: 1300 }"
         :rowKey="record => record.id"
         :pagination="false"
+        :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
       >
         <template slot="match_mode" slot-scope="text">
           <template v-if="text === 1">
@@ -81,7 +82,14 @@
       </a-table>
 
       <a-row :style="{ marginTop: '10px' }" v-if="meta.total">
-        <a-col :span="24">
+        <!-- 批量操作 -->
+        <a-col :span="4">
+          <a-space>
+            <a-button :disabled="selectedRowKeys.length == 0" @click="onBatchDel">删除</a-button>
+            <a-button @click="onBatchAdd">批量添加</a-button>
+          </a-space>
+        </a-col>
+        <a-col :span="20">
           <a-pagination
             style="float: right"
             show-size-changer
@@ -133,12 +141,33 @@
       </a-form-model>
       <!-- from END -->
     </a-modal>
+
+    <!-- 批量添加 -->
+    <a-modal
+      :width="700"
+      v-model="batchAddVisible"
+      title="批量添加CC防护"
+      @ok="onBatchAddOK"
+      @cancel="onBatchAddCancel"
+    >
+      <a-form-model
+        ref="batchAddForm"
+        :model="batchAddForm"
+        :rules="batchAddRules"
+        :label-col="{ span: 5 }"
+        :wrapper-col="{ span: 15 }"
+      >
+        <a-form-model-item label="data" prop="data">
+          <a-textarea :rows="10" placeholder="请输入数据" v-model="batchAddForm.data"></a-textarea>
+        </a-form-model-item>
+      </a-form-model>
+    </a-modal>
   </page-header-wrapper>
 </template>
 
 <script>
 import moment from 'moment'
-import { GetList, Add, Update, UpdateStatus, Delete } from '@/api/rateLimit'
+import { GetList, Add, Update, UpdateStatus, Delete, BatchAdd } from '@/api/rateLimit'
 import { GetALLSite } from '@/api/site'
 
 const columns = [
@@ -222,7 +251,13 @@ export default {
       status: 0,
       showTime: {
         defaultValue: [moment('00:00:00', 'HH:mm:ss'), moment('23:59:59', 'HH:mm:ss')]
-      }
+      },
+      selectedRowKeys: [],
+      batchAddVisible: false,
+      batchAddForm: {
+        data: ''
+      },
+      batchAddRules: {}
     }
   },
   methods: {
@@ -250,6 +285,10 @@ export default {
     },
 
     onTimeChange() {},
+
+    onSelectChange(selectedRowKeys) {
+      this.selectedRowKeys = selectedRowKeys
+    },
 
     query() {
       this.queryParams.page_num = 1
@@ -309,6 +348,54 @@ export default {
         onCancel() {}
       })
     },
+
+    onBatchDel() {
+      let _this = this
+      this.$confirm({
+        title: '确定要删除所选的' + _this.selectedRowKeys.length + '个CC防护规则',
+        onOk() {
+          _this.selectedRowKeys.forEach(item => {
+            Delete(item)
+              .then(res => {
+                if (res.code == 0) {
+                  _this.$message.success('删除成功!')
+                  _this.doGetList()
+                } else {
+                  _this.$message.error(res.msg)
+                }
+              })
+              .catch(err => {
+                _this.$message.error(err.message)
+              })
+          })
+          _this.selectedRowKeys = []
+        },
+        onCancel() {}
+      })
+    },
+
+    onBatchAdd() {
+      this.batchAddVisible = true
+    },
+    onBatchAddOK() {
+      let data = this.batchAddForm.data
+
+      BatchAdd(data)
+        .then(res => {
+          if (res.code == 0) {
+            this.$message.success('添加成功')
+            this.$refs.batchAddForm.resetFields()
+            this.batchAddVisible = false
+            this.doGetList()
+          } else {
+            this.$message.error(res.msg)
+          }
+        })
+        .catch(err => {
+          this.$message.error(err.message)
+        })
+    },
+    onBatchAddCancel() {},
 
     doGetList() {
       GetList(this.queryParams)

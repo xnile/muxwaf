@@ -42,6 +42,7 @@
         :scroll="{ x: 1300 }"
         :rowKey="record => record.id"
         :pagination="false"
+        :row-selection="{ selectedRowKeys: selectedRowKeys, onChange: onSelectChange }"
       >
         <template slot="match_mode" slot-scope="text">
           <template v-if="text === 1">
@@ -72,7 +73,14 @@
       </a-table>
 
       <a-row :style="{ marginTop: '10px' }" v-if="meta.total">
-        <a-col :span="24">
+        <!-- 批量操作 -->
+        <a-col :span="4">
+          <a-space>
+            <a-button :disabled="selectedRowKeys.length == 0" @click="onBatchDel">删除</a-button>
+            <!-- <a-button @click="onBatchAdd">批量添加</a-button> -->
+          </a-space>
+        </a-col>
+        <a-col :span="20">
           <a-pagination
             style="float: right"
             show-size-changer
@@ -202,7 +210,8 @@ export default {
         match_mode: 1,
         remark: ''
       },
-      rules: {}
+      rules: {},
+      selectedRowKeys: []
     }
   },
   methods: {
@@ -236,6 +245,35 @@ export default {
     onSearch() {
       this.queryParams.page_num = 1
       this.getList()
+    },
+
+    onSelectChange(selectedRowKeys) {
+      this.selectedRowKeys = selectedRowKeys
+    },
+
+    onBatchDel() {
+      let _this = this
+      this.$confirm({
+        title: '确定要删除所选的' + _this.selectedRowKeys.length + '个URL白名单规则？',
+        onOk() {
+          _this.selectedRowKeys.forEach(item => {
+            DeleteURL(item)
+              .then(res => {
+                if (res.code == 0) {
+                  _this.$message.success('删除成功!')
+                  _this.getList()
+                } else {
+                  _this.$message.error(res.msg)
+                }
+              })
+              .catch(err => {
+                _this.$message.error(err.message)
+              })
+          })
+          _this.selectedRowKeys = []
+        },
+        onCancel() {}
+      })
     },
 
     updateItem(record) {
