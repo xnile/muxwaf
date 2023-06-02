@@ -124,6 +124,35 @@ end
 
 
 function _M.access(_, ctx)
+
+  -- do
+  --   local setup_client = require("dns")
+  --   local dns_client = setup_client()
+
+  --   local round_robin = require("resty.dns.balancer.round_robin")
+  --   -- log.error(type(round_robin))
+  --   local opts = {
+  --     dns = dns_client,
+  --     hosts={
+  --       {
+  --         name = "www.baidu.com",
+  --         port = 8080,
+  --         weight = 10,
+  --       },
+  --       {
+  --         name = "www.muxwaf.com",
+  --         port = 9090,
+  --         weight = 100,
+  --       }
+  --     }
+  --   }
+  --   local b = round_robin.new(opts)
+  --   local addr, port, host = b:getPeer()
+  --   log.error(addr, port, host)
+
+  -- end
+
+
   skip_check_apis(ctx)
   check_site_is_exist(ctx)
   check_whitelist_ip(ctx)
