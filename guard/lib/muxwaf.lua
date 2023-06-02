@@ -2,7 +2,8 @@ local require      = require
 local _            = require("cjson.safe").encode_empty_table_as_object(false)
 local ctxdump      = require("resty.ctxdump")
 local tablepool    = require("resty.tablepool")
-local ipdb_parser  = require("resty.ipdb.city")
+-- local ipdb_parser  = require("resty.ipip.city")
+local geo          = require("geo")
 local constants    = require("constants")
 local page_500     = require("page.500")
 local sample_log   = require("sample_log")
@@ -19,13 +20,17 @@ local _M = {
   _VERSION = 0.1
 }
 
-local IPIPDB_FILE  = ngx.config.prefix() .. "ipdb/ipipfree.ipdb"
-local ipipdb       = ipdb_parser:new(IPIPDB_FILE)
+-- local IPIPDB_FILE  = ngx.config.prefix() .. "ipdb/ipipfree.ipdb"
+-- local ipipdb       = ipdb_parser:new(IPIPDB_FILE)
 
-function _M.get_ipdb()
-  return {
-    ipip = ipipdb
-  }
+
+local geo_ip_searcher
+do
+  geo_ip_searcher = geo.new("ipip")
+end
+
+function _M.get_ip_geo_searcher()
+  return geo_ip_searcher
 end
 
 function _M.init_phase()

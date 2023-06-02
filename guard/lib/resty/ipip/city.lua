@@ -7,7 +7,7 @@ local mt = {
     __index = _M
 }
 
-local reader = require("resty.ipdb.reader")
+local reader = require("resty.ipip.reader")
 
 function _M.new(self, name)
     return setmetatable({

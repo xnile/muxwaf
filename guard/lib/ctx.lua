@@ -1,5 +1,5 @@
 local require            = require
-local lrucache           = require "resty.lrucache.pureffi"
+-- local lrucache           = require "resty.lrucache.pureffi"
 local page_403           = require("page.403")
 local page_410           = require("page.410")
 local sites              = require("sites")
@@ -44,23 +44,21 @@ local _M  = {
 
 local _mt = { __index = _M }
 
-local ip_loc_cache, err = lrucache.new(IP_LOC_CACHE_SIZE)
-if not ip_loc_cache then
-    error("failed to create the cache: " .. (err or "unknown"), 2)
-end
+-- local ip_loc_cache, err = lrucache.new(IP_LOC_CACHE_SIZE)
+-- if not ip_loc_cache then
+--     error("failed to create the cache: " .. (err or "unknown"), 2)
+-- end
 
-local ipdb
+local ip_geo_searcher
 local function get_ip_location(ip)
-    if not ipdb then
-        ipdb = muxwaf.get_ipdb()
+    if not ip_geo_searcher then
+        ip_geo_searcher = muxwaf.get_ip_geo_searcher()
     end
-    local location = ip_loc_cache:get(ip)
-    if not location then
-        -- {"country_name":"中国","region_name":"北京","city_name":"北京"}
-        location = ipdb.ipip:find(ip, "CN")
-        ip_loc_cache:set(ip, location, 3600)
+    local loc, err = ip_geo_searcher:search(ip)
+    if err ~= nil then
+      log.error("Failed to obtain location information for '", ip, "'")
     end
-    return location
+    return loc
 end
 
 local function get_body_data()
@@ -113,7 +111,6 @@ local function get_real_client_ip(host, remote_addr)
 
 
   local req_headers = ngx.req.get_headers()
-  setmetatable(req_headers, nil)
   local raw_header_ip = req_headers[real_ip_header]
   if not raw_header_ip then
     log.warn("failed to get client ip from http header, \"", string_upper(real_ip_header), "\" header does not found, fallback to use remote_addr")
