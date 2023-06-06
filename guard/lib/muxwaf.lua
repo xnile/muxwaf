@@ -46,6 +46,7 @@ function _M.init_worker_phase()
   require("tasks").run()
   require("configs").init()
   require("metrics").init_worker()
+  require("balancer").init_worker()
 end
 
 function _M.exit_worker_phase()

@@ -1,4 +1,6 @@
+-- TODO: support custom origin host
 local require        = require
+local balancer       = require("balancer")
 local log            = require("log")
 local utils          = require("utils")
 local cjson          = require("cjson.safe")
@@ -100,6 +102,9 @@ end
 
 
 function _M.full_sync(_, items)
+
+    balancer:full_sync_origins(items)
+
     local del_ids = utils.diff_cfg_ids(cache, items)
     local this = _M
     this:del(del_ids)
