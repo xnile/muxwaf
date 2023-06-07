@@ -196,6 +196,8 @@ end
 
 local function set_vars(ctx)
   ngx_var.x_real_ip = ctx.real_client_ip
+
+  -- should before balance phase, otherwise it will not take effect
   ngx_var.upstream_scheme = ctx.upstream_scheme
 end
 

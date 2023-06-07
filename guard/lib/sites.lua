@@ -36,40 +36,50 @@ end
 -- }
 
 function _M.add(_, items)
+    -- add orgins first
+    balancer:add_origins(items)
+
     for _, item in ipairs(items) do
         local id, host = item.id, item.host
 
         if sites[id] then
-            log.warn("failed to add site \"", host, "\" with ID \"", id, "\" the site already exists")
+            log.warn("failed to add site '", host, "' with ID '", id, "', the site already exists")
             goto continue
         end
 
         if host_matcher[host] then
-            log.warn("failed to add site \"", host, "\" with ID \"", id, "\" conflicting host \"", host, "\"")
+            log.warn("failed to add site '", host, "' with ID '", id, "',  host conflict")
             goto continue
         end
 
         sites[id] = table_clone(item)
         host_matcher[host] = id
-        log.debug("successed to add site \"", host, "\" with ID \"", id, "\"")
+        log.debug("successed to add site '", host, "' with ID '", id, "'")
+
         ::continue::
     end
 end
 
 function _M.del(_, items)
+    local del_hosts = {}
+
     for _, id in ipairs(items) do
         local candidate = sites[id]
         if not candidate then
-            log.warn("failed to delete site with ID \"", id, "\" the site does not exist")
+            log.warn("failed to delete site with ID '", id, "', the site does not exist")
             goto continue
         end
         local host = candidate.host
 
         sites[id] =  nil
         host_matcher[host] = nil
+        del_hosts[#del_hosts +1] = host
         
         ::continue::
     end
+
+    -- delete origins later
+    balancer:del_origins(del_hosts)
 end
 
 function _M.update(_, items)
@@ -78,13 +88,13 @@ function _M.update(_, items)
 
         local candidate = cache[id]
         if not candidate then
-            log.warn("failed to update site with ID \"", id, "\"the site does not exist")
+            log.warn("failed to update site with ID '", id, "', the site does not exist")
             goto continue
         end
 
         if host ~= candidate.host then
             -- log.warn("failed to update site wh update host is not supported")
-            log.warn("failed to update site with ID \"", id, "\" update site domain is not supported")
+            log.warn("failed to update site with ID '", id, "', update site domain is not supported")
             goto continue
         end
 
@@ -158,10 +168,10 @@ function _M.get_site_cert_id(host)
     return site and site.config.cert_id or ""
 end
 
-function _M.get_site_origins(host)
-    local site = get_site(host)
-    return site and site.origins or nil
-end
+-- function _M.get_site_origins(host)
+--     local site = get_site(host)
+--     return site and site.origins or nil
+-- end
 
 function _M.is_real_ip_from_header(host)
     local site = get_site(host)

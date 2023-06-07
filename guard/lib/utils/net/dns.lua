@@ -67,14 +67,14 @@ local function resolve_host_for_qtype(r, host, qtype)
       answers.errcode, answers.errstr)
   end
 
-  local addresses, ttl = a_records_and_min_ttl(answers)
+  local addresses, min_ttl = a_records_and_min_ttl(answers)
   if #addresses == 0 then
     local msg = "no A record resolved"
     if qtype == resolver.TYPE_AAAA then msg = "no AAAA record resolved" end
     return nil, -1, msg
   end
 
-  return addresses, ttl, nil
+  return addresses, min_ttl, nil
 end
 
 local function resolve_host(r, host)
@@ -94,7 +94,7 @@ end
 function _M.lookup(host)
   local cached_addresses = cache:get(host)
   if cached_addresses then
-    return cached_addresses, nil
+    return cached_addresses, -1, nil
   end
 
   local r, err = resolver:new{
@@ -103,25 +103,18 @@ function _M.lookup(host)
     timeout = 2000,  -- 2 sec
   }
 
-  -- if not r then
-  --   ngx_log(ngx_ERR, string_format("failed to instantiate the resolver: %s", err))
-  --   return { host }
-  -- end
   if not r then
-    return nil, string_format("failed to instantiate the resolver: %s", err)
+    return nil, -1, string_format("failed to instantiate the resolver: %s", err)
   end
 
-  local addresses, ttl, dns_errors
-  addresses, ttl, dns_errors = resolve_host(r, host)
+  local addresses, min_ttl, dns_errors
+  addresses, min_ttl, dns_errors = resolve_host(r, host)
   if addresses then
-    cache_set(host, addresses, ttl)
-    return addresses, nil
+    cache_set(host, addresses, min_ttl)
+    return addresses, min_ttl, nil
   end
 
-  -- ngx_log(ngx_ERR, "failed to query the DNS server for ",
-  --   host, ":\n", table_concat(dns_errors, "\n"))
-
-  return nil, "failed to query the DNS server for " .. host .. ":\n" .. table_concat(dns_errors, "\n")
+  return nil, -1, "failed to query the DNS server for " .. host .. ":\n" .. table_concat(dns_errors, "\n")
 end
 
 setmetatable(_M, {__index = { _cache = cache }})

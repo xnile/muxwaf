@@ -22,7 +22,7 @@ local _M = {
 
 local function skip_check_apis(ctx)
   if ctx.server_port == tostring(DEFAULT_API_LISTEN_PORT) then
-    log.debug("allow apis to pass through")
+    -- log.debug("allow apis to pass through")
     return ngx_exit(NGX_OK)
   end
 end
@@ -123,7 +123,7 @@ local function check_ratelimit(ctx)
 end
 
 
-function _M.access(_, ctx)
+function _M.access_phase(ctx)
 
   -- do
   --   local setup_client = require("dns")
