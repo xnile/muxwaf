@@ -199,6 +199,11 @@ local function set_vars(ctx)
 
   -- should before balance phase, otherwise it will not take effect
   ngx_var.upstream_scheme = ctx.upstream_scheme
+
+  -- set origin host
+  if ctx.upstream_host and ctx.upstream_host ~= "" then
+    ngx_var.upstream_host = ctx.upstream_host
+  end
 end
 
 
@@ -209,7 +214,7 @@ end
 
 function _M.new()
   local now = time.now()
-  local ctx = tablepool.fetch("pool_ctx", 0, 26)
+  local ctx = tablepool.fetch("pool_ctx", 0, 27)
   -- local ctx = table_new(0, 26)
   -- ctx.var = vars.new()
 
@@ -232,6 +237,7 @@ function _M.new()
   ctx.site_id = sites.get_site_id(ctx.host)
   ctx.real_client_ip = get_real_client_ip(ctx.host, ctx.remote_addr)  
   ctx.upstream_scheme = sites.get_origin_protocol(ctx.host, ctx.scheme)
+  ctx.upstream_host   = sites.get_origin_host(ctx.host)
   ctx.ip_location = get_ip_location(ctx.real_client_ip)
   -- ctx.unescape_uri = decode_url(ctx.request_uri)
 

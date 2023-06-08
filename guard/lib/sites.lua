@@ -83,6 +83,8 @@ function _M.del(_, items)
 end
 
 function _M.update(_, items)
+    balancer:update_origins(items)
+
     for _, item in ipairs(items) do
         local id, host  = item.id, item.host   --TODO: remove host
 
@@ -144,6 +146,12 @@ function _M.get_origin_protocol(host, request_scheme)
         return request_scheme
     end
     return "http"
+end
+
+
+-- TODO
+function _M.get_origin_host(host)
+    return ""
 end
 
 -- api for ctx

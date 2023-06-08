@@ -104,6 +104,17 @@ end
 --     return servers
 -- end
 
+local function balancer_reinit(host)
+    local candidate = balancers[host]
+    if not candidate then return end
+
+    local servers = upstream_servers[host]
+    if not servers then return end
+
+    candidate:reinit(servers)
+end
+
+
 
 local function sync_lookup_origins()
     for host, _origins in pairs(site_origins) do
@@ -134,6 +145,9 @@ local function sync_lookup_origins()
         end
 
         upstream_servers[host] = servers
+
+        -- reinit balancer make it effective
+        balancer_reinit(host)
     end
 end
 

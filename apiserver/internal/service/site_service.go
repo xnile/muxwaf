@@ -30,6 +30,8 @@ type ISiteService interface {
 	AddSiteOrigins(id int64, origins []*model.SiteOriginModel) error
 	DelOrigin(id int64) error
 	GetSiteDomain(id int64) (string, error)
+	// TODO
+	//UpdateStatus(id int64) error
 }
 
 type siteService struct {
@@ -421,20 +423,30 @@ func (svc *siteService) Del(id int64) error {
 		}
 	}
 
-	// 删除站点
-	if err = svc.repo.DB.Where("id = ?", id).Delete(&model.SiteModel{}).Error; err != nil {
-		logx.Error("[site] delete site err: ", err)
-		return ecode.InternalServerError
-	}
-	//删除站点配置
-	if err = svc.repo.DB.Where("site_id = ?", id).Delete(&model.SiteConfigModel{}).Error; err != nil {
-		logx.Error("[site] delete site config err: ", err)
-		return ecode.InternalServerError
-	}
-	//删除站点源站
-	if err = svc.repo.DB.Where("site_id = ?", id).Delete(&model.SiteOriginModel{}).Error; err != nil {
-		logx.Error("[site] delete site origins err: ", err)
-		return ecode.InternalServerError
+	// 删除关联资源
+	// TODO: 换成事物
+	{
+		// 删除站点
+		if err = svc.repo.DB.Where("id = ?", id).Delete(&model.SiteModel{}).Error; err != nil {
+			logx.Error("[site] delete site err: ", err)
+			return ecode.InternalServerError
+		}
+		//删除站点配置
+		if err = svc.repo.DB.Where("site_id = ?", id).Delete(&model.SiteConfigModel{}).Error; err != nil {
+			logx.Error("[site] delete site config err: ", err)
+			return ecode.InternalServerError
+		}
+		//删除站点源站
+		if err = svc.repo.DB.Where("site_id = ?", id).Delete(&model.SiteOriginModel{}).Error; err != nil {
+			logx.Error("[site] delete site origins err: ", err)
+			return ecode.InternalServerError
+		}
+
+		//删除站点地域级IP黑名单
+		if err = svc.repo.DB.Where("site_id = ?", id).Delete(&model.SiteRegionBlacklistModel{}).Error; err != nil {
+			logx.Error("[site]Failed to delete site region IP blacklist: ", err)
+			return ecode.InternalServerError
+		}
 	}
 
 	// update guard
