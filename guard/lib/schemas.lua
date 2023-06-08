@@ -4,6 +4,8 @@ local table_insert  = table.insert
 local table_concat  = table.concat
 local pairs         = pairs
 
+local _VERSION = 1.0
+
 -- base
 local client_ip_def, id_def, url_match_mode
 do
@@ -54,7 +56,7 @@ do
 end
 
 
--- delete
+-- delete should be passed as an array
 local delete_array_validator_def
 do
     assert(id_def ~= nil, "id_def can not be empty")
@@ -246,7 +248,7 @@ do
 end
 
 
--- site
+-- site config
 local site_validator, site_schema_def
 do
     local site_config_def = {
@@ -266,6 +268,10 @@ do
             enum = { 1, 2, 3 },
             default = 1
         },
+        origin_host = {
+            type = "string",
+            default = ""
+        },
         is_real_ip_from_header = {
             type = "integer",
             enum = { 0, 1 },
@@ -277,7 +283,7 @@ do
         }
     },
     additionalProperties = false,
-    required = { "is_https", "cert_id", "origin_protocol", "is_real_ip_from_header", "real_ip_header" }
+    required = { "is_https", "cert_id", "origin_protocol", "origin_host", "is_real_ip_from_header", "real_ip_header" }
 }
 
     local site_origin_def = {
@@ -463,5 +469,6 @@ do
 end
 
 return {
-    validator = validator
+    validator = validator,
+    _VERSION = _VERSION
 }

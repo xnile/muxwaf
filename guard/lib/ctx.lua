@@ -203,6 +203,7 @@ local function set_vars(ctx)
   -- set origin host
   if ctx.upstream_host and ctx.upstream_host ~= "" then
     ngx_var.upstream_host = ctx.upstream_host
+    log.debug("set the host for requesting the origin site to '", ctx.upstream_host, "'")
   end
 end
 

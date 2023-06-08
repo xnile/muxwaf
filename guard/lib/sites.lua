@@ -1,4 +1,3 @@
--- TODO: support custom origin host
 local require        = require
 local balancer       = require("balancer")
 local log            = require("log")
@@ -17,12 +16,10 @@ local _M = {
 
 local ORIGIN_PROTOCOL = constants.ORIGIN_PROTOCOL
 
-local sites        = table_new(0, 50)
-local host_matcher = table_new(0, 50)
-local cache = sites
+local sites        = table_new(0, 20)
+local host_matcher = table_new(0, 20)
+local raw
 
-
--- TODO: add cache
 local function get_site(host)
     local site_id = host_matcher[host]
     return site_id and sites[site_id] or nil
@@ -88,7 +85,7 @@ function _M.update(_, items)
     for _, item in ipairs(items) do
         local id, host  = item.id, item.host   --TODO: remove host
 
-        local candidate = cache[id]
+        local candidate = sites[id]
         if not candidate then
             log.warn("failed to update site with ID '", id, "', the site does not exist")
             goto continue
@@ -117,12 +114,12 @@ function _M.full_sync(_, items)
 
     balancer:full_sync_origins(items)
 
-    local del_ids = utils.diff_cfg_ids(cache, items)
+    local del_ids = utils.diff_cfg_ids(sites, items)
     local this = _M
     this:del(del_ids)
 
     for _, item in ipairs(items) do
-        if not cache[item.id] then
+        if not sites[item.id] then
             this:add({ item })
         else
             this:update({ item })
@@ -151,7 +148,8 @@ end
 
 -- TODO
 function _M.get_origin_host(host)
-    return ""
+    local site = get_site(host)
+    return site and (site.config and site.config.origin_host or "") or ""
 end
 
 -- api for ctx
@@ -194,14 +192,17 @@ end
 function _M.reset(_)
     table_clear(sites)
     table_clear(host_matcher)
+    table_clear(raw)
 end
 
 function _M.get_raw(_)
-  local cnt = {}
-  for _, item in pairs(cache) do
+    raw = table_clone(sites)
+
+    local cnt = {}
+    for _, item in pairs(raw) do
     cnt[#cnt +1] = table_clone(item)
-  end
-  return cnt
+    end
+    return cnt
 end
 
 return _M

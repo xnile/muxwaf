@@ -147,6 +147,7 @@ local function sync_lookup_origins()
         upstream_servers[host] = servers
 
         -- reinit balancer make it effective
+        -- log.debug("reinit balancer for host '", host, "'")
         balancer_reinit(host)
     end
 end
