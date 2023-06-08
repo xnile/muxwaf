@@ -55,6 +55,7 @@ type SiteConfigGuard struct {
 	IsRealIPFromHeader int16  `json:"is_real_ip_from_header"`
 	OriginProtocol     int16  `json:"origin_protocol"`
 	RealIPHeader       string `json:"real_ip_header"`
+	OriginHost         string `json:"origin_host"`
 }
 
 type SiteOriginGuard struct {
@@ -88,7 +89,7 @@ type RulesGuard struct {
 
 type GuardConfigs struct {
 	Log          *SampleLogUploadGuard `json:"log"`
-	Sites        []*SiteGuard           `json:"sites"`
-	Certificates []*CertificateGuard    `json:"certificates"`
-	Rules        *RulesGuard            `json:"rules"`
+	Sites        []*SiteGuard          `json:"sites"`
+	Certificates []*CertificateGuard   `json:"certificates"`
+	Rules        *RulesGuard           `json:"rules"`
 }
