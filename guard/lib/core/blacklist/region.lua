@@ -75,23 +75,26 @@ end
 -- @param site_id string
 -- @param ip string
 -- @return boolean
-function _M.match(ctx)
+function _M.deny(ctx)
     local site_id = ctx.site_id
     local candidate = matcher[site_id]
     if not candidate then
         return false
     end
 
-    local location = ctx.ip_location
+    local location = ctx.ip_geo
     local country = location.country_name
     local region  = location.region_name
 
+    -- Match countries first
     if candidate.countries[country] then
         if candidate.mode == MATCH_MODE.WHITELIST then
             return false
         end
         return true
     end
+
+    -- Then match regions
     if candidate.regions[region] then
         if candidate.mode == MATCH_MODE.WHITELIST then
             return false

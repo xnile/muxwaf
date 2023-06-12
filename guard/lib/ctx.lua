@@ -30,27 +30,21 @@ local setmetatable       = setmetatable
 local string_upper       = string.upper
 local JSON_NULL          = cjson.null
 
-
-local IP_LOC_CACHE_SIZE = 1000
-
-local HTTP_GONE              = ngx.HTTP_GONE
-local HTTP_FORBIDDEN         = ngx.HTTP_FORBIDDEN
-local HTTP_NOT_FOUND         = ngx.HTTP_NOT_FOUND
-local DEFAULT_REAL_IP_HEADER = "X-Forwarded-For"
-
 local _M  = {
   _VERSION = 0.1,
 }
 
 local _mt = { __index = _M }
 
--- local ip_loc_cache, err = lrucache.new(IP_LOC_CACHE_SIZE)
--- if not ip_loc_cache then
---     error("failed to create the cache: " .. (err or "unknown"), 2)
--- end
+local HTTP_GONE              = ngx.HTTP_GONE
+local HTTP_FORBIDDEN         = ngx.HTTP_FORBIDDEN
+local HTTP_NOT_FOUND         = ngx.HTTP_NOT_FOUND
+local DEFAULT_REAL_IP_HEADER = "X-Forwarded-For"
+
+
 
 local ip_geo_searcher
-local function get_ip_location(ip)
+local function get_ip_geo(ip)
     if not ip_geo_searcher then
         ip_geo_searcher = muxwaf.get_ip_geo_searcher()
     end
@@ -105,7 +99,7 @@ local function get_real_client_ip(host, remote_addr)
 
   local real_ip_header = sites.get_real_ip_header(host)
 
-  if real_ip_header == '' then
+  if not real_ip_header or real_ip_header == '' then
     real_ip_header = DEFAULT_REAL_IP_HEADER
   end
 
@@ -113,7 +107,7 @@ local function get_real_client_ip(host, remote_addr)
   local req_headers = ngx.req.get_headers()
   local raw_header_ip = req_headers[real_ip_header]
   if not raw_header_ip then
-    log.warn("failed to get client ip from http header, \"", string_upper(real_ip_header), "\" header does not found, fallback to use remote_addr")
+    log.warn("failed to get client ip from http header, '", string_upper(real_ip_header), "' header does not found, fallback to use remote_addr")
     return remote_addr
   end
 
@@ -133,7 +127,7 @@ local function get_real_client_ip(host, remote_addr)
   end
 
   if not net.is_valid_ip(real_client_ip) then
-    log.warn("failed to get client ip from http header: ip \"", real_client_ip, "\" is invalid, fallback to use remote_addr")
+    log.warn("failed to get client ip from http header, '", real_client_ip, "' is invalid ip, fallback to use remote_addr")
     return remote_addr
   end
 
@@ -198,7 +192,10 @@ local function set_vars(ctx)
   ngx_var.x_real_ip = ctx.real_client_ip
 
   -- should before balance phase, otherwise it will not take effect
-  ngx_var.upstream_scheme = ctx.upstream_scheme
+  if ctx.upstream_scheme and ctx.upstream_scheme ~= "" then
+    ngx_var.upstream_scheme = ctx.upstream_scheme
+    log.debug("set the host for requesting the origin site use '", ctx.upstream_scheme, "'")
+  end
 
   -- set origin host
   if ctx.upstream_host and ctx.upstream_host ~= "" then
@@ -239,7 +236,7 @@ function _M.new()
   ctx.real_client_ip = get_real_client_ip(ctx.host, ctx.remote_addr)  
   ctx.upstream_scheme = sites.get_origin_protocol(ctx.host, ctx.scheme)
   ctx.upstream_host   = sites.get_origin_host(ctx.host)
-  ctx.ip_location = get_ip_location(ctx.real_client_ip)
+  ctx.ip_geo = get_ip_geo(ctx.real_client_ip)
   -- ctx.unescape_uri = decode_url(ctx.request_uri)
 
    

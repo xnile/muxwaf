@@ -15,6 +15,7 @@ local _M = {
 }
 
 local ORIGIN_PROTOCOL = constants.ORIGIN_PROTOCOL
+local DEFAULT_REAL_IP_HEADER = "X-Forwarded-For"
 
 local sites        = table_new(0, 20)
 local host_matcher = table_new(0, 20)
@@ -83,7 +84,7 @@ function _M.update(_, items)
     balancer:update_origins(items)
 
     for _, item in ipairs(items) do
-        local id, host  = item.id, item.host   --TODO: remove host
+        local id, host  = item.id, item.host
 
         local candidate = sites[id]
         if not candidate then
@@ -145,8 +146,6 @@ function _M.get_origin_protocol(host, request_scheme)
     return "http"
 end
 
-
--- TODO
 function _M.get_origin_host(host)
     local site = get_site(host)
     return site and (site.config and site.config.origin_host or "") or ""
@@ -165,13 +164,13 @@ end
 -- api for ssl
 function _M.is_enable_https(host)
     local site = get_site(host)
-    return site and site.config.is_https == 1 or false
+    return site and (site.config and site.config.is_https == 1 or false) or false
 end
 
 -- api for ssl
 function _M.get_site_cert_id(host)
     local site = get_site(host)
-    return site and site.config.cert_id or ""
+    return site and (site.config and site.config.cert_id or false) or ""
 end
 
 -- function _M.get_site_origins(host)
@@ -181,12 +180,12 @@ end
 
 function _M.is_real_ip_from_header(host)
     local site = get_site(host)
-    return site and site.config.is_real_ip_from_header == 1 or false
+    return site and (site.config and site.config.is_real_ip_from_header == 1  or false) or false
 end
 
 function _M.get_real_ip_header(host)
     local site = get_site(host)
-    return site and site.config.real_ip_header or "X-Forwarded-For" --TODO: move to constants
+    return site and (site.config and site.config.real_ip_header or false) or DEFAULT_REAL_IP_HEADER
 end
 
 function _M.reset(_)

@@ -12,15 +12,14 @@ local tostring    = tostring
 local NGX_OK                      = ngx.OK
 local HTTP_GONE                   = ngx.HTTP_GONE
 local HTTP_INTERNAL_SERVER_ERROR  = ngx.HTTP_INTERNAL_SERVER_ERROR
-
-local RULE_TYPE               = constants.RULE_TYPE
-local DEFAULT_API_LISTEN_PORT = constants.DEFAULT_API_LISTEN_PORT
+local RULE_TYPE                   = constants.RULE_TYPE
+local DEFAULT_API_LISTEN_PORT     = constants.DEFAULT_API_LISTEN_PORT
 
 local _M = {
   _VERSION = 0.1
 }
 
-local function skip_check_apis(ctx)
+local function bypass_apis(ctx)
   if ctx.server_port == tostring(DEFAULT_API_LISTEN_PORT) then
     -- log.debug("allow apis to pass through")
     return ngx_exit(NGX_OK)
@@ -30,7 +29,7 @@ end
 
 local function check_site_is_exist(ctx)
   if ctx.site_id == "" then
-    log.warn("site \"", ctx.host, "\" is not exist")
+    log.warn("The site '", ctx.host, "' is not exist")
     return ctx.say_410()
   end
 end
@@ -52,8 +51,7 @@ end
 local function check_blacklist_region(ctx)
   local client_ip = ctx.real_client_ip
   local mather = rules.blacklist_region
-  -- if mather.match(ctx.site_id, client_ip) then
-  if mather.match(ctx) then
+  if mather.deny(ctx) then
     sample_log.block(ctx, RULE_TYPE.BLACKLIST_REGION, nil)
     return ctx:say_block()
   end
@@ -124,36 +122,7 @@ end
 
 
 function _M.access_phase(ctx)
-
-  -- do
-  --   local setup_client = require("dns")
-  --   local dns_client = setup_client()
-
-  --   local round_robin = require("resty.dns.balancer.round_robin")
-  --   -- log.error(type(round_robin))
-  --   local opts = {
-  --     dns = dns_client,
-  --     hosts={
-  --       {
-  --         name = "www.baidu.com",
-  --         port = 8080,
-  --         weight = 10,
-  --       },
-  --       {
-  --         name = "www.muxwaf.com",
-  --         port = 9090,
-  --         weight = 100,
-  --       }
-  --     }
-  --   }
-  --   local b = round_robin.new(opts)
-  --   local addr, port, host = b:getPeer()
-  --   log.error(addr, port, host)
-
-  -- end
-
-
-  skip_check_apis(ctx)
+  bypass_apis(ctx)
   check_site_is_exist(ctx)
   check_whitelist_ip(ctx)
   check_whitelist_url(ctx)
