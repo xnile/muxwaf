@@ -125,11 +125,11 @@ function _M.log_phase(ctx)
     if not ctx or not ctx.host then return end
     -- prom_metric_requests_total:inc(1)
 
-    -- Skip non-existent sites
-    if ctx.site_id == "" then return end
+    -- -- Skip non-existent sites
+    -- if ctx.site_id == "" then return end
     
-    -- Skip self
-    if ctx.server_port == tostring(DEFAULT_API_LISTEN_PORT) and ctx.request_path == "/api/sys/metrics" then return end
+    -- -- Skip self
+    -- if ctx.server_port == tostring(DEFAULT_API_LISTEN_PORT) and ctx.request_path == "/api/sys/metrics" then return end
 
     -- local host            = ngx.var.host or "-"
     local host            = ctx.host

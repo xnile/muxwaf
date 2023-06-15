@@ -3,7 +3,7 @@ local balancer       = require("balancer")
 local log            = require("log")
 local utils          = require("utils")
 local cjson          = require("cjson.safe")
-local constants      = require("constants")
+-- local constants      = require("constants")
 local ngx            = ngx
 local ipairs         = ipairs
 local table_new      = table.new
@@ -14,7 +14,7 @@ local _M = {
     _VERSION = 0.1,
 }
 
-local ORIGIN_PROTOCOL = constants.ORIGIN_PROTOCOL
+-- local ORIGIN_PROTOCOL = constants.ORIGIN_PROTOCOL
 local DEFAULT_REAL_IP_HEADER = "X-Forwarded-For"
 
 local sites        = table_new(0, 20)
@@ -128,23 +128,23 @@ function _M.full_sync(_, items)
     end
 end
 
-function _M.get_origin_protocol(host, request_scheme)
-    local site = get_site(host)
-    if not site then
-        return "http"
-    end
+-- function _M.get_origin_protocol(host, request_scheme)
+--     local site = get_site(host)
+--     if not site then
+--         return "http"
+--     end
 
-    local origin_protocol = site.config.origin_protocol
+--     local origin_protocol = site.config.origin_protocol
 
-    if origin_protocol == ORIGIN_PROTOCOL.HTTP then
-        return "http"
-    elseif origin_protocol == ORIGIN_PROTOCOL.HTTPS then
-        return "https"
-    elseif origin_protocol == ORIGIN_PROTOCOL.FOLLOW then
-        return request_scheme
-    end
-    return "http"
-end
+--     if origin_protocol == ORIGIN_PROTOCOL.HTTP then
+--         return "http"
+--     elseif origin_protocol == ORIGIN_PROTOCOL.HTTPS then
+--         return "https"
+--     elseif origin_protocol == ORIGIN_PROTOCOL.FOLLOW then
+--         return request_scheme
+--     end
+--     return "http"
+-- end
 
 function _M.get_origin_host(host)
     local site = get_site(host)
@@ -171,6 +171,12 @@ end
 function _M.get_site_cert_id(host)
     local site = get_site(host)
     return site and (site.config and site.config.cert_id or false) or ""
+end
+
+-- TODO:
+function  _M.is_force_https(host)
+    local site = get_site(host)
+    return site and (site.config and site.config.is_force_https == 1 or false) or false
 end
 
 -- function _M.get_site_origins(host)

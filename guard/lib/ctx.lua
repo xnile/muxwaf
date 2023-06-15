@@ -1,34 +1,24 @@
 local require            = require
--- local lrucache           = require "resty.lrucache.pureffi"
+local balancer           = require("balancer")
 local page_403           = require("page.403")
 local page_410           = require("page.410")
 local sites              = require("sites")
 local ssl                = require("ssl")
-local net                = require("utils.net")
--- local vars               = require("vars")
 local time               = require("time")
 local log                = require("log")
--- local metrics            = require("metrics")
-local ngx_re_split       = require("ngx.re").split
 local tablepool          = require("resty.tablepool")
 local cjson              = require("cjson.safe")
 local stringx            = require("utils.stringx")
+local net                = require("utils.net")
 local ngx                = ngx
 local ngx_var            = ngx.var
 local ngx_say            = ngx.say
-local ngx_worker_id      = ngx.worker.id
--- local str_sub            = ngx.re.sub
+-- local ngx_worker_id      = ngx.worker.id
 local ngx_unescape_uri   = ngx.unescape_uri
-local req_read_body      = ngx.req.read_body
-local req_get_body_data  = ngx.req.get_body_data
-local req_get_body_file  = ngx.req.get_body_file
-local error              = error
-local io_open            = io.open
-local io_close           = io.close
 local table_new          = table.new
 local setmetatable       = setmetatable
 local string_upper       = string.upper
-local JSON_NULL          = cjson.null
+local str_byte           = string.byte
 
 local _M  = {
   _VERSION = 0.1,
@@ -38,7 +28,6 @@ local _mt = { __index = _M }
 
 local HTTP_GONE              = ngx.HTTP_GONE
 local HTTP_FORBIDDEN         = ngx.HTTP_FORBIDDEN
-local HTTP_NOT_FOUND         = ngx.HTTP_NOT_FOUND
 local DEFAULT_REAL_IP_HEADER = "X-Forwarded-For"
 
 
@@ -55,42 +44,6 @@ local function get_ip_geo(ip)
     return loc
 end
 
-local function get_body_data()
-    req_read_body()
-    local body = req_get_body_data()
-
-    if not body then
-      -- request body might've been written to tmp file if body > client_body_buffer_size
-      local file_name = req_get_body_file()
-      if not file_name then
-        return nil
-      end
-
-      local fd = io_open(file_name, "rb")
-      if not fd then
-        return nil
-      end
-
-      body = fd:read("*all")
-      io_close(fd)
-    end
-
-    return body
-end
-
-
-local function get_and_decode_body_data()
-  local raw = get_body_data()
-  if not raw then
-    return nil, "the data passed cannot be empty"
-  end
-
-  local data, err = cjson.decode(raw)
-  if not data then
-    return nil, err
-  end
-  return data, nil
-end
 
 local function get_real_client_ip(host, remote_addr)
   if not sites.is_real_ip_from_header(host) then
@@ -119,12 +72,22 @@ local function get_real_client_ip(host, remote_addr)
   -- local real_client_ip = xffs[1]
 
   local real_client_ip = ''
-  local idx = stringx.rfind_char(raw_header_ip, ',')
+  local idx = stringx.lfind_char(raw_header_ip, ',')
   if not idx then
     real_client_ip = raw_header_ip
   else
-    real_client_ip = raw_header_ip:sub(1, idx-1)
+    for i = idx -1, 1, -1 do
+      if str_byte(raw_header_ip, i) == str_byte(" ") then
+        idx = idx - 1
+      else
+        break
+      end
+    end
+
+    real_client_ip = raw_header_ip:sub(1, idx - 1)
   end
+
+  log.error("real_client_ip: ", real_client_ip)
 
   if not net.is_valid_ip(real_client_ip) then
     log.warn("failed to get client ip from http header, '", real_client_ip, "' is invalid ip, fallback to use remote_addr")
@@ -133,6 +96,7 @@ local function get_real_client_ip(host, remote_addr)
 
   return real_client_ip
 end
+
 
 local function say_block(ctx)
   -- metrics.incr_block_count()
@@ -146,30 +110,6 @@ local function say_block(ctx)
   ngx.exit(ngx.status)
 end
 
-local function say_ok()
-    ngx.header["Content-Type"] = 'application/json'
-    return ngx_say(cjson.encode({
-      code = 0,
-      msg  = "Success",
-      data = JSON_NULL,
-    })) 
-end
-
-
-local function say_err(code, msg)
-  ngx.header["Content-Type"] = 'application/json'
-  return ngx_say(cjson.encode({
-    code = code,
-    msg  = msg,
-    data = JSON_NULL
-  }))
-end
-
-local function say_404()
-  ngx.header["Content-Type"] = 'application/json'
-  ngx.status= HTTP_NOT_FOUND
-  return ngx_say("404 page not found")
-end
 
 local function say_410()
     ngx.header["Content-Type"] = "text/html"
@@ -178,10 +118,6 @@ local function say_410()
     ngx.exit(ngx.status)
 end
 
-local function say_json(data)
-  ngx.header["Content-Type"] = 'application/json'
-  return ngx_say(cjson.encode(data))
-end
 
 local function decode_url(url)
   return ngx_unescape_uri(url)
@@ -205,15 +141,15 @@ local function set_vars(ctx)
 end
 
 
-function _M.set_param(self, param)
-  self.param = param
-  return
-end
+-- function _M.set_param(self, param)
+--   self.param = param
+--   return
+-- end
 
 function _M.new()
   local now = time.now()
-  local ctx = tablepool.fetch("pool_ctx", 0, 27)
-  -- local ctx = table_new(0, 26)
+  local ctx = tablepool.fetch("pool_ctx", 0, 20)
+  -- local ctx = table_new(0, 20)
   -- ctx.var = vars.new()
 
   ctx.host               = ngx_var.host
@@ -223,33 +159,22 @@ function _M.new()
   ctx.request_method     = ngx_var.request_method
   ctx.request_uri        = ngx_var.request_uri
   ctx.request_path       = ngx_var.uri
-  -- ctx.request_time       = ngx_var.msec
-  -- ctx.request_time_local = ngx_var.time_local
   ctx.server_port        = ngx_var.server_port
 
-  -- Parameters in path
-  ctx.param = {}
   ctx.sample_log = {}
   ctx.waf_start_time = now
-  ctx.worker_id = ngx_worker_id()
   ctx.site_id = sites.get_site_id(ctx.host)
   ctx.real_client_ip = get_real_client_ip(ctx.host, ctx.remote_addr)  
-  ctx.upstream_scheme = sites.get_origin_protocol(ctx.host, ctx.scheme)
   ctx.upstream_host   = sites.get_origin_host(ctx.host)
   ctx.ip_geo = get_ip_geo(ctx.real_client_ip)
   -- ctx.unescape_uri = decode_url(ctx.request_uri)
 
-   
-  ctx.say_ok = say_ok
-  ctx.say_err = say_err
-  ctx.say_404 = say_404
+  ctx.upstream_scheme, ctx.upstream_server = balancer.get_origin_peer_and_protocol(ctx.host, ctx.scheme)
+
   ctx.say_410 = say_410
-  ctx.say_json = say_json
   ctx.say_block = say_block
   ctx.encode = cjson.encode
   ctx.decode = cjson.decode
-  ctx.get_body_data = get_body_data
-  ctx.get_and_decode_body_data = get_and_decode_body_data  
 
   set_vars(ctx)
 

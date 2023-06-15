@@ -79,10 +79,10 @@ return {
     HTTPS = 443,
   },
 
-  ORIGIN_PROTOCOL = {
-    HTTP   = 1,
-    HTTPS  = 2,
-    FOLLOW = 3,
-  }
+  -- ORIGIN_PROTOCOL = {
+  --   HTTP   = 1,
+  --   HTTPS  = 2,
+  --   FOLLOW = 3,
+  -- }
 
 }

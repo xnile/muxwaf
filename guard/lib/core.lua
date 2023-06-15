@@ -13,18 +13,18 @@ local NGX_OK                      = ngx.OK
 local HTTP_GONE                   = ngx.HTTP_GONE
 local HTTP_INTERNAL_SERVER_ERROR  = ngx.HTTP_INTERNAL_SERVER_ERROR
 local RULE_TYPE                   = constants.RULE_TYPE
-local DEFAULT_API_LISTEN_PORT     = constants.DEFAULT_API_LISTEN_PORT
+-- local DEFAULT_API_LISTEN_PORT     = constants.DEFAULT_API_LISTEN_PORT
 
 local _M = {
   _VERSION = 0.1
 }
 
-local function bypass_apis(ctx)
-  if ctx.server_port == tostring(DEFAULT_API_LISTEN_PORT) then
-    -- log.debug("allow apis to pass through")
-    return ngx_exit(NGX_OK)
-  end
-end
+-- local function bypass_apis(ctx)
+--   if ctx.server_port == tostring(DEFAULT_API_LISTEN_PORT) then
+--     -- log.debug("allow apis to pass through")
+--     return ngx_exit(NGX_OK)
+--   end
+-- end
 
 
 local function check_site_is_exist(ctx)
@@ -122,7 +122,7 @@ end
 
 
 function _M.access_phase(ctx)
-  bypass_apis(ctx)
+  -- bypass_apis(ctx)
   check_site_is_exist(ctx)
   check_whitelist_ip(ctx)
   check_whitelist_url(ctx)
