@@ -207,9 +207,14 @@ function _M.get_origin_peer_and_protocol(host, scheme)
     end
 
     local peer, protocol = raw_peer:sub(1, idx - 1), raw_peer:sub(idx + 1)
-    if protocol == "follow" then
-        protocol = scheme
+    if protocol == "follow" then   -- TODO:
+        log.error("Protocol following is currently not supported.")
+        protocol = "http"
+    elseif protocol ~= "http"  or protocol ~= "https"
+        log.error("Failed to obtain the origin protocol.")
+        protocol = "http"
     end
+    
     return peer, protocol
 end
 

@@ -2,7 +2,7 @@
   <page-header-wrapper>
     <!-- 添加按钮 -->
     <template v-slot:extra>
-      <a-button type="primary" @click="add">新增网站</a-button>
+      <a-button type="primary" @click="add">添加防护网站</a-button>
     </template>
     <a-card>
       <div class="table-page-search-wrapper">
@@ -121,7 +121,7 @@
       <!-- 分页end -->
     </a-card>
     <a-drawer
-      :title="(operateType == 'add' ? '添加' : '修改') + '网站'"
+      :title="(operateType == 'add' ? '添加' : '修改') + '防护网站'"
       :width="800"
       placement="right"
       :closable="false"
@@ -138,10 +138,10 @@
         :wrapper-col="wrapperCol"
         layout="vertical"
       >
-        <a-form-model-item label="域名" prop="domain" :wrapper-col="{ span: 15 }">
+        <a-form-model-item label="防护域名" prop="domain" :wrapper-col="{ span: 15 }">
           <a-input placeholder="请输入域名" v-model="form.domain" :disabled="operateType == 'edit'" />
         </a-form-model-item>
-        <a-form-model-item label="源站" prop="origins">
+        <a-form-model-item label="源站地址" prop="origins">
           <a-table
             :columns="srcColumns"
             :dataSource="form.origins"
@@ -174,6 +174,12 @@
             </template>
           </a-table>
           <a-button style="width: 100%; margin: 20px 0" type="dashed" @click="addSrc">+ 新增</a-button>
+        </a-form-model-item>
+        <a-form-model-item label="源站协议">
+          <a-radio-group>
+            <a-radio value="http">HTTP</a-radio>
+            <a-radio value="https">HTTPS</a-radio>
+          </a-radio-group>
         </a-form-model-item>
         <!-- form END -->
       </a-form-model>

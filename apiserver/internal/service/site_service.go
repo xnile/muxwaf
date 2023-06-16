@@ -14,16 +14,16 @@ import (
 )
 
 type ISiteService interface {
-	Add(site *model.SiteReq) error
+	//Add(site *model.SiteReq) error
 	Del(id int64) error
 	List(pageNum, pageSize int64, status int16, domain, isFuzzy string) (*model.ListResp, error)
 	GetAll() ([]map[string]any, error)
 	GetHttps(id int64) (*model.SiteHttpsRsp, error)
-	GetOrigins(id int64) []*model.SiteOriginRsp
+	//GetOrigins(id int64) []*model.SiteOriginRsp
 	GetConfigs(siteID int64) (*model.SiteConfigRsp, error)
 	GetCertificates(siteID int64, domain string) ([]*model.CertCandidateResp, error)
 	GetRegionBlacklist(id int64) (*model.SiteRegionBlacklistRsp, error)
-	UpdateConfig(siteID int64, configEntity *model.SiteConfigReq) error
+	//UpdateConfig(siteID int64, configEntity *model.SiteConfigReq) error
 	UpdateHttps(siteID int64, config *model.SiteHttpsReq) error
 	UpdateOrigin(id int64, originModel *model.SiteOriginModel) error
 	UpdateRegionBlacklist(id int64, region *model.SiteRegionBlacklistModel) error
@@ -32,6 +32,8 @@ type ISiteService interface {
 	GetSiteDomain(id int64) (string, error)
 	// TODO
 	//UpdateStatus(id int64) error
+
+	UpdateOriginCfg(id int64, payload model.OriginCfgReq) error
 }
 
 type siteService struct {
@@ -46,118 +48,118 @@ func NewSiteService(repo *repository.Repository, eventBus *event.EventBus) ISite
 	}
 }
 
-func (svc *siteService) Add(site *model.SiteReq) (err error) {
-	siteEntity := model.SiteModel{
-		Domain: site.Domain,
-		Status: 1,
-	}
-	if err := svc.repo.DB.Create(&siteEntity).Error; err != nil {
-		logx.Error("[site] add site err: ", err)
-		return ecode.InternalServerError
-	}
+//func (svc *siteService) Add(site *model.SiteReq) (err error) {
+//	siteEntity := model.SiteModel{
+//		Domain: site.Domain,
+//		Status: 1,
+//	}
+//	if err := svc.repo.DB.Create(&siteEntity).Error; err != nil {
+//		logx.Error("[site] add site err: ", err)
+//		return ecode.InternalServerError
+//	}
+//
+//	if err := svc.repo.DB.Create(&model.SiteConfigModel{
+//		SiteID:             siteEntity.ID,
+//		CertID:             0,
+//		HttpPort:           80,
+//		HttpsPort:          443,
+//		OriginProtocol:     1,
+//		IsRealIPFromHeader: 0,
+//		RealIPHeader:       "",
+//	}).Error; err != nil {
+//		logx.Error("[site] add site config err: ", err)
+//		return ecode.InternalServerError
+//	}
+//
+//	for _, origin := range site.Origins {
+//		if err := svc.repo.DB.Create(&model.SiteOriginModel{
+//			SiteID:   siteEntity.ID,
+//			HttpPort: origin.HttpPort,
+//			Weight:   origin.Weight,
+//			Type:     1,
+//			Host:     origin.Host,
+//		}).Error; err != nil {
+//			logx.Error("[site] add site origin err: ", err)
+//			return ecode.InternalServerError
+//		}
+//	}
+//
+//	if err := svc.repo.DB.Create(&model.SiteRegionBlacklistModel{
+//		SiteID: siteEntity.ID,
+//		Status: 1,
+//	}).Error; err != nil {
+//		logx.Error("[site]Failed to add site region blacklist: ", err)
+//		return ecode.InternalServerError
+//	}
+//
+//	// update guard
+//	{
+//		configs := make(model.GuardArrayRsp, 0)
+//		config := map[string]any{
+//			"id":   siteEntity.UUID,
+//			"host": siteEntity.Domain,
+//			"config": map[string]any{
+//				"is_https":               0,
+//				"is_real_ip_from_header": 0,
+//				"real_ip_header":         "",
+//				"origin_protocol":        1,
+//				"cert_id":                "",
+//			},
+//		}
+//		_origins := make([]map[string]any, 0)
+//		for _, origin := range site.Origins {
+//			_origin := map[string]interface{}{
+//				"host":       origin.Host,
+//				"http_port":  origin.HttpPort,
+//				"https_port": 443,
+//				"weight":     origin.Weight,
+//			}
+//			_origins = append(_origins, _origin)
+//		}
+//		config["origins"] = _origins
+//		configs = append(configs, &config)
+//		svc.eventBus.PushEvent(event.Site, event.OpTypeAdd, configs)
+//	}
+//
+//	return nil
+//}
 
-	if err := svc.repo.DB.Create(&model.SiteConfigModel{
-		SiteID:             siteEntity.ID,
-		CertID:             0,
-		HttpPort:           80,
-		HttpsPort:          443,
-		OriginProtocol:     1,
-		IsRealIPFromHeader: 0,
-		RealIPHeader:       "",
-	}).Error; err != nil {
-		logx.Error("[site] add site config err: ", err)
-		return ecode.InternalServerError
-	}
-
-	for _, origin := range site.Origins {
-		if err := svc.repo.DB.Create(&model.SiteOriginModel{
-			SiteID:   siteEntity.ID,
-			HttpPort: origin.HttpPort,
-			Weight:   origin.Weight,
-			Type:     1,
-			Host:     origin.Host,
-		}).Error; err != nil {
-			logx.Error("[site] add site origin err: ", err)
-			return ecode.InternalServerError
-		}
-	}
-
-	if err := svc.repo.DB.Create(&model.SiteRegionBlacklistModel{
-		SiteID: siteEntity.ID,
-		Status: 1,
-	}).Error; err != nil {
-		logx.Error("[site]Failed to add site region blacklist: ", err)
-		return ecode.InternalServerError
-	}
-
-	// update guard
-	{
-		configs := make(model.GuardArrayRsp, 0)
-		config := map[string]any{
-			"id":   siteEntity.UUID,
-			"host": siteEntity.Domain,
-			"config": map[string]any{
-				"is_https":               0,
-				"is_real_ip_from_header": 0,
-				"real_ip_header":         "",
-				"origin_protocol":        1,
-				"cert_id":                "",
-			},
-		}
-		_origins := make([]map[string]any, 0)
-		for _, origin := range site.Origins {
-			_origin := map[string]interface{}{
-				"host":       origin.Host,
-				"http_port":  origin.HttpPort,
-				"https_port": 443,
-				"weight":     origin.Weight,
-			}
-			_origins = append(_origins, _origin)
-		}
-		config["origins"] = _origins
-		configs = append(configs, &config)
-		svc.eventBus.PushEvent(event.Site, event.OpTypeAdd, configs)
-	}
-
-	return nil
-}
-
-func (svc *siteService) UpdateConfig(siteID int64, req *model.SiteConfigReq) error {
-	fields := make([]string, 0)
-	configEntity := new(model.SiteConfigModel)
-	if req.IsRealIPFromHeader != nil {
-		fields = append(fields, "IsRealIPFromHeader")
-		configEntity.IsRealIPFromHeader = *req.IsRealIPFromHeader
-	}
-	if req.RealIPHeader != nil {
-		fields = append(fields, "RealIPHeader")
-		configEntity.RealIPHeader = *req.RealIPHeader
-	}
-	if req.OriginProtocol != nil {
-		fields = append(fields, "OriginProtocol")
-		configEntity.OriginProtocol = *req.OriginProtocol
-	}
-
-	if err := svc.repo.DB.Model(&model.SiteConfigModel{}).Where("site_id = ?", siteID).
-		Select(fields).
-		Updates(configEntity).Error; err != nil {
-		logx.Error("[site] update site config err: ", err)
-		return ecode.InternalServerError
-	}
-
-	// guard update
-	{
-		configs := make(model.GuardArrayRsp, 0)
-		config, err := svc.assembleSiteGuardRsp(siteID)
-		if err != nil {
-			return err
-		}
-		configs = append(configs, &config)
-		svc.eventBus.PushEvent(event.Site, event.OpTypeUpdate, configs)
-	}
-
-	return nil
-}
+//func (svc *siteService) UpdateConfig(siteID int64, req *model.SiteConfigReq) error {
+//	fields := make([]string, 0)
+//	configEntity := new(model.SiteConfigModel)
+//	if req.IsRealIPFromHeader != nil {
+//		fields = append(fields, "IsRealIPFromHeader")
+//		configEntity.IsRealIPFromHeader = *req.IsRealIPFromHeader
+//	}
+//	if req.RealIPHeader != nil {
+//		fields = append(fields, "RealIPHeader")
+//		configEntity.RealIPHeader = *req.RealIPHeader
+//	}
+//	if req.OriginProtocol != nil {
+//		fields = append(fields, "OriginProtocol")
+//		configEntity.OriginProtocol = *req.OriginProtocol
+//	}
+//
+//	if err := svc.repo.DB.Model(&model.SiteConfigModel{}).Where("site_id = ?", siteID).
+//		Select(fields).
+//		Updates(configEntity).Error; err != nil {
+//		logx.Error("[site] update site config err: ", err)
+//		return ecode.InternalServerError
+//	}
+//
+//	// guard update
+//	{
+//		configs := make(model.GuardArrayRsp, 0)
+//		config, err := svc.assembleSiteGuardRsp(siteID)
+//		if err != nil {
+//			return err
+//		}
+//		configs = append(configs, &config)
+//		svc.eventBus.PushEvent(event.Site, event.OpTypeUpdate, configs)
+//	}
+//
+//	return nil
+//}
 
 func (svc *siteService) UpdateHttps(siteID int64, config *model.SiteHttpsReq) error {
 	configEntity := new(model.SiteConfigModel)
@@ -255,26 +257,26 @@ func (svc *siteService) GetAll() ([]map[string]any, error) {
 	return rsp, nil
 }
 
-func (svc *siteService) GetOrigins(id int64) []*model.SiteOriginRsp {
-	r := make([]*model.SiteOriginRsp, 0)
-	origins, err := svc.repo.SiteOriginRepo.GetBySiteID(id)
-	copier.Copy(&r, &origins)
-	if err != nil {
-		logx.Error("get site origins err: ", err)
-		return nil
-	}
-	return r
-
-}
+//func (svc *siteService) GetOrigins(id int64) []*model.SiteOriginRsp {
+//	r := make([]*model.SiteOriginRsp, 0)
+//	origins, err := svc.repo.SiteOriginRepo.GetBySiteID(id)
+//	copier.Copy(&r, &origins)
+//	if err != nil {
+//		logx.Error("get site origins err: ", err)
+//		return nil
+//	}
+//	return r
+//
+//}
 
 func (svc *siteService) AddSiteOrigins(id int64, origins []*model.SiteOriginModel) error {
 	for _, origin := range origins {
 		if err := svc.repo.SiteOriginRepo.Insert(&model.SiteOriginModel{
 			SiteID:   id,
-			HttpPort: origin.HttpPort,
+			Port:     origin.Port,
 			Weight:   origin.Weight,
-			Type:     1,
-			Host:     origin.Host,
+			Addr:     origin.Addr,
+			Protocol: model.HTTPOriginProtocol,
 		}); err != nil {
 			logx.Error("add site origins err: ", err)
 			return ecode.InternalServerError
@@ -624,4 +626,109 @@ func (svc *siteService) GetSiteDomain(id int64) (string, error) {
 		return "", ecode.InternalServerError
 	}
 	return domain, nil
+}
+
+func (svc *siteService) isSiteExist(siteID int64) error {
+	if err := svc.repo.DB.Where("id = ?", siteID).Select("id").First(&model.SiteModel{}).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ecode.ErrSiteNotFound
+		}
+		logx.Error("[site]Failed to get site: ", err)
+		return ecode.InternalServerError
+	}
+	return nil
+}
+
+func (svc *siteService) UpdateOriginCfg(siteID int64, payload model.OriginCfgReq) error {
+	if err := svc.isSiteExist(siteID); err != nil {
+		return err
+	}
+	oldOrigins := make([]*model.SiteOriginModel, 0)
+	if err := svc.repo.DB.Where("site_id = ?", siteID).Select("id").Find(&oldOrigins).Error; err != nil {
+		logx.Error("[site]Failed to get site origins: ", err)
+		return ecode.InternalServerError
+	}
+
+	siteCfg := model.SiteConfigModel{
+		OriginHostHeader: payload.OriginHostHeader,
+		OriginProtocol:   payload.OriginProtocol,
+	}
+
+	tx := svc.repo.DB.Begin()
+
+	if err := tx.Model(&model.SiteConfigModel{}).
+		Where("site_id = ?", siteID).
+		Select("OriginHostHeader", "OriginProtocol").
+		Updates(siteCfg).
+		Error; err != nil {
+		tx.Rollback()
+		logx.Error("[site]Failed to update site config: ", err)
+		return ecode.InternalServerError
+	}
+
+	//	删除
+nextDel:
+	for _, oldOrigin := range oldOrigins {
+		for _, newOrigin := range payload.Origins {
+			if oldOrigin.ID == newOrigin.ID {
+				continue nextDel
+			}
+		}
+		if err := tx.Where("id = ?", oldOrigin.ID).Delete(&model.SiteOriginModel{}).Error; err != nil {
+			logx.Error("[site]Failed to delete origin: ", err)
+			return ecode.InternalServerError
+		}
+	}
+
+nextAddOrUpdate:
+	for _, newOrigin := range payload.Origins {
+		kind := model.IPOrigin
+		if !utils.IsIPv4(newOrigin.Addr) {
+			kind = model.DomainOrigin
+		}
+
+		o := model.SiteOriginModel{
+			SiteID:   siteID,
+			Port:     newOrigin.Port,
+			Addr:     newOrigin.Addr,
+			Weight:   newOrigin.Weight,
+			Kind:     kind,
+			Protocol: payload.OriginProtocol,
+		}
+		for _, oldOrigin := range oldOrigins {
+			if newOrigin.ID == oldOrigin.ID {
+				if err := tx.Where("id = ?", oldOrigin.ID).
+					Select("Port", "Addr", "Weight", "Kind", "Protocol").
+					Updates(&o).Error; err != nil {
+					tx.Rollback()
+					logx.Error("[site]Failed to update origin: ", err)
+					return ecode.InternalServerError
+				}
+				continue nextAddOrUpdate
+			}
+		}
+
+		if err := tx.Create(&o).Error; err != nil {
+			tx.Rollback()
+			logx.Error("[site]Failed to insert origin: ", err)
+			return ecode.InternalServerError
+		}
+	}
+	if err := tx.Commit().Error; err != nil {
+		logx.Error("[site]Failed to commit transaction : ", err)
+		return ecode.InternalServerError
+	}
+	return nil
+
+	//// update guard
+	//{
+	//	configs := make(model.GuardArrayRsp, 0)
+	//	config, err := svc.assembleSiteGuardRsp(originEntity.SiteID)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	configs = append(configs, &config)
+	//	svc.eventBus.PushEvent(event.Site, event.OpTypeUpdate, configs)
+	//}
+	//return nil
 }

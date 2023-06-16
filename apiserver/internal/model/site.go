@@ -33,18 +33,3 @@ type SiteGuardRsp struct {
 	Config  *SiteConfigGuard   `json:"config"`
 	Origins []*SiteOriginGuard `json:"origins"`
 }
-
-//type SiteConfigGuard struct {
-//	IsHttps            int16  `json:"is_https"`
-//	IsRealIpFromHeader int16  `json:"is_real_ip_from_header"`
-//	RealIpHeader       string `json:"real_ip_header"`
-//	OriginProtocol     int16  `json:"origin_protocol"`
-//	CertID             string `json:"cert_id"`
-//}
-
-//type SiteOriginGuard struct {
-//	Host      string `json:"host"`
-//	HttpPort  int16  `json:"http_port"`
-//	HttpsPort int16  `json:"https_port"`
-//	Weight    int16  `json:"weight"`
-//}

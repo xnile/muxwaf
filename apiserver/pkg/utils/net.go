@@ -6,7 +6,10 @@ import (
 	"regexp"
 )
 
-var domainRegexp = regexp.MustCompile(`^(?i)[a-z0-9-]+(\.[a-z0-9-]+)+\.?$`)
+const (
+	domainRegexString      = `^(?i)[a-z0-9-]+(\.[a-z0-9-]+)+\.?$`
+	fqdnRegexStringRFC1123 = `^([a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})(\.[a-zA-Z0-9]{1}[a-zA-Z0-9-]{0,62})*?(\.[a-zA-Z]{1}[a-zA-Z0-9]{0,62})\.?$`
+)
 
 type IPNet struct {
 	IP  *netip.Addr
@@ -38,8 +41,25 @@ func ParseIPorCIDR(s string) IPNet {
 	return ipNet
 }
 
+func IsIPv4(s string) bool {
+	ip := net.ParseIP(s)
+
+	return ip != nil && ip.To4() != nil
+}
+
 func IsValidDomain(domain string) bool {
+	domainRegexp := regexp.MustCompile(domainRegexString)
 	return domainRegexp.MatchString(domain)
+}
+
+func IsFQDN(s string) bool {
+
+	if s == "" {
+		return false
+	}
+	fqdnRegexRFC1123 := regexp.MustCompile(fqdnRegexStringRFC1123)
+
+	return fqdnRegexRFC1123.MatchString(s)
 }
 
 func GetOutboundIP() net.IP {
