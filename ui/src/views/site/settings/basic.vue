@@ -13,7 +13,7 @@
         </a-col>
       </div>
     </a-row>
-    <a-row>
+    <!-- <a-row>
       <div class="item">
         <a-col :span="2">
           <span class="list-lable">回源协议 :</span>
@@ -24,7 +24,7 @@
           <span v-else-if="form.origin_protocol == 3">跟随</span>
         </a-col>
       </div>
-    </a-row>
+    </a-row> -->
     <a-row>
       <div class="item">
         <a-col :span="2">
@@ -53,13 +53,13 @@
       <!-- <a-form-model-item label="域名">
         {{ domain }}
       </a-form-model-item> -->
-      <a-form-model-item label="回源协议">
+      <!-- <a-form-model-item label="回源协议">
         <a-radio-group v-model="form.origin_protocol">
           <a-radio :value="1">HTTP</a-radio>
           <a-radio :value="2">HTTPS</a-radio>
           <a-radio :value="3">跟随</a-radio>
         </a-radio-group>
-      </a-form-model-item>
+      </a-form-model-item> -->
       <a-form-model-item label="前置CDN">
         <a-switch v-model="pre_cdn" />
       </a-form-model-item>
@@ -81,7 +81,7 @@
 
 <script>
 import store from '@/store'
-import { GetDomain, GetConfigs, UpdateSiteConfigs } from '@/api/site'
+import { GetDomain, GetConfigs, UpdateSiteBasicConfigs } from '@/api/site'
 export default {
   data() {
     return {
@@ -90,7 +90,7 @@ export default {
       real_ip_header_type: 0,
       pre_cdn: false,
       form: {
-        origin_protocol: 1,
+        // origin_protocol: 1,
         is_real_ip_from_header: 0,
         real_ip_header: ''
       },
@@ -104,17 +104,6 @@ export default {
         // height: '30px',
         lineHeight: '30px'
       }
-      // buttonStyle: {
-      //   // position: 'absolute',
-      //   // right: 0,
-      //   // bottom: 0,
-      //   // width: '100%',
-      //   // borderTop: '1px solid #e9e9e9',
-      //   margin: '30px 0px'
-      //   // background: '#fff',
-      //   // textAlign: 'left',
-      //   // zIndex: 1
-      // }
     }
   },
   methods: {
@@ -140,7 +129,7 @@ export default {
       }
 
       let id = this.$route.params.id
-      UpdateSiteConfigs(id, payload)
+      UpdateSiteBasicConfigs(id, payload)
         .then(res => {
           if (res.code == 0) {
             this.$message.success('更新成功！')
@@ -173,7 +162,6 @@ export default {
     getSiteConfigs() {
       GetConfigs(this.$route.params.id).then(res => {
         if (res.code == 0) {
-          this.form.origin_protocol = res.data.origin_protocol
           this.pre_cdn = Boolean(res.data.is_real_ip_from_header)
           this.form.real_ip_header = res.data.real_ip_header
           this.form.is_real_ip_from_header = res.data.is_real_ip_from_header

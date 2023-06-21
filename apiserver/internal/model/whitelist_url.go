@@ -3,6 +3,8 @@ package model
 type WhitelistURLModel struct {
 	Model
 	SiteID    int64  `json:"site_id" gorm:"index;type:bigint;not null" binding:"required"`
+	SiteUUID  string `json:"-" gorm:"index;type:char(20);default:''"`
+	Host      string `json:"host" gorm:"uniqueIndex;type:varchar(255);not null"`
 	Path      string `json:"path" gorm:"type:text;not null" binding:"required,uri"`
 	MatchMode int16  `json:"match_mode" gorm:"type:smallint;not null;default:1;comment:url match mode,1 as prefix,2 as exact" binding:"required"`
 	Method    int16  `json:"method" gorm:"type:smallint;not null;default:0;comment:not used yet"`

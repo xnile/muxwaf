@@ -5,6 +5,7 @@ import "github.com/lib/pq"
 type SiteRegionBlacklistModel struct {
 	Model
 	SiteID    int64          `json:"site_id" gorm:"not null"`
+	SiteUUID  string         `json:"-" gorm:"index;type:char(20);default:''"`
 	Countries pq.StringArray `json:"countries" gorm:"type:varchar(20)[];not null;default:'{}'"`
 	Regions   pq.StringArray `json:"regions" gorm:"type:varchar(20)[];not null;default:'{}'"`
 	MatchMode int8           `json:"match_mode" gorm:"not null;default:0;comment:0 blacklist mode,1 whitelist mode"`

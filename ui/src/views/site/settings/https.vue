@@ -25,25 +25,38 @@
         </a-col>
       </div>
     </a-row>
+
     <a-row v-if="form.is_https == 1">
       <div class="item">
         <a-col :span="2">
-          <span class="list-lable">HTTPS证书 :</span>
+          <span class="list-lable">证书 :</span>
         </a-col>
         <a-col :span="12">
-          <span>{{ certName }} </span>
+          <span>{{ form.cert_name }} </span>
         </a-col>
       </div>
     </a-row>
+    <a-row v-if="form.is_https == 1">
+      <div class="item">
+        <a-col :span="2">
+          <span class="list-lable">强制HTTPS :</span>
+        </a-col>
+        <a-col :span="12">
+          <span v-if="form.is_force_https == 1">是</span>
+          <span v-else>否</span>
+        </a-col>
+      </div>
+    </a-row>
+
     <a-modal
-      title="编辑证书"
+      title="修改HTTPS配置"
       :visible="visible"
       :confirm-loading="confirmLoading"
       @ok="handleOk"
       @cancel="handleCancel"
     >
       <a-form-model :model="form" :label-col="{ span: 5 }">
-        <a-form-model-item label="启用HTTPS">
+        <a-form-model-item label="开启HTTPS">
           <a-switch v-model="enableHttps" @change="onChange" />
         </a-form-model-item>
         <a-form-model-item
@@ -60,10 +73,14 @@
             v-model="form.cert_id"
             @dropdownVisibleChange="dropdownVisibleChange"
           >
+            <a-select-option :value="0">请选择证书</a-select-option>
             <a-select-option v-for="(item, index) in certificates" :value="item.id" :key="index">{{
               item.name
             }}</a-select-option>
           </a-select>
+        </a-form-model-item>
+        <a-form-model-item v-if="enableHttps" label="强制跳转">
+          <a-switch v-model="isForceHttps" @change="onChange" />
         </a-form-model-item>
       </a-form-model>
     </a-modal>
@@ -73,19 +90,24 @@
 <script>
 import store from '@/store'
 // import { GetAll } from '@/api/certificate'
-import { GetConfigs, UpdateSiteHttps } from '@/api/site'
+import { UpdateSiteHttpsConfigs } from '@/api/site'
+import { GetHttpsConfigs } from '@/api/site/https'
 import { GetCandidateCertificates } from '@/api/site/cert'
-import { GetCertName } from '@/api/certificate'
+import { boolean } from 'yargs'
+// import { GetCertName } from '@/api/certificate'
 export default {
   data() {
     return {
       labelCol: { span: 2 },
       wrapperCol: { span: 20 },
       enableHttps: false,
-      certName: '无',
+      isForceHttps: false,
+
       form: {
         is_https: 0,
-        cert_id: null
+        cert_id: 0,
+        is_force_https: 0,
+        cert_name: ''
       },
       // edit
       visible: false,
@@ -94,22 +116,22 @@ export default {
     }
   },
   methods: {
-    onChange() {
-      if (this.form.cert_id == 0) {
-        this.form.cert_id = null
-      }
-    },
+    onChange() {},
     handleOk() {
       let payload = {}
       Object.assign(payload, this.form)
       if (this.enableHttps) {
+        const isForceHttps = this.isForceHttps ? 1 : 0
         payload.is_https = 1
+        payload.is_force_https = isForceHttps
       } else {
         payload.is_https = 0
         payload.cert_id = 0
+        payload.is_force_https = 0
       }
+
       let id = this.$route.params.id
-      UpdateSiteHttps(id, payload)
+      UpdateSiteHttpsConfigs(id, payload)
         .then(res => {
           if (res.code == 0) {
             this.$message.success('更新成功！')
@@ -149,20 +171,22 @@ export default {
 
     doGetConfigs() {
       let id = this.$route.params.id
-      GetConfigs(id).then(res => {
+      GetHttpsConfigs(id).then(res => {
         if (res.code == 0) {
-          this.form.is_https = res.data.is_https
-          this.form.cert_id = res.data.cert_id
-          if (this.form.is_https) {
-            this.enableHttps = true
-            GetCertName(this.form.cert_id).then(r => {
-              if (r.code == 0) {
-                this.certName = r.data
-              }
-            })
-          } else {
-            this.certName = '无'
-          }
+          this.form = res.data
+          // if (this.form.is_https) {
+          //   this.enableHttps = true
+          //   GetCertName(this.form.cert_id).then(r => {
+          //     if (r.code == 0) {
+          //       this.certName = r.data
+          //     }
+          //   })
+          // } else {
+          //   this.certName = '无'
+          // }
+
+          this.enableHttps = Boolean(this.form.is_https)
+          this.isForceHttps = Boolean(this.form.is_force_https)
         }
       })
     }

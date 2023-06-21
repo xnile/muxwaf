@@ -31,37 +31,61 @@ func NewRateLimitService(repo *repository.Repository, eventBus *event.EventBus) 
 	}
 }
 
-func (svc *rateLimitService) Add(entity *model.RateLimitModel) error {
-	//entity := model.RateLimitModel{
-	//	SiteID: siteID,
-	//	Path:   path,
-	//	Limit:  limit,
-	//	Window: window,
-	//	Status: 1,
-	//	Remark: remark,
-	//}
-	entity.ID = 0
-	if err := svc.repo.DB.Create(entity).Error; err != nil {
-		return err
+func (svc *rateLimitService) Add(payload *model.RateLimitModel) error {
+	var siteEty model.SiteModel
+	{
+		if err := svc.repo.DB.Select("ID", "UUID", "Domain").
+			Where("id = ?", payload.SiteID).
+			First(&siteEty).
+			Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ecode.ErrSiteNotFound
+			}
+			logx.Error("[RateLimit]Failed to get site info: ", err)
+			return ecode.InternalServerError
+		}
+	}
+
+	payload.ID = 0
+	payload.Status = 1
+	payload.SiteUUID = siteEty.UUID
+	payload.Host = siteEty.Domain
+	if err := svc.repo.DB.Create(payload).Error; err != nil {
+		logx.Error("[RateLimit]Failed to create rate limit: ", err)
+		return ecode.InternalServerError
 	}
 
 	// update guard
 	{
-		siteEntity := model.SiteModel{}
-		if err := svc.repo.DB.Where("id = ?", entity.SiteID).First(&siteEntity).Error; err == nil {
-			configs := make(model.GuardArrayRsp, 0)
-			config := map[string]any{
-				"id":         entity.UUID,
-				"path":       entity.Path,
-				"limit":      entity.Limit,
-				"window":     entity.Window,
-				"match_mode": entity.MatchMode,
-				"host":       siteEntity.Domain,
-				"site_id":    siteEntity.UUID,
+
+		configs := make(model.GuardArrayRsp, 0)
+		{
+			rateLimitGuard := model.RateLimitGuard{
+				UUID:      payload.UUID,
+				SiteID:    payload.SiteUUID,
+				Host:      payload.Host,
+				Path:      "",
+				Limit:     0,
+				Window:    0,
+				MatchMode: 0,
 			}
-			configs = append(configs, &config)
-			svc.eventBus.PushEvent(event.RateLimit, event.OpTypeAdd, configs)
+			configs = append(configs, &rateLimitGuard)
 		}
+
+		//siteEntity := model.SiteModel{}
+		//if err := svc.repo.DB.Where("id = ?", entity.SiteID).First(&siteEntity).Error; err == nil {
+		//	configs := make(model.GuardArrayRsp, 0)
+		//	config := map[string]any{
+		//		"id":         entity.UUID,
+		//		"path":       entity.Path,
+		//		"limit":      entity.Limit,
+		//		"window":     entity.Window,
+		//		"match_mode": entity.MatchMode,
+		//		"host":       siteEntity.Domain,
+		//		"site_id":    siteEntity.UUID,
+		//	}
+		//	configs = append(configs, &config)
+		svc.eventBus.PushEvent(event.RateLimit, event.OpTypeAdd, configs)
 	}
 
 	return nil
@@ -98,10 +122,10 @@ func (svc *rateLimitService) List(pageNum, pageSize, siteID int64, status, match
 		return nil, ecode.InternalServerError
 	}
 
-	for _, entity := range entities {
-		domain, _ := svc.repo.Site.GetDomain(entity.SiteID)
-		entity.Domain = domain
-	}
+	//for _, entity := range entities {
+	//	domain, _ := svc.repo.Site.GetDomain(entity.SiteID)
+	//	entity.Domain = domain
+	//}
 
 	rsp.SetValue(entities)
 	rsp.SetMeta(pageSize, pageNum, count)
@@ -180,32 +204,71 @@ func (svc *rateLimitService) Update(id int64, m *model.RateLimitModel) error {
 		return ecode.InternalServerError
 	}
 
+	siteEty, err := svc.getSiteDomainAndUUID(m.SiteID)
+	if err != nil {
+		logx.Error("[RateLimit]Failed to get site info: ", err)
+		return err
+	}
+
+	// 同时更新SiteUUID和Host
+	m.SiteUUID = siteEty.UUID
+	m.Host = siteEty.Domain
 	if err := svc.repo.DB.Where("id = ?", id).
-		Select("SiteID", "Path", "Limit", "Window", "MatchMode", "Remark").
+		Select("SiteID", "Path", "Limit", "Window", "MatchMode", "Remark", "SiteUUID", "Host").
 		Updates(m).
 		Error; err != nil {
-		return err
+		logx.Error("[RateLimit]Failed to update rate limit: ", err)
+		return ecode.InternalServerError
 	}
 
 	// update guard
 	{
-		_ = svc.repo.DB.Where("id = ?", id).First(entity).Error
-		siteEntity := model.SiteModel{}
-		if err := svc.repo.DB.Where("id = ?", m.SiteID).First(&siteEntity).Error; err == nil {
-			configs := make(model.GuardArrayRsp, 0)
-			config := map[string]any{
-				"id":         entity.UUID,
-				"path":       entity.Path,
-				"limit":      entity.Limit,
-				"window":     entity.Window,
-				"match_mode": entity.MatchMode,
-				"host":       siteEntity.Domain,
-				"site_id":    siteEntity.UUID,
-			}
-			configs = append(configs, &config)
-			svc.eventBus.PushEvent(event.RateLimit, event.OpTypeUpdate, configs)
+
+		configs := make(model.GuardArrayRsp, 0)
+
+		rateLimitGuard := model.RateLimitGuard{
+			UUID:      entity.UUID,
+			SiteID:    m.SiteUUID,
+			Host:      m.Host,
+			Path:      m.Path,
+			Limit:     m.Limit,
+			Window:    m.Window,
+			MatchMode: m.MatchMode,
 		}
+
+		//_ = svc.repo.DB.Where("id = ?", id).First(entity).Error
+		//siteEntity := model.SiteModel{}
+		//if err := svc.repo.DB.Where("id = ?", m.SiteID).First(&siteEntity).Error; err == nil {
+		//	configs := make(model.GuardArrayRsp, 0)
+		//	config := map[string]any{
+		//		"id":         entity.UUID,
+		//		"path":       entity.Path,
+		//		"limit":      entity.Limit,
+		//		"window":     entity.Window,
+		//		"match_mode": entity.MatchMode,
+		//		"host":       siteEntity.Domain,
+		//		"site_id":    siteEntity.UUID,
+		//	}
+		configs = append(configs, &rateLimitGuard)
+		svc.eventBus.PushEvent(event.RateLimit, event.OpTypeUpdate, configs)
+
 	}
 
 	return nil
+}
+
+func (svc *rateLimitService) getSiteDomainAndUUID(siteID int64) (*model.SiteModel, error) {
+	var siteEty model.SiteModel
+	{
+		if err := svc.repo.DB.Select("ID", "UUID", "Domain").
+			Where("id = ?", siteID).
+			First(&siteEty).
+			Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, ecode.ErrSiteNotFound
+			}
+			return nil, ecode.InternalServerError
+		}
+	}
+	return &siteEty, nil
 }

@@ -9,37 +9,58 @@
       </div>
     </a-row>
 
-    <!-- 添加源站 -->
-    <!-- <a-modal
-      title="新增源站"
-      :visible="visible"
-      :confirm-loading="confirmLoading"
-      @ok="handleOk"
-      @cancel="handleCancel"
-      :width="800"
-    > -->
-    <a-form-model :model="addForm" :label-col="labelCol" :wrapper-col="wrapperCol">
-      <a-form-model-item label="回源host">
-        <a-input v-if="editable" style="width: 200px" placeholder="" />
-        <template v-else>www.xnile.cn</template>
+    <a-form-model
+      ref="form"
+      :model="form"
+      :rules="rules"
+      :label-col="labelCol"
+      :wrapper-col="wrapperCol"
+      label-align="left"
+    >
+      <a-form-model-item label="回源host" prop="origin_host_header">
+        <a-input v-if="editable" style="width: 200px" placeholder="" v-model="form.origin_host_header" />
+        <template v-else>{{ form.origin_host_header }}</template>
       </a-form-model-item>
       <a-form-model-item label="回源协议">
-        <a-radio-group v-if="editable">
+        <a-radio-group v-if="editable" v-model="form.origin_protocol">
           <a-radio value="http">HTTP</a-radio>
           <a-radio value="https">HTTPS</a-radio>
         </a-radio-group>
         <template v-else>
-          http
+          {{ form.origin_protocol }}
         </template>
       </a-form-model-item>
-      <a-form-model-item label="源站地址" prop="origins">
-        <!-- <a-table
-          :columns="originColumns"
-          :dataSource="addForm.origins"
-          :rowKey="record => record.key"
-          :pagination="false"
-        >
-          <template slot="host" slot-scope="v, r, index">
+      <a-form-model-item label="源站地址">
+        <a-table :columns="columns" :data-source="form.origins" :pagination="false" :rowKey="record => record.id">
+          <template v-for="col in ['addr', 'port', 'weight']" :slot="col" slot-scope="text, r, idx">
+            <div :key="col" class="origin">
+              <template v-if="editable">
+                <template v-if="col == 'addr'">
+                  <a-form-model-item :prop="col">
+                    <a-input
+                      style="margin: -5px 0"
+                      :placeholder="originPlaceholder[col]"
+                      v-model="form.origins[idx][col]"
+                    />
+                  </a-form-model-item>
+                </template>
+                <template v-else>
+                  <a-form-model-item :prop="col">
+                    <a-input-number
+                      style="margin: -5px 0"
+                      :placeholder="originPlaceholder[col]"
+                      v-model="form.origins[idx][col]"
+                    />
+                  </a-form-model-item>
+                </template>
+              </template>
+              <template v-else>
+                {{ text }}
+              </template>
+            </div>
+          </template>
+
+          <!-- <template slot="addr" slot-scope="v, r, index">
             <a-input type="text" placeholder="请输入IP或域名" v-model="addForm.origins[index].host" />
           </template>
           <template slot="http_port" slot-scope="v, r, index">
@@ -47,97 +68,40 @@
           </template>
           <template slot="weight" slot-scope="v, r, index">
             <a-input type="number" v-model="addForm.origins[index].weight" />
-          </template>
-          <template slot="operation" slot-scope="v, record, index">
-            <a-space>
-              <a-button type="link" @click="onDelOrigin(record, index)">删除</a-button>
-            </a-space>
-          </template>
-        </a-table> -->
+          </template> -->
 
-        <a-table :columns="columns" :data-source="data" :pagination="false" :rowKey="record => record.id">
-          <template v-for="col in ['addr', 'port', 'weight']" :slot="col" slot-scope="text, record">
-            <div :key="col">
-              <a-input
-                v-if="editable"
-                style="margin: -5px 0"
-                :placeholder="originPlaceholder[col]"
-                :value="text"
-                @change="e => handleChange(e.target.value, record.id, col)"
-              />
-              <template v-else>
-                {{ text }}
-              </template>
-            </div>
-          </template>
           <template slot="operation" slot-scope="text, record">
-            <div class="editable-row-operations">
-              <!-- <span v-if="record.editable">
-                <a-popconfirm title="确认更改?" @confirm="() => save(record.id)">
-                  <a>保存</a>
-                </a-popconfirm>
-                <a-popconfirm title="确认取消?" @confirm="() => cancel(record.id)">
-                  <a>取消</a>
-                </a-popconfirm>
-              </span> -->
-              <span v-if="editable">
-                <a :disabled="editingKey !== ''" @click="() => del(record.id)">删除</a>
-              </span>
+            <div class="origin">
+              <a-form-model-item v-if="editable">
+                <a :disabled="editingKey !== ''" @click="() => onDelItem(record.id)">删除</a>
+              </a-form-model-item>
             </div>
           </template>
         </a-table>
 
-        <a-button style="width: 100%; margin: 20px 0" type="dashed" @click="onAddOriginItem">+ 新增</a-button>
+        <!-- eslint-disable-next-line -->
+        <a-button v-if="editable" type="dashed" @click="onAddOriginItem" style="width: 100%; margin: 20px 0"
+          >+ 新增</a-button
+        >
       </a-form-model-item>
 
-      <a-form-model-item :wrapper-col="{ span: 14, offset: 1 }">
-        <a-button type="primary">
-          保存
-        </a-button>
-        <a-button style="margin-left: 10px;" @click="onCancel">
-          取消
-        </a-button>
-      </a-form-model-item>
+      <template v-if="editable">
+        <a-row>
+          <a-col>
+            <a-button style="margin-left: 10px;" type="primary" @click="onOK">
+              保存
+            </a-button>
+            <a-button style="margin-left: 10px;" @click="onCancel">
+              取消
+            </a-button>
+          </a-col>
+        </a-row>
+      </template>
     </a-form-model>
-    <!-- </a-modal> -->
-    <!-- 添加源站 END -->
-
-    <!-- <a-table :columns="columns" :data-source="data" :pagination="false" :rowKey="record => record.id">
-      <template v-for="col in ['host', 'http_port', 'weight']" :slot="col" slot-scope="text, record">
-        <div :key="col">
-          <a-input
-            v-if="record.editable"
-            style="margin: -5px 0"
-            :value="text"
-            @change="e => handleChange(e.target.value, record.id, col)"
-          />
-          <template v-else>
-            {{ text }}
-          </template>
-        </div>
-      </template>
-      <template slot="operation" slot-scope="text, record">
-        <div class="editable-row-operations">
-          <span v-if="record.editable">
-            <a-popconfirm title="确认更改?" @confirm="() => save(record.id)">
-              <a>保存</a>
-            </a-popconfirm>
-            <a-popconfirm title="确认取消?" @confirm="() => cancel(record.id)">
-              <a>取消</a>
-            </a-popconfirm>
-          </span>
-          <span v-else>
-            <a :disabled="editingKey !== ''" @click="() => edit(record.id)">编辑</a>
-            <a :disabled="editingKey !== ''" @click="() => del(record.id)">删除</a>
-          </span>
-        </div>
-      </template>
-    </a-table>
-    <a-button type="primary" @click="onAddOrigin">新增源站</a-button> -->
   </div>
 </template>
 <script>
-import { GetOrigins, UpdateOrigin, AddOrigins, DelOrigin } from '@/api/site/origin'
+import { GetOrigins, UpdateOriginCfg } from '@/api/site/origin'
 import templates from '@/views/templates.vue'
 const columns = [
   {
@@ -165,41 +129,6 @@ const columns = [
     width: '20%'
   }
 ]
-// const originColumns = [
-//   {
-//     title: '回源地址',
-//     dataIndex: 'host',
-//     width: 300,
-//     scopedSlots: { customRender: 'host' }
-//   },
-//   {
-//     title: '端口',
-//     dataIndex: 'http_port',
-//     width: 100,
-//     scopedSlots: { customRender: 'http_port' }
-//   },
-//   {
-//     title: '权重',
-//     dataIndex: 'weight',
-//     width: 100,
-//     scopedSlots: { customRender: 'weight' }
-//   },
-//   {
-//     title: '操作',
-//     dataIndex: 'action',
-//     scopedSlots: { customRender: 'operation' }
-//   }
-// ]
-
-// const data = []
-// for (let i = 0; i < 2; i++) {
-//   data.push({
-//     key: i.toString(),
-//     host: `Edrward ${i}`,
-//     port: 80,
-//     weight: 32
-//   })
-// }
 
 const originPlaceholder = {
   addr: '请输入源站地址（IP/域名）',
@@ -211,33 +140,27 @@ export default {
   data() {
     // this.cacheData = data.map(item => ({ ...item }))
     return {
-      data: [],
-      cacheData: [],
       columns,
       editingKey: '',
-      count: 1,
 
       // add
       labelCol: { span: 2 },
       wrapperCol: { span: 20 },
-      // originColumns,
-      visible: false,
-      confirmLoading: false,
       form: {
         origin_host_header: '',
-        origin_protocol: 'http',
-        origins: [
-          {
-            key: 0,
-            host: '',
-            http_port: 80,
-            weight: 100
-          }
-        ]
+        origin_protocol: '',
+        origins: []
       },
 
-      editable: false,
-      originPlaceholder
+      editable: true,
+      originPlaceholder,
+      rules: {
+        // addr: [{ required: true, message: '请输入源站地址（IP/域名）', trigger: 'blur' }],
+        // port: [{ required: true, message: '请输入源站端口', trigger: 'blur' }],
+        // weight: [{ required: true, message: '请输入源站权重', trigger: 'blur' }],
+        // origin_host_header: [{ required: true, message: '请输入源站权重', trigger: 'blur' }]
+      }
+      // rules: {}
     }
   },
   methods: {
@@ -246,22 +169,33 @@ export default {
     },
 
     onCancel() {
+      this.doGetOrigins()
       this.editable = false
     },
 
-    onChange() {},
+    onOK() {
+      // this.$refs.form.validate(valid => {
+      //   if (valid) {
+      //     console.log('ok')
+      //   }
+      //   console.log(valid)
+      // })
 
-    handleChange(value, key, column) {
-      const newData = [...this.data]
-      const target = newData.find(item => key === item.id)
-      if (target) {
-        if (column == 'http_port' || column == 'weight') {
-          value = Number(value)
-        }
-        target[column] = value
-        this.data = newData
-      }
+      const siteID = this.$route.params.id
+      this.doUpdateOrigin(siteID, this.form)
     },
+
+    // handleChange(value, key, column) {
+    //   const newData = [...this.data]
+    //   const target = newData.find(item => key === item.id)
+    //   if (target) {
+    //     if (column == 'http_port' || column == 'weight') {
+    //       value = Number(value)
+    //     }
+    //     target[column] = value
+    //     this.data = newData
+    //   }
+    // },
     // edit(key) {
     //   const newData = [...this.data]
     //   const target = newData.find(item => key === item.id)
@@ -271,17 +205,14 @@ export default {
     //     this.data = newData
     //   }
     // },
-    del(key) {
-      let newData = [...this.data]
-      console.log(newData)
+    onDelItem(key) {
+      let newData = [...this.form.origins]
       const target = newData.find(item => key === item.id)
       if (target) {
         newData.map((value, idx) => {
           if (value.id == key) {
-            console.log('key: ', key)
-            console.log('idx: ', idx)
             newData.splice(idx, 1)
-            this.data = newData
+            this.form.origins = newData
             // DelOrigin(key).then(res => {
             //   if (res.code == 0) {
             //     newData.splice(idx, 1)
@@ -335,15 +266,21 @@ export default {
     //   this.visible = true
     // },
     onAddOriginItem() {
+      let max = 0
+      this.form.origins.forEach(item => {
+        if (item.id > max) {
+          max = item.id
+        }
+      })
+
       const newData = {
-        key: this.count,
-        id: 13,
+        id: max + 1,
         addr: '',
         port: null,
         weight: null
       }
-      this.data = [...this.data, newData]
-      console.log(this.data)
+      this.form.origins = [...this.form.origins, newData]
+      console.log(this.form.origins)
       // this.addForm.origins.push({ host: '', port: 80, weight: 100 })
     },
     // onDelOrigin(record, index) {
@@ -360,49 +297,60 @@ export default {
       let id = this.$route.params.id
       GetOrigins(id).then(res => {
         if (res.code == 0) {
-          this.data = res.data
-          this.cacheData = this.data.map(item => ({ ...item }))
+          this.form = res.data
+          // this.cacheData = this.data.map(item => ({ ...item }))
         }
       })
     },
 
-    doUpdateOrigin(id, data) {
-      return new Promise(resolve => {
-        UpdateOrigin(id, data)
-          .then(res => {
-            if (res.code == 0) {
-              this.$message.success('更新成功！')
-              resolve(true)
-            } else {
-              this.$message.error(res.msg)
-              resolve(false)
-            }
-          })
-          .catch(err => {
-            console.log(err)
-            this.$message.error(err.msg)
-            resolve(false)
-          })
-      })
-    },
+    // doUpdateOrigin(id, data) {
+    //   return new Promise(resolve => {
+    //     UpdateOrigin(id, data)
+    //       .then(res => {
+    //         if (res.code == 0) {
+    //           this.$message.success('更新成功！')
+    //           resolve(true)
+    //         } else {
+    //           this.$message.error(res.msg)
+    //           resolve(false)
+    //         }
+    //       })
+    //       .catch(err => {
+    //         this.$message.error(err.msg)
+    //         resolve(false)
+    //       })
+    //   })
+    // },
 
-    doAddOrigins() {
-      const id = this.$route.params.id
-      const data = this.addForm.origins
-      AddOrigins(id, data)
-        .then(res => {
-          if (res.code == 0) {
-            this.$message.success('添加成功')
-            this.visible = false
-            this.doGetOrigins()
-          } else {
-            this.$message.error(res.msg)
-          }
-        })
-        .catch(err => {
-          this.$message.error(err.msg)
-        })
+    doUpdateOrigin(id, data) {
+      UpdateOriginCfg(id, data).then(res => {
+        if (res.code == 0) {
+          this.$message.success('更新成功！')
+          this.doGetOrigins()
+          this.editable = false
+        } else {
+          this.$message.error(res.msg)
+        }
+      })
     }
+
+    // doAddOrigins() {
+    //   const id = this.$route.params.id
+    //   const data = this.form.origins
+    //   AddOrigins(id, data)
+    //     .then(res => {
+    //       if (res.code == 0) {
+    //         this.$message.success('添加成功')
+    //         this.visible = false
+    //         this.doGetOrigins()
+    //       } else {
+    //         this.$message.error(res.msg)
+    //       }
+    //     })
+    //     .catch(err => {
+    //       this.$message.error(err.msg)
+    //     })
+    // }
   },
   mounted() {
     // this.doGetOrigins()
@@ -415,7 +363,23 @@ export default {
 }
 </script>
 <style scoped>
-.editable-row-operations a {
-  margin-right: 8px;
+.ant-form-item {
+  margin-bottom: 5px;
+}
+
+.origin .ant-form-item {
+  /* -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 14px;
+  font-variant: tabular-nums;
+  line-height: 1.5;
+  list-style: none;
+  -webkit-font-feature-settings: 'tnum';
+  font-feature-settings: 'tnum'; */
+  margin-bottom: 0;
+  /* vertical-align: top; */
 }
 </style>

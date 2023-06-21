@@ -89,7 +89,7 @@ export const asyncRouterMap = [
                 name: 'httpsSettings',
                 component: () => import('@/views/site/settings/https.vue'),
                 meta: {
-                  title: 'https配置',
+                  title: 'HTTPS配置',
                   hidden: true,
                   keepAlive: true,
                   permission: ['超级管理员', '管理员']

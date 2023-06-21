@@ -13,8 +13,9 @@ func (SiteModel) TableName() string {
 }
 
 type SiteReq struct {
-	SiteModel
-	Origins []*SiteOriginModel `json:"origins" gorm:"-" binding:"required"`
+	Domain         string             `json:"domain" binding:"required,fqdn"`
+	OriginProtocol OriginProtocol     `json:"origin_protocol" binding:"required,oneof=http https"`
+	Origins        []*SiteOriginModel `json:"origins"  binding:"gt=0,dive"`
 }
 
 type SiteRsp struct {
@@ -27,9 +28,9 @@ type SiteRsp struct {
 }
 
 // SiteGuardRsp guard sync entity
-type SiteGuardRsp struct {
-	ID      string             `json:"id"`
-	Host    string             `json:"host"`
-	Config  *SiteConfigGuard   `json:"config"`
-	Origins []*SiteOriginGuard `json:"origins"`
-}
+//type SiteGuardRsp struct {
+//	ID      string             `json:"id"`
+//	Host    string             `json:"host"`
+//	Config  *SiteConfigGuard   `json:"config"`
+//	Origins []*SiteOriginGuard `json:"origins"`
+//}

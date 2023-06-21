@@ -4,21 +4,21 @@ import (
 	"database/sql/driver"
 )
 
-type OriginType string
+type OriginType int8
 
 const (
-	IPOrigin     OriginType = "ip"
-	DomainOrigin OriginType = "domain"
+	IPOrigin     OriginType = 1
+	DomainOrigin OriginType = 2
 )
 
-func (p *OriginType) Scan(value interface{}) error {
-	*p = OriginType(value.(string))
-	return nil
-}
-
-func (p OriginType) Value() (driver.Value, error) {
-	return string(p), nil
-}
+//func (p *OriginType) Scan(value interface{}) error {
+//	*p = OriginType(value.(string))
+//	return nil
+//}
+//
+//func (p OriginType) Value() (driver.Value, error) {
+//	return string(p), nil
+//}
 
 type OriginProtocol string
 
@@ -42,7 +42,8 @@ func (p OriginProtocol) Value() (driver.Value, error) {
 
 type SiteOriginModel struct {
 	Model
-	SiteID int64 `json:"site_id" gorm:"index;not null"`
+	SiteID   int64  `json:"site_id" gorm:"index;not null"`
+	SiteUUID string `json:"-" gorm:"index;type:char(20);default:''"`
 	//HttpPort  int16 `json:"http_port"  gorm:"type:smallint;not null;default:80" binding:"required,numeric"`
 	//HttpsPort int16 `json:"https_port"  gorm:"type:smallint;not null;default:443" `
 	//
@@ -52,7 +53,7 @@ type SiteOriginModel struct {
 	Port     int16          `json:"port"  gorm:"type:smallint;not null;default:80" binding:"gte=1,lte=65535"`
 	Addr     string         `json:"addr" gorm:"type:varchar(253);not null;default:127.0.0.1" binding:"required,ipv4|fqdn"`
 	Weight   int16          `json:"weight" gorm:"type:smallint;not null;default:100" binding:"gte=0,lte=100"`
-	Kind     OriginType     `json:"-"  gorm:"type:origin_type"`
+	Kind     OriginType     `json:"-"  gorm:"type:smallint;not null;default:0"`
 	Protocol OriginProtocol `json:"-" gorm:"type:origin_protocol"`
 }
 
@@ -68,11 +69,6 @@ type SiteOriginRsp struct {
 	Weight int16  `json:"weight"`
 	//Kind     OriginType     `json:"kind"`
 	//Protocol OriginProtocol `json:"protocol"`
-}
-
-type SiteHttpsRsp struct {
-	Https    bool   `json:"https"`
-	CertName string `json:"certName"`
 }
 
 type OriginCfgReq struct {

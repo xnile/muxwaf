@@ -122,7 +122,7 @@
     </a-card>
     <a-drawer
       :title="(operateType == 'add' ? '添加' : '修改') + '防护网站'"
-      :width="800"
+      :width="900"
       placement="right"
       :closable="false"
       :visible="visible"
@@ -152,20 +152,26 @@
             "
             :pagination="false"
           >
-            <template slot="ip" slot-scope="v, r, index">
-              <a-input type="text" placeholder="请输入单个IP" v-model="form.origins[index].host" />
+            <template slot="addr" slot-scope="v, r, index">
+              <a-input type="text" placeholder="请输入源站地址（IP/域名）" v-model="form.origins[index].addr" />
             </template>
-            <template slot="http_port" slot-scope="v, r, index">
+            <template slot="port" slot-scope="v, r, index">
               <a-input
                 type="number"
                 min="0"
                 max="65535"
-                :placeholder="80"
-                v-model.number="form.origins[index].http_port"
+                placeholder="1-65535"
+                v-model.number="form.origins[index].port"
               />
             </template>
             <template slot="weight" slot-scope="v, r, index">
-              <a-input type="number" min="0" max="100" v-model.number="form.origins[index].weight" />
+              <a-input
+                type="number"
+                min="0"
+                max="100"
+                placeholder="0-100"
+                v-model.number="form.origins[index].weight"
+              />
             </template>
             <template slot="operation" slot-scope="v, record, index">
               <a-space>
@@ -176,7 +182,7 @@
           <a-button style="width: 100%; margin: 20px 0" type="dashed" @click="addSrc">+ 新增</a-button>
         </a-form-model-item>
         <a-form-model-item label="源站协议">
-          <a-radio-group>
+          <a-radio-group v-model="form.origin_protocol">
             <a-radio value="http">HTTP</a-radio>
             <a-radio value="https">HTTPS</a-radio>
           </a-radio-group>
@@ -250,31 +256,27 @@ const srcColumns = [
   //   scopedSlots: { customRender: 'index' }
   // },
   {
-    title: 'IP',
-    dataIndex: 'host',
-    width: 300,
-    scopedSlots: { customRender: 'ip' }
+    title: '源站地址',
+    dataIndex: 'addr',
+    width: '57%',
+    scopedSlots: { customRender: 'addr' }
   },
   {
     title: '端口',
-    dataIndex: 'http_port',
-    width: 100,
-    scopedSlots: { customRender: 'http_port' }
+    dataIndex: 'port',
+    width: '20%',
+    scopedSlots: { customRender: 'port' }
   },
-  // {
-  //   title: '线路',
-  //   dataIndex: 'active_standby',
-  //   scopedSlots: { customRender: 'active_standby' }
-  // },
   {
     title: '权重',
     dataIndex: 'weight',
-    width: 100,
+    width: '18%',
     scopedSlots: { customRender: 'weight' }
   },
   {
     title: '操作',
     dataIndex: 'action',
+    width: '5%',
     scopedSlots: { customRender: 'operation' }
   }
 ]
@@ -298,13 +300,13 @@ export default {
       certificates: [],
       real_ip_header_type: 0,
       form: {
-        // id: 0,
         domain: '',
+        origin_protocol: 'http',
         origins: [
           {
-            host: '',
-            http_port: 80,
-            weight: 100
+            addr: null,
+            port: null,
+            weight: null
           }
         ]
       },

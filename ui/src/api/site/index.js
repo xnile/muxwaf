@@ -27,17 +27,17 @@ export function GetALLSite() {
   })
 }
 
-export function UpdateSiteConfigs(id, data) {
+export function UpdateSiteBasicConfigs(id, data) {
   return request({
-    url: `/api/sites/${id}/configs`,
+    url: `/api/sites/${id}/configs/basic`,
     method: 'put',
     data: data
   })
 }
 
-export function UpdateSiteHttps(id, data) {
+export function UpdateSiteHttpsConfigs(id, data) {
   return request({
-    url: `/api/sites/${id}/https`,
+    url: `/api/sites/${id}/configs/https`,
     method: 'put',
     data: data
   })

@@ -210,7 +210,7 @@ function _M.get_origin_peer_and_protocol(host, scheme)
     if protocol == "follow" then   -- TODO:
         log.error("Protocol following is currently not supported.")
         protocol = "http"
-    elseif protocol ~= "http"  or protocol ~= "https"
+    elseif protocol ~= "http"  or protocol ~= "https" then
         log.error("Failed to obtain the origin protocol.")
         protocol = "http"
     end

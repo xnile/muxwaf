@@ -125,14 +125,6 @@ func (svc *whitelistService) AddIP(c *gin.Context) error {
 }
 
 func (svc *whitelistService) AddURL(c *gin.Context, urlModel *model.WhitelistURLModel) error {
-	//entities := make([]*model.WhitelistURLModel, 0)
-	//if err := svc.repo.DB.Where("site_id = ? and path = ?", siteID, path).Find(&entities).Error; err != nil {
-	//	logx.Error(fmt.Sprintf("[whitelist] searching whitelist url whith site_id %d and path %s err:", siteID, path), err)
-	//	return ecode.InternalServerError
-	//}
-	//if len(entities) > 0 {
-	//	return ecode.ErrRecordAlreadyExists
-	//}
 
 	if err := svc.repo.DB.Where("site_id = ? and path = ? and match_mode = ?", urlModel.SiteID, urlModel.Path, urlModel.MatchMode).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -141,6 +133,14 @@ func (svc *whitelistService) AddURL(c *gin.Context, urlModel *model.WhitelistURL
 		return ecode.InternalServerError
 	}
 
+	siteEty, err := svc.getSiteDomainAndUUID(urlModel.SiteID)
+	if err != nil {
+		logx.Error("[Whitelist]Failed to get site info: ", err)
+		return ecode.InternalServerError
+	}
+
+	urlModel.SiteUUID = siteEty.UUID
+	urlModel.Host = siteEty.Domain
 	if err := svc.repo.DB.Create(urlModel).Error; err != nil {
 		logx.Error("[whitelistUrl] insert whitelist url err: ", err)
 		return ecode.InternalServerError
@@ -148,19 +148,29 @@ func (svc *whitelistService) AddURL(c *gin.Context, urlModel *model.WhitelistURL
 
 	// update guard
 	{
-		siteEntity := model.SiteModel{}
-		if err := svc.repo.DB.Where("id = ?", urlModel.SiteID).First(&siteEntity).Error; err == nil {
-			configs := make(model.GuardArrayRsp, 0)
-			config := map[string]any{
-				"id":         urlModel.UUID,
-				"path":       urlModel.Path,
-				"host":       siteEntity.Domain,
-				"site_id":    siteEntity.UUID,
-				"match_mode": urlModel.MatchMode,
-			}
-			configs = append(configs, &config)
-			svc.eventBus.PushEvent(event.WhitelistURL, event.OpTypeAdd, configs)
-		}
+		//siteEntity := model.SiteModel{}
+		//if err := svc.repo.DB.Where("id = ?", urlModel.SiteID).First(&siteEntity).Error; err == nil {
+		//	configs := make(model.GuardArrayRsp, 0)
+		//	config := map[string]any{
+		//		"id":         urlModel.UUID,
+		//		"path":       urlModel.Path,
+		//		"host":       siteEntity.Domain,
+		//		"site_id":    siteEntity.UUID,
+		//		"match_mode": urlModel.MatchMode,
+		//	}
+		//	configs = append(configs, &config)
+		//	svc.eventBus.PushEvent(event.WhitelistURL, event.OpTypeAdd, configs)
+		//}
+
+		configs := make(model.GuardArrayRsp, 0)
+		configs = append(configs, model.WhitelistURLGuard{
+			UUID:      urlModel.UUID,
+			SiteID:    urlModel.SiteUUID,
+			Host:      urlModel.Host,
+			Path:      urlModel.Path,
+			MatchMode: urlModel.MatchMode,
+		})
+		svc.eventBus.PushEvent(event.WhitelistURL, event.OpTypeAdd, configs)
 	}
 	return nil
 }
@@ -222,10 +232,10 @@ func (svc *whitelistService) ListURL(pageNum, pageSize, siteID int64, status int
 		return nil, ecode.InternalServerError
 	}
 
-	for _, entity := range entities {
-		domain, _ := svc.repo.Site.GetDomain(entity.SiteID)
-		entity.Domain = domain
-	}
+	//for _, entity := range entities {
+	//	domain, _ := svc.repo.Site.GetDomain(entity.SiteID)
+	//	entity.Domain = domain
+	//}
 
 	rsp.SetValue(entities)
 	rsp.SetMeta(pageSize, pageNum, count)
@@ -278,23 +288,31 @@ func (svc *whitelistService) UpdateURLStatus(id int64) error {
 			svc.eventBus.PushEvent(event.WhitelistURL, event.OpTypeDel, configs)
 		}
 		if urlEntity.Status == 1 {
-			siteEntity := model.SiteModel{}
-			if err := svc.repo.DB.Where("id = ?", urlEntity.SiteID).
-				Select("Domain", "UUID").
-				First(&siteEntity).Error; err != nil {
-				logx.Error("[guard_update] get site err: ", err)
-				return nil
-			}
+			//siteEntity := model.SiteModel{}
+			//if err := svc.repo.DB.Where("id = ?", urlEntity.SiteID).
+			//	Select("Domain", "UUID").
+			//	First(&siteEntity).Error; err != nil {
+			//	logx.Error("[guard_update] get site err: ", err)
+			//	return nil
+			//}
 
 			configs := make(model.GuardArrayRsp, 0)
-			config := map[string]any{
-				"id":         urlEntity.UUID,
-				"path":       urlEntity.Path,
-				"host":       siteEntity.Domain,
-				"site_id":    siteEntity.UUID,
-				"match_mode": urlEntity.MatchMode,
+			//config := map[string]any{
+			//	"id":         urlEntity.UUID,
+			//	"path":       urlEntity.Path,
+			//	"host":       siteEntity.Domain,
+			//	"site_id":    siteEntity.UUID,
+			//	"match_mode": urlEntity.MatchMode,
+			//}
+
+			whitelistURLGuard := model.WhitelistURLGuard{
+				UUID:      urlEntity.UUID,
+				SiteID:    urlEntity.SiteUUID,
+				Host:      urlEntity.Host,
+				Path:      urlEntity.Path,
+				MatchMode: urlEntity.MatchMode,
 			}
-			configs = append(configs, &config)
+			configs = append(configs, &whitelistURLGuard)
 			svc.eventBus.PushEvent(event.WhitelistURL, event.OpTypeAdd, configs)
 		}
 	}
@@ -359,31 +377,44 @@ func (svc *whitelistService) DeleteURL(id int64) error {
 	return nil
 }
 
-func (svc *whitelistService) UpdateURL(id int64, m *model.WhitelistURLModel) error {
+func (svc *whitelistService) UpdateURL(id int64, payload *model.WhitelistURLModel) error {
+	var entity model.WhitelistURLModel
+	if err := svc.repo.DB.Where("id = ?", id).Select("UUID").First(&entity).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ecode.ErrIDNotFound
+		}
+		logx.Error("[Whitelist]Check if the URL whitelist exists failed: ", err)
+		return ecode.InternalServerError
+	}
 
+	siteEty, err := svc.getSiteDomainAndUUID(payload.SiteID)
+	if err != nil {
+		logx.Error("[Whitelist]Failed to get site info: ", err)
+		return ecode.InternalServerError
+	}
+
+	payload.SiteUUID = siteEty.UUID
+	payload.Host = siteEty.Domain
 	if err := svc.repo.DB.Where("id = ?", id).
-		Select("SiteID", "Path", "MatchMode", "Remark").
-		Updates(m).Error; err != nil {
-		return err
+		Select("SiteID", "Path", "MatchMode", "Remark", "SiteUUID", "Host").
+		Updates(payload).Error; err != nil {
+		logx.Error("[Whitelist]Failed to update URL whitelist: ", err)
+		return ecode.InternalServerError
 	}
 
 	// update guard
-	entity := model.WhitelistURLModel{}
-	_ = svc.repo.DB.Where("id = ?", id).First(&entity).Error
 	{
-		siteEntity := model.SiteModel{}
-		if err := svc.repo.DB.Where("id = ?", m.SiteID).First(&siteEntity).Error; err == nil {
-			configs := make(model.GuardArrayRsp, 0)
-			config := map[string]any{
-				"id":         entity.UUID,
-				"path":       m.Path,
-				"host":       siteEntity.Domain,
-				"site_id":    siteEntity.UUID,
-				"match_mode": m.MatchMode,
-			}
-			configs = append(configs, &config)
-			svc.eventBus.PushEvent(event.WhitelistURL, event.OpTypeUpdate, configs)
+
+		configs := make(model.GuardArrayRsp, 0)
+		whitelistURLGuard := model.WhitelistURLGuard{
+			UUID:      entity.UUID,
+			SiteID:    payload.SiteUUID,
+			Host:      payload.Host,
+			Path:      payload.Path,
+			MatchMode: payload.MatchMode,
 		}
+		configs = append(configs, &whitelistURLGuard)
+		svc.eventBus.PushEvent(event.WhitelistURL, event.OpTypeUpdate, configs)
 	}
 
 	return nil
@@ -537,4 +568,20 @@ func (svc *whitelistService) BatchAddIP(c *gin.Context, payload *model.Whitelist
 	svc.eventBus.PushEvent(event.WhitelistIP, event.OpTypeAdd, guardData)
 
 	return nil
+}
+
+func (svc *whitelistService) getSiteDomainAndUUID(siteID int64) (*model.SiteModel, error) {
+	var siteEty model.SiteModel
+	{
+		if err := svc.repo.DB.Select("ID", "UUID", "Domain").
+			Where("id = ?", siteID).
+			First(&siteEty).
+			Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, ecode.ErrSiteNotFound
+			}
+			return nil, ecode.InternalServerError
+		}
+	}
+	return &siteEty, nil
 }

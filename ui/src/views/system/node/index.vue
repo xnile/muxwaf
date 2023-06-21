@@ -78,8 +78,8 @@
       @cancel="onCancel"
     >
       <a-form-model ref="form" :model="form" :rules="rules" :label-col="{ span: 5 }" :wrapper-col="{ span: 15 }">
-        <a-form-model-item label="IP" prop="ip_or_domain">
-          <a-input placeholder="请输入waf guard节点IP" v-model="form.ip_or_domain"></a-input>
+        <a-form-model-item label="IP" prop="addr">
+          <a-input placeholder="请输入waf guard节点IP" v-model="form.addr"></a-input>
         </a-form-model-item>
         <a-form-model-item label="端口" prop="port">
           <a-input-number placeholder="端口" v-model.number="form.port"></a-input-number>
@@ -95,7 +95,7 @@ import { AddNode, ListNodes, DelNode, SyncCfg, SwitchLogUpload, SwitchStatus } f
 const columns = [
   {
     title: '地址',
-    dataIndex: 'ip_or_domain',
+    dataIndex: 'addr',
     width: '10%'
   },
   {
@@ -138,11 +138,11 @@ export default {
       operateType: 'add',
       form: {
         name: '',
-        ip_or_domain: '',
+        addr: '',
         port: 8083
       },
       rules: {
-        ip_or_domain: [
+        addr: [
           { required: true, message: '请输入节点IP或主机名', trigger: 'blur' }
           // {
           //   // eslint-disable-next-line
@@ -253,7 +253,7 @@ export default {
       SwitchStatus(id)
         .then(res => {
           if (res.code == 0) {
-            this.$message.success('任务添加成功！')
+            this.$message.success('操作成功！')
             this.getList()
           } else {
             this.$message.error(res.msg)

@@ -47,13 +47,13 @@ func DelCert(c *gin.Context) {
 	handler.ResponseBuilder(c, err, nil)
 }
 
-func GetCertName(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-
-	svc := service.SVC.Cert
-	certName, err := svc.GetCertName(id)
-	handler.ResponseBuilder(c, err, certName)
-}
+//func GetCertName(c *gin.Context) {
+//	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+//
+//	svc := service.SVC.Cert
+//	certName, err := svc.GetCertName(id)
+//	handler.ResponseBuilder(c, err, certName)
+//}
 
 func GetAll(c *gin.Context) {
 	//data, err := service.SVC.Cert.GetALL()

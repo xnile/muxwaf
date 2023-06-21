@@ -53,23 +53,25 @@ type SiteConfigGuard struct {
 	CertID             string `json:"cert_id"`
 	IsHttps            int16  `json:"is_https"`
 	IsRealIPFromHeader int16  `json:"is_real_ip_from_header"`
-	OriginProtocol     int16  `json:"origin_protocol"`
-	RealIPHeader       string `json:"real_ip_header"`
-	OriginHost         string `json:"origin_host"`
+	//OriginProtocol     int16  `json:"origin_protocol"`
+	RealIPHeader string `json:"real_ip_header"`
+	//OriginHost         string `json:"origin_host"`
+	Origin *SiteOriginCfgGuard `json:"origin"`
 }
 
 type SiteOriginGuard struct {
-	Host      string `json:"host"`
-	HttpPort  int16  `json:"http_port"`
-	HttpsPort int16  `json:"https_port"`
-	Weight    int16  `json:"weight"`
+	Addr     string         `json:"addr"`
+	Port     int16          `json:"port"`
+	Weight   int16          `json:"weight"`
+	Kind     OriginType     `json:"kind"`
+	Protocol OriginProtocol `json:"protocol"`
 }
 
 type SiteGuard struct {
-	UUID    string             `json:"id"`
-	Host    string             `json:"host"`
-	Config  *SiteConfigGuard   `json:"config"`
-	Origins []*SiteOriginGuard `json:"origins"`
+	UUID    string           `json:"id"`
+	Host    string           `json:"host"`
+	Configs *SiteConfigGuard `json:"config"`
+	//Origins []*SiteOriginGuard `json:"origins"`
 }
 
 type SiteRegionBlacklistGuard struct {
@@ -87,8 +89,15 @@ type RulesGuard struct {
 	RateLimit       []*RateLimitGuard           `json:"rate_limit"`
 }
 
-type GuardConfigs struct {
-	Log          *SampleLogUploadGuard `json:"log"`
+type SiteOriginCfgGuard struct {
+	OriginProtocol   OriginProtocol     `json:"origin_protocol"`
+	OriginHostHeader string             `json:"origin_host_header"`
+	Origins          []*SiteOriginGuard `json:"origins"`
+}
+
+// ConfigsSyncGuard Guard全量配置
+type ConfigsSyncGuard struct {
+	SampleLog    *SampleLogUploadGuard `json:"log"` // TODO json改名
 	Sites        []*SiteGuard          `json:"sites"`
 	Certificates []*CertificateGuard   `json:"certificates"`
 	Rules        *RulesGuard           `json:"rules"`
