@@ -152,7 +152,7 @@ export default {
         origins: []
       },
 
-      editable: true,
+      editable: false,
       originPlaceholder,
       rules: {
         // addr: [{ required: true, message: '请输入源站地址（IP/域名）', trigger: 'blur' }],

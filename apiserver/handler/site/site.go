@@ -179,10 +179,17 @@ func GetHttpsConfigs(c *gin.Context) {
 
 }
 
-func GetConfigs(c *gin.Context) {
+//func GetConfigs(c *gin.Context) {
+//	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+//	svc := service.SVC.Site
+//	data, err := svc.GetConfigs(id)
+//	handler.ResponseBuilder(c, err, data)
+//}
+
+func GetBasicConfigs(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	svc := service.SVC.Site
-	data, err := svc.GetConfigs(id)
+	data, err := svc.GetBasicHttps(id)
 	handler.ResponseBuilder(c, err, data)
 }
 
@@ -208,8 +215,8 @@ func GetCandidateCertificates(c *gin.Context) {
 	handler.ResponseBuilder(c, err, data)
 }
 
-func GetSiteDomain(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	data, err := service.SVC.Site.GetSiteDomain(id)
-	handler.ResponseBuilder(c, err, data)
-}
+//func GetSiteDomain(c *gin.Context) {
+//	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+//	data, err := service.SVC.Site.GetSiteDomain(id)
+//	handler.ResponseBuilder(c, err, data)
+//}

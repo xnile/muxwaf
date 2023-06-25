@@ -43,9 +43,16 @@ export function UpdateSiteHttpsConfigs(id, data) {
   })
 }
 
-export function GetConfigs(id) {
+// export function GetConfigs(id) {
+//   return request({
+//     url: `/api/sites/${id}/configs`,
+//     method: 'get'
+//   })
+// }
+
+export function GetBasicConfigs(id) {
   return request({
-    url: `/api/sites/${id}/configs`,
+    url: `/api/sites/${id}/configs/basic`,
     method: 'get'
   })
 }
@@ -64,9 +71,9 @@ export function UpdateStatus(id) {
   })
 }
 
-export function GetDomain(id) {
-  return request({
-    url: `/api/sites/${id}/domain`,
-    method: 'get'
-  })
-}
+// export function GetDomain(id) {
+//   return request({
+//     url: `/api/sites/${id}/domain`,
+//     method: 'get'
+//   })
+// }

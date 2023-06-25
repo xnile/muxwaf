@@ -144,7 +144,7 @@ import { GetALLSite } from '@/api/site'
 const columns = [
   {
     title: '网站',
-    dataIndex: 'domain',
+    dataIndex: 'host',
     width: '10%'
   },
   {

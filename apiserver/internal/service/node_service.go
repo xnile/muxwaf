@@ -39,7 +39,7 @@ func NewINodeService(db *gorm.DB, eventBus *event.EventBus) INodeService {
 
 func (svc *nodeService) Add(payload *model.NodeModel) error {
 	//node := new(model.NodeModel)
-	if err := svc.gDB.Where("ip_or_domain = ? and port = ?", payload.Addr, payload.Port).First(new(model.NodeModel)).Error; err == nil {
+	if err := svc.gDB.Where("addr = ? and port = ?", payload.Addr, payload.Port).First(new(model.NodeModel)).Error; err == nil {
 		return errors.New("节点已经存在")
 	}
 
@@ -363,14 +363,18 @@ func (svc *nodeService) Sync(id int64) error {
 				}
 
 				{
-					cert, ok := certsCache[cfg.CertID]
-					if !ok {
-						logx.Error("[node]Certificate not found")
-						return ecode.InternalServerError
+					certUUID := ""
+					if cfg.CertID > 0 {
+						cert, ok := certsCache[cfg.CertID]
+						if !ok {
+							logx.Error("[node]Certificate not found")
+							return ecode.InternalServerError
+						}
+						certUUID = cert.UUID
 					}
 
 					configsGuard = model.SiteConfigGuard{
-						CertID:             cert.UUID,
+						CertID:             certUUID,
 						IsHttps:            cfg.IsHttps,
 						IsRealIPFromHeader: cfg.IsRealIPFromHeader,
 						RealIPHeader:       cfg.RealIPHeader,

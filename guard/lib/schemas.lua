@@ -1,4 +1,5 @@
 local jsonschema    = require("resty.jsonschema")
+local table_clone   = require("table.clone")
 local string_format = string.format
 local table_insert  = table.insert
 local table_concat  = table.concat
@@ -251,6 +252,57 @@ end
 -- site config
 local site_validator, site_schema_def
 do
+
+    local site_origin_def = {
+        type = "object",
+        properties = {
+            addr = {
+                type = "string"
+            },
+            port = {
+                type = "integer",
+                minimum = 1,
+                maximum = 65535
+            },     
+            weight = {
+                type = "integer",
+                minimum = 0,
+                maximum = 100,
+                default = 100
+            },
+            kind = {
+                type = "integer",
+                enum = { 1, 2 },
+                default = 1,           
+            },
+            protocol = {
+                type = "string",
+                enum = { "http", "https"},
+                default = "http"
+            }
+        },
+        additionalProperties = false,
+        required = { "addr", "port", "weight", "kind", "protocol" }
+    }
+
+    local site_origin_config_def = {
+        type = "object",
+        properties = {
+            origin_protocol = {
+                type = "string",
+                enum = { "http", "https"},
+                default = "http"
+            },
+            origin_host_header = {
+                type = "string"
+            },
+            origins = {
+                type = "array",
+                items = site_origin_def
+            },
+        },
+    }
+
     local site_config_def = {
     type = "object",
     properties = {
@@ -263,15 +315,6 @@ do
             type = "string",
             default = ""
         },
-        origin_protocol = {
-            type = "integer",
-            enum = { 1, 2, 3 },
-            default = 1
-        },
-        origin_host = {
-            type = "string",
-            default = ""
-        },
         is_real_ip_from_header = {
             type = "integer",
             enum = { 0, 1 },
@@ -280,39 +323,12 @@ do
         real_ip_header = {
             type = "string",
             default = "X-Forwarded-For"
-        }
+        },
+        origin = site_origin_config_def
     },
     additionalProperties = false,
-    required = { "is_https", "cert_id", "origin_protocol", "origin_host", "is_real_ip_from_header", "real_ip_header" }
-}
-
-    local site_origin_def = {
-        type = "object",
-        properties = {
-            host = {
-                type = "string"
-            },
-            http_port = {
-                type = "integer",
-                minimum = 1,
-                maximum = 65535
-            },
-            https_port = {
-                type = "integer",
-                minimum = 1,
-                maximum = 65535
-            },        
-            weight = {
-                type = "integer",
-                minimum = 0,
-                maximum = 100,
-                default = 100
-            }
-        },
-        additionalProperties = false,
-        required = { "host", "http_port", "https_port", "weight" }
+    required = { "is_https", "cert_id", "is_real_ip_from_header", "real_ip_header", "origin" }
     }
-
 
     site_schema_def = {
         type = "object",
@@ -322,14 +338,17 @@ do
                 type = "string"
             },
             config = site_config_def,
-            origins = {
-                type = "array",
-                items = site_origin_def
-            }
+            -- origins = {
+            --     type = "array",
+            --     items = site_origin_def
+            -- }
         },
         additionalProperties = false,
-        required = { "id", "host", "config", "origins" }
+        required = { "id", "host", "config" }
     }
+
+    local update_site_config_def = table_clone(site_config_def)
+    update_site_config_def.required = nil
 
     local site_update_schema_def = {
         type = "object",
@@ -338,17 +357,10 @@ do
             host = {
                 type = "string"
             },
-            config = site_config_def,
-            origins = {
-                type = "array",
-                items = site_origin_def
-            }
+            config = update_site_config_def,
         },
         additionalProperties = false,    
-        anyOf = {
-            { required = { "id", "host", "config" } },
-            { required = { "id", "host", "origins" } }
-        }
+        required = { "id", "host", "config" }
     }
 
     local site_array_schema = {

@@ -52,7 +52,7 @@ type SiteOriginModel struct {
 
 	Port     int16          `json:"port"  gorm:"type:smallint;not null;default:80" binding:"gte=1,lte=65535"`
 	Addr     string         `json:"addr" gorm:"type:varchar(253);not null;default:127.0.0.1" binding:"required,ipv4|fqdn"`
-	Weight   int16          `json:"weight" gorm:"type:smallint;not null;default:100" binding:"gte=0,lte=100"`
+	Weight   int8           `json:"weight" gorm:"type:smallint;not null;default:100" binding:"gte=0,lte=100"`
 	Kind     OriginType     `json:"-"  gorm:"type:smallint;not null;default:0"`
 	Protocol OriginProtocol `json:"-" gorm:"type:origin_protocol"`
 }
@@ -66,7 +66,7 @@ type SiteOriginRsp struct {
 	ID     int64  `json:"id"`
 	Addr   string `json:"addr"`
 	Port   int16  `json:"port"`
-	Weight int16  `json:"weight"`
+	Weight int8   `json:"weight"`
 	//Kind     OriginType     `json:"kind"`
 	//Protocol OriginProtocol `json:"protocol"`
 }

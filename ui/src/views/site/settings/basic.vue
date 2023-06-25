@@ -81,7 +81,7 @@
 
 <script>
 import store from '@/store'
-import { GetDomain, GetConfigs, UpdateSiteBasicConfigs } from '@/api/site'
+import { GetBasicConfigs, UpdateSiteBasicConfigs } from '@/api/site'
 export default {
   data() {
     return {
@@ -134,7 +134,7 @@ export default {
           if (res.code == 0) {
             this.$message.success('更新成功！')
             this.visible = false
-            this.getSiteConfigs()
+            this.getBasicSiteConfigs()
           } else {
             this.$message.error(res.msg)
           }
@@ -147,21 +147,22 @@ export default {
     onCancel() {
       // window.location.reload()
       this.$router.push({ name: 'basicSettings' })
-      this.getSiteConfigs()
+      this.getBasicSiteConfigs()
     },
 
     getDomain() {
-      let id = this.$route.params.id
-      GetDomain(id).then(res => {
-        if (res.code == 0) {
-          this.domain = res.data
-        }
-      })
+      // let id = this.$route.params.id
+      // GetDomain(id).then(res => {
+      //   if (res.code == 0) {
+      //     this.domain = res.data
+      //   }
+      // })
     },
 
-    getSiteConfigs() {
-      GetConfigs(this.$route.params.id).then(res => {
+    getBasicSiteConfigs() {
+      GetBasicConfigs(this.$route.params.id).then(res => {
         if (res.code == 0) {
+          this.domain = res.data.host
           this.pre_cdn = Boolean(res.data.is_real_ip_from_header)
           this.form.real_ip_header = res.data.real_ip_header
           this.form.is_real_ip_from_header = res.data.is_real_ip_from_header
@@ -175,20 +176,20 @@ export default {
     }
   },
   mounted() {
-    this.domain = store.state.site.domain
-    if (this.domain == '') {
-      this.getDomain()
-    }
-    this.getSiteConfigs()
+    // this.domain = store.state.site.domain
+    // if (this.domain == '') {
+    //   this.getDomain()
+    // }
+    this.getBasicSiteConfigs()
   },
   activated() {
     // 在首次挂载、
     // 以及每次从缓存中被重新插入的时候调用
-    this.getSiteConfigs()
-    this.domain = store.state.site.domain
-    if (this.domain == '') {
-      this.getDomain()
-    }
+    this.getBasicSiteConfigs()
+    // this.domain = store.state.site.domain
+    // if (this.domain == '') {
+    //   this.getDomain()
+    // }
   }
 }
 </script>

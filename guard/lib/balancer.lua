@@ -76,8 +76,9 @@ local function delete_upstream_servers_and_balancer(host)
 end
 
 
+-- When force is set to true, ignore the TTL expiration and force an update
 local function resolve_origins_and_reinit_balancer(host, force)
-    local origins = site_origins[host] or {}
+    local origins = site_origins[host].origins or {}
     local servers = {}
     local ttl = MAXIMUM_TTL_VALUE
 
@@ -93,15 +94,17 @@ local function resolve_origins_and_reinit_balancer(host, force)
 
     for _, o in ipairs(origins) do
         -- TODO: rename host to addr, http_port to port
-        local addr, port, weight, protocol, origin_type = o.host, o.http_port, (o.weight or 100), (o.protocol or "http"), (o.origin_type or "")
-        if origin_type == "" then
-            origin_type = net.is_valid_ip(addr) and "ip" or "domain"
+        local addr, port, weight, protocol, origin_type = o.addr, o.port, (o.weight or 100), (o.protocol or "http"), (o.kind or "")
+        if origin_type ~= 1 and origin_type ~= 2 then
+            origin_type = net.is_valid_ip(addr) and 1 or 2
         end
 
-        if origin_type == "ip" then
+        -- if origin_type == "ip" then
+        if origin_type == 1 then
             local id = table_concat({protocol, addr, port}, ":")
             servers[id] = weight
-        elseif origin_type == "domain" then
+        -- elseif origin_type == "domain" then
+        elseif origin_type == 2 then
             local addresses, min_ttl, err = dns.lookup(addr)
             if not addresses then
                 log.error("could not resolve host '", addr, "'")
@@ -206,86 +209,112 @@ function _M.get_origin_peer_and_protocol(host, scheme)
         return nil, nil
     end
 
-    local peer, protocol = raw_peer:sub(1, idx - 1), raw_peer:sub(idx + 1)
+    local protocol, peer = raw_peer:sub(1, idx - 1), raw_peer:sub(idx + 1)
     if protocol == "follow" then   -- TODO:
         log.error("Protocol following is currently not supported.")
         protocol = "http"
-    elseif protocol ~= "http"  or protocol ~= "https" then
+    elseif protocol ~= "http" and protocol ~= "https" then
         log.error("Failed to obtain the origin protocol.")
         protocol = "http"
     end
     
-    return peer, protocol
+    return protocol, peer
 end
 
 
 
-function _M.add_origins(_, items)
-    for _, item in ipairs(items) do
-        local host, origins = item.host, item.origins
+function _M.add_origin_config(_, host, origin_config)
+    -- for _, item in ipairs(items) do
+    --     local host, origins = item.host, item.origins
 
-        if origins[host] then
-            log.warn("failed to add origin of the site '", host, "', origin already exists")
-            goto continue
-        end
+    --     if origins[host] then
+    --         log.warn("failed to add origin of the site '", host, "', origin already exists")
+    --         goto continue
+    --     end
 
-        site_origins[host] = table_clone(origins)
+    --     site_origins[host] = table_clone(origins)
 
-        -- init_worker phase, sites:full_sync -> sites:add() -> this
-        -- TODO: better it
-        if ngx_get_phase() ~= "init_worker" then
-            resolve_origins_and_reinit_balancer(host)
-        end
+    --     -- init_worker phase, sites:full_sync -> sites:add() -> this
+    --     -- TODO: better it
+    --     if ngx_get_phase() ~= "init_worker" then
+    --         resolve_origins_and_reinit_balancer(host)
+    --     end
 
-        ::continue::
+    --     ::continue::
+    -- end
+
+    if site_origins[host] then
+        log.warn("failed to add origin of the site '", host, "', origin already exists")
     end
-end
 
-
-function _M.del_origins(_, items)
-    for _, host in ipairs(items) do
-        if not origins[host] then
-            log.warn("Failed to remove the origin server of the site '", host, "', the site does not exist")
-            goto continue
-        end
-
-        site_origins[host] = nil
-
-        -- init_worker phase, sites:full_sync -> sites:del() -> this
-        -- TODO: better it
-        if ngx_get_phase() ~= "init_worker" then
-            resolve_origins_and_reinit_balancer(host)
-        end
-
-        ::continue::
+    site_origins[host] = table_clone(origin_config)
+    if ngx_get_phase() ~= "init_worker" then
+        resolve_origins_and_reinit_balancer(host)
     end
+
 end
 
 
-function _M.update_origins(_, items)
-    for _, item in ipairs(items) do
-        local host, origins = item.host, item.origins
+function _M.del_origin_config(_, host)
+    -- for _, host in ipairs(items) do
+    --     if not origins[host] then
+    --         log.warn("Failed to remove the origin server of the site '", host, "', the site does not exist")
+    --         goto continue
+    --     end
 
-        if origins[host] then
-            log.warn("failed to update origin of the site '", host, "', the site does not exist")
-            goto continue
-        end
+    --     site_origins[host] = nil
 
-        site_origins[host] = table_clone(origins)
+    --     -- init_worker phase, sites:full_sync -> sites:del() -> this
+    --     -- TODO: better it
+    --     if ngx_get_phase() ~= "init_worker" then
+    --         resolve_origins_and_reinit_balancer(host)
+    --     end
 
+    --     ::continue::
+    -- end
+    if not site_origins[host] then
+        log.warn("Failed to remove the origin server of the site '", host, "', the site does not exist")
+    end
+
+    site_origins[host] = nil
+    delete_upstream_servers_and_balancer(host)
+end
+
+
+function _M.update_origin_config(_, host, origin_config)
+    -- for _, item in ipairs(items) do
+    --     local host, origins = item.host, item.origins
+
+    --     if origins[host] then
+    --         log.warn("failed to update origin of the site '", host, "', the site does not exist")
+    --         goto continue
+    --     end
+
+    --     site_origins[host] = table_clone(origins)
+
+    --     resolve_origins_and_reinit_balancer(host, true)
+    --     ::continue::
+    -- end
+
+    if site_origins[host] then
+        log.warn("failed to update origin of the site '", host, "', the site does not exist")
+    end
+
+    site_origins[host] = table_clone(origin_config)
+
+    if ngx_get_phase() ~= "init_worker" then
         resolve_origins_and_reinit_balancer(host, true)
-        ::continue::
     end
 end
 
 
 function _M.full_sync_origins(_, items)
-    local new_origins = {}
-    for _, item in ipairs(items) do
-        local host, origins = item.host, item.origins
-        new_origins[host] = table_clone(origins)
-    end
-    site_origins = new_origins
+    -- local new_origins = {}
+    -- for _, item in ipairs(items) do
+    --     local host, origins = item.host, item.origins
+    --     new_origins[host] = table_clone(origins)
+    -- end
+    -- site_origins = new_origins
 end
 
 

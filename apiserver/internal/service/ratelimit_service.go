@@ -64,10 +64,10 @@ func (svc *rateLimitService) Add(payload *model.RateLimitModel) error {
 				UUID:      payload.UUID,
 				SiteID:    payload.SiteUUID,
 				Host:      payload.Host,
-				Path:      "",
-				Limit:     0,
-				Window:    0,
-				MatchMode: 0,
+				Path:      payload.Path,
+				Limit:     payload.Limit,
+				Window:    payload.Window,
+				MatchMode: payload.MatchMode,
 			}
 			configs = append(configs, &rateLimitGuard)
 		}

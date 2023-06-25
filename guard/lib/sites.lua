@@ -35,10 +35,10 @@ end
 
 function _M.add(_, items)
     -- add orgins first
-    balancer:add_origins(items)
+    -- balancer:add_origins(items)
 
     for _, item in ipairs(items) do
-        local id, host = item.id, item.host
+        local id, host, config = item.id, item.host, item.config
 
         if sites[id] then
             log.warn("failed to add site '", host, "' with ID '", id, "', the site already exists")
@@ -52,6 +52,9 @@ function _M.add(_, items)
 
         sites[id] = table_clone(item)
         host_matcher[host] = id
+
+        balancer:add_origin_config(host, config.origin)
+
         log.debug("successed to add site '", host, "' with ID '", id, "'")
 
         ::continue::
@@ -59,8 +62,6 @@ function _M.add(_, items)
 end
 
 function _M.del(_, items)
-    local del_hosts = {}
-
     for _, id in ipairs(items) do
         local candidate = sites[id]
         if not candidate then
@@ -71,39 +72,47 @@ function _M.del(_, items)
 
         sites[id] =  nil
         host_matcher[host] = nil
-        del_hosts[#del_hosts +1] = host
+
+        balancer:del_origin_config(host)
         
         ::continue::
     end
 
-    -- delete origins later
-    balancer:del_origins(del_hosts)
+    -- -- delete origins later
+    -- balancer:del_origin_config(del_hosts)
 end
 
 function _M.update(_, items)
-    balancer:update_origins(items)
+    -- balancer:update_origins(items)
 
     for _, item in ipairs(items) do
-        local id, host  = item.id, item.host
+        local id, host, config  = item.id, item.host, item.config
 
         local candidate = sites[id]
         if not candidate then
-            log.warn("failed to update site with ID '", id, "', the site does not exist")
+            log.warn("failed to update site ", host, " with ID '", id, "', the site does not exist")
             goto continue
         end
 
         if host ~= candidate.host then
             -- log.warn("failed to update site wh update host is not supported")
-            log.warn("failed to update site with ID '", id, "', update site domain is not supported")
+            log.warn("failed to update site ", host, " with ID '", id, "', update site domain is not supported")
             goto continue
         end
 
-        if item.config then
-            candidate.config = table_clone(item.config)
-        end
+        -- if item.config then
+        --     candidate.config = table_clone(item.config)
+        -- end
 
-        if item.origins then
-            candidate.origins = table_clone(item.origins)
+        -- if item.origins then
+        --     candidate.origins = table_clone(item.origins)
+        -- end
+
+        for k,v in pairs(config) do
+            candidate.config[k] = type(config[k]) == "table" and table_clone(config[k]) or config[k]
+            if k == "origin" then
+                balancer:update_origin_config(host, table_clone(config[k]))
+            end
         end
 
         ::continue::
@@ -113,7 +122,7 @@ end
 
 function _M.full_sync(_, items)
 
-    balancer:full_sync_origins(items)
+    -- balancer:full_sync_origins(items)
 
     local del_ids = utils.diff_cfg_ids(sites, items)
     local this = _M
@@ -148,7 +157,7 @@ end
 
 function _M.get_origin_host(host)
     local site = get_site(host)
-    return site and (site.config and site.config.origin_host or "") or ""
+    return site and (site.config and (site.config.origin and site.config.origin.origin_host_header) or "") or ""
 end
 
 -- api for ctx

@@ -22,15 +22,15 @@ const (
 )
 
 const (
-	BlacklistIP      Target = "/api/blacklist/ip"
-	BlacklistRegion         = "/api/blacklist/region"
-	WhitelistIP             = "/api/whitelist/ip"
-	WhitelistURL            = "/api/whitelist/url"
-	RateLimit               = "/api/rate-limit"
-	Certificate             = "/api/certificates"
-	Site                    = "/api/sites"
+	BlacklistIP     Target = "/api/blacklist/ip"
+	BlacklistRegion        = "/api/blacklist/region"
+	WhitelistIP            = "/api/whitelist/ip"
+	WhitelistURL           = "/api/whitelist/url"
+	RateLimit              = "/api/rate-limit"
+	Certificate            = "/api/certificates"
+	Site                   = "/api/sites"
 	SampleLogUpload        = "/api/sys/configs/sample_log_upload"
-	All                     = "/api/sys/configs"
+	All                    = "/api/sys/configs"
 )
 
 var _ Handler = &defaultHandler{}
@@ -56,12 +56,12 @@ func (h *defaultHandler) Next(event Event) {
 
 	nodes := make([]*model.NodeModel, 0)
 	mapGuards := make(map[int64]string)
-	if err := h.gDB.Select("id", "ip_or_domain", "port").Where("status = ?", 1).Find(&nodes).Error; err != nil {
+	if err := h.gDB.Select("id", "Addr", "port").Where("status = ?", 1).Find(&nodes).Error; err != nil {
 		logx.Error("[event] Failed to get nodes: ", err.Error())
 		return
 	}
 	for _, node := range nodes {
-		mapGuards[node.ID] = node.IPOrDomain + ":" + strconv.Itoa(int(node.Port))
+		mapGuards[node.ID] = node.Addr + ":" + strconv.Itoa(int(node.Port))
 	}
 
 	for guardID, guard := range mapGuards {

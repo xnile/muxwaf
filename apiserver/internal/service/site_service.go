@@ -19,11 +19,11 @@ type ISiteService interface {
 	List(pageNum, pageSize int64, status int16, domain, isFuzzy string) (*model.ListResp, error)
 	GetAll() ([]map[string]any, error)
 
-	GetConfigs(siteID int64) (*model.SiteConfigRsp, error)
+	//GetConfigs(siteID int64) (*model.SiteConfigRsp, error)
 	GetCertificates(siteID int64, domain string) ([]*model.CertCandidateResp, error)
 	GetRegionBlacklist(id int64) (*model.SiteRegionBlacklistRsp, error)
 	UpdateRegionBlacklist(id int64, region *model.SiteRegionBlacklistModel) error
-	GetSiteDomain(id int64) (string, error)
+	//GetSiteDomain(id int64) (string, error)
 	// TODO
 	//UpdateStatus(id int64) error
 
@@ -32,6 +32,7 @@ type ISiteService interface {
 	UpdateBasicConfigs(siteID int64, payload *model.SiteBasicCfgReq) error
 	UpdateHttpsConfigs(siteID int64, payload *model.SiteHttpsReq) error
 	GetHttpsConfigs(siteID int64) (*model.SiteHttpsConfigsRsp, error)
+	GetBasicHttps(siteID int64) (*model.SiteBasicConfigRsp, error)
 }
 
 type siteService struct {
@@ -256,7 +257,7 @@ func (svc *siteService) UpdateHttpsConfigs(siteID int64, payload *model.SiteHttp
 	//}
 
 	var (
-		isHttps      int16 = 0
+		isHttps      int8  = 0
 		certID       int64 = 0
 		isForceHttps int8  = 0
 		certUUID           = ""
@@ -930,6 +931,29 @@ func (svc *siteService) GetOriginCfg(siteID int64) (*model.OriginCfgRsp, error) 
 		Origins:          origins,
 	}
 	return &rsp, nil
+}
+
+func (svc *siteService) GetBasicHttps(siteID int64) (*model.SiteBasicConfigRsp, error) {
+	var siteEntity model.SiteModel
+	if err := svc.repo.DB.Where("id = ?", siteID).Select("Domain").First(&siteEntity).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ecode.ErrSiteNotFound
+		}
+		logx.Error("[site]Failed to get site: ", err)
+		return nil, ecode.InternalServerError
+	}
+
+	var configEntity model.SiteConfigModel
+	if err := svc.repo.DB.Where("site_id = ?", siteID).Select("IsRealIPFromHeader", "RealIPHeader").First(&configEntity).Error; err != nil {
+		logx.Error("[ste] get site config err: ", err)
+		return nil, ecode.InternalServerError
+	}
+
+	return &model.SiteBasicConfigRsp{
+		Host:               siteEntity.Domain,
+		IsRealIPFromHeader: configEntity.IsRealIPFromHeader,
+		RealIPHeader:       configEntity.RealIPHeader,
+	}, nil
 }
 
 func (svc *siteService) getSiteUUID(siteID int64) (string, error) {

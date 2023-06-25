@@ -24,7 +24,7 @@ type WhitelistURLGuard struct {
 	SiteID    string `json:"site_id"`
 	Host      string `json:"host"`
 	Path      string `json:"path"`
-	MatchMode int16  `json:"match_mode"`
+	MatchMode int8   `json:"match_mode"`
 }
 
 type RateLimitGuard struct {
@@ -34,7 +34,7 @@ type RateLimitGuard struct {
 	Path      string `json:"path"`
 	Limit     int64  `json:"limit"`
 	Window    int64  `json:"window"`
-	MatchMode int16  `json:"match_mode"`
+	MatchMode int8   `json:"match_mode"`
 }
 
 type CertificateGuard struct {
@@ -51,8 +51,8 @@ type SampleLogUploadGuard struct {
 
 type SiteConfigGuard struct {
 	CertID             string `json:"cert_id"`
-	IsHttps            int16  `json:"is_https"`
-	IsRealIPFromHeader int16  `json:"is_real_ip_from_header"`
+	IsHttps            int8   `json:"is_https"`
+	IsRealIPFromHeader int8   `json:"is_real_ip_from_header"`
 	//OriginProtocol     int16  `json:"origin_protocol"`
 	RealIPHeader string `json:"real_ip_header"`
 	//OriginHost         string `json:"origin_host"`
@@ -62,7 +62,7 @@ type SiteConfigGuard struct {
 type SiteOriginGuard struct {
 	Addr     string         `json:"addr"`
 	Port     int16          `json:"port"`
-	Weight   int16          `json:"weight"`
+	Weight   int8           `json:"weight"`
 	Kind     OriginType     `json:"kind"`
 	Protocol OriginProtocol `json:"protocol"`
 }
