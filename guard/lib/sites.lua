@@ -137,28 +137,12 @@ function _M.full_sync(_, items)
     end
 end
 
--- function _M.get_origin_protocol(host, request_scheme)
+
+-- TODO: move to balancer
+-- function _M.get_origin_host(host)
 --     local site = get_site(host)
---     if not site then
---         return "http"
---     end
-
---     local origin_protocol = site.config.origin_protocol
-
---     if origin_protocol == ORIGIN_PROTOCOL.HTTP then
---         return "http"
---     elseif origin_protocol == ORIGIN_PROTOCOL.HTTPS then
---         return "https"
---     elseif origin_protocol == ORIGIN_PROTOCOL.FOLLOW then
---         return request_scheme
---     end
---     return "http"
+--     return site and (site.config and (site.config.origin and site.config.origin.origin_host_header) or "") or ""
 -- end
-
-function _M.get_origin_host(host)
-    local site = get_site(host)
-    return site and (site.config and (site.config.origin and site.config.origin.origin_host_header) or "") or ""
-end
 
 -- api for ctx
 function _M.get_site_id(host)
@@ -182,7 +166,6 @@ function _M.get_site_cert_id(host)
     return site and (site.config and site.config.cert_id or false) or ""
 end
 
--- TODO:
 function  _M.is_force_https(host)
     local site = get_site(host)
     return site and (site.config and site.config.is_force_https == 1 or false) or false

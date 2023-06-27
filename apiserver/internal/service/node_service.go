@@ -258,29 +258,30 @@ func (svc *nodeService) Sync(id int64) error {
 			return ecode.InternalServerError
 		}
 
-		// 证书，只同步在使用的证书
+		// 证书，只同步在使用的证书会有问题，同步以后，再操作给站点启用证书话可能会找不到证书，所以这里同步全部证书
 		{
-			inUseCertificates := make([]*model.CertModel, 0)
-			for _, site := range siteEntities {
-				cfg := siteConfigsCache[site.ID]
-				if cfg == nil {
-					logx.Error("[node]Site configuration not found")
-					return ecode.InternalServerError
-				}
-
-				certID := cfg.CertID
-				if certID < 1 {
-					// 站点未启用HTTPS
-					continue
-				}
-				candidate := certsCache[certID]
-				if candidate == nil {
-					logx.Error("[node]Certificate not found")
-					continue
-				}
-				inUseCertificates = append(inUseCertificates, candidate)
-			}
-			if err := copier.Copy(&arrayCertificateGuard, &inUseCertificates); err != nil {
+			//inUseCertificates := make([]*model.CertModel, 0)
+			//for _, site := range siteEntities {
+			//	cfg := siteConfigsCache[site.ID]
+			//	if cfg == nil {
+			//		logx.Error("[node]Site configuration not found")
+			//		return ecode.InternalServerError
+			//	}
+			//
+			//	certID := cfg.CertID
+			//	if certID < 1 {
+			//		// 站点未启用HTTPS
+			//		continue
+			//	}
+			//	candidate := certsCache[certID]
+			//	if candidate == nil {
+			//		logx.Error("[node]Certificate not found")
+			//		continue
+			//	}
+			//	inUseCertificates = append(inUseCertificates, candidate)
+			//}
+			//if err := copier.Copy(&arrayCertificateGuard, &inUseCertificates); err != nil {
+			if err := copier.Copy(&arrayCertificateGuard, &certificateEntities); err != nil {
 				logx.Error("[node] Failed to copy arrayCertificateGuard: ", 0)
 				return ecode.InternalServerError
 			}

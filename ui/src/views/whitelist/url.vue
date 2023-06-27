@@ -139,8 +139,8 @@ import { ListSite } from '@/api/site'
 
 const columns = [
   {
-    title: '域名',
-    dataIndex: 'domain'
+    title: '网站',
+    dataIndex: 'host'
   },
   {
     title: '路径',
@@ -209,10 +209,8 @@ export default {
     showModal() {
       this.visible = true
       this.operateType = 'add'
-      // this.$refs.form.resetFields()
-      // this.$refs.form && this.$refs.form.resetFields()
       this.$nextTick(() => {
-        this.$refs.form.resetFields()
+        this.$refs.form && this.$refs.form.resetFields()
       })
     },
 

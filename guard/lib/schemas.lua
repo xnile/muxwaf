@@ -315,6 +315,11 @@ do
             type = "string",
             default = ""
         },
+        is_force_https = {
+            type = "integer",
+            enum = { 0, 1 },
+            default = 0,
+        },
         is_real_ip_from_header = {
             type = "integer",
             enum = { 0, 1 },
@@ -327,7 +332,7 @@ do
         origin = site_origin_config_def
     },
     additionalProperties = false,
-    required = { "is_https", "cert_id", "is_real_ip_from_header", "real_ip_header", "origin" }
+    required = { "is_https", "cert_id", "is_force_https", "is_real_ip_from_header", "real_ip_header", "origin" }
     }
 
     site_schema_def = {
@@ -383,9 +388,9 @@ do
 end
 
 -- log cfg
-local log_cfg_validator, log_cfg_schema
+local sample_log_cfg_validator, sample_log_cfg_schema
 do
-    log_cfg_schema = {
+    sample_log_cfg_schema = {
         type = "object",
         properties = {
             is_sample_log_upload = {
@@ -399,8 +404,8 @@ do
         additionalProperties = false,
         required = { "is_sample_log_upload", "sample_log_upload_api", "sample_log_upload_api_token"}
     }
-    log_cfg_validator = {
-        update = jsonschema.generate_validator(log_cfg_schema)
+    sample_log_cfg_validator = {
+        update = jsonschema.generate_validator(sample_log_cfg_schema)
     }
 end
 
@@ -411,7 +416,7 @@ do
     local full_cfg_schema = {
         type = "object",
         properties = {
-            log             = log_cfg_schema,
+            sample_log             = sample_log_cfg_schema,
             sites           = { type = "array", items = site_schema_def },
             certificates    = { type = "array", items = certificate_schema_def },
             rules = {
@@ -428,7 +433,7 @@ do
             },
         },
         additionalProperties = false,
-        required = { "log", "sites", "certificates", "rules"}
+        required = { "sample_log", "sites", "certificates", "rules"}
 
     }
 
@@ -443,7 +448,7 @@ end
 local validator = {
     this             = full_validator,
     sites            = site_validator,
-    sample_log       = log_cfg_validator,
+    sample_log       = sample_log_cfg_validator,
     certificates     = certificate_validator,
     blacklist_ip     = blacklist_ip_validator,
     whitelist_ip     = whitelist_ip_validator,

@@ -50,13 +50,12 @@ type SampleLogUploadGuard struct {
 }
 
 type SiteConfigGuard struct {
-	CertID             string `json:"cert_id"`
-	IsHttps            int8   `json:"is_https"`
-	IsRealIPFromHeader int8   `json:"is_real_ip_from_header"`
-	//OriginProtocol     int16  `json:"origin_protocol"`
-	RealIPHeader string `json:"real_ip_header"`
-	//OriginHost         string `json:"origin_host"`
-	Origin *SiteOriginCfgGuard `json:"origin"`
+	CertID             string              `json:"cert_id"`
+	IsHttps            int8                `json:"is_https"`
+	IsForceHttps       int8                `json:"is_force_https"`
+	IsRealIPFromHeader int8                `json:"is_real_ip_from_header"`
+	RealIPHeader       string              `json:"real_ip_header"`
+	Origin             *SiteOriginCfgGuard `json:"origin,omitempty"`
 }
 
 type SiteOriginGuard struct {
@@ -97,7 +96,7 @@ type SiteOriginCfgGuard struct {
 
 // ConfigsSyncGuard Guard全量配置
 type ConfigsSyncGuard struct {
-	SampleLog    *SampleLogUploadGuard `json:"log"` // TODO json改名
+	SampleLog    *SampleLogUploadGuard `json:"sample_log"`
 	Sites        []*SiteGuard          `json:"sites"`
 	Certificates []*CertificateGuard   `json:"certificates"`
 	Rules        *RulesGuard           `json:"rules"`

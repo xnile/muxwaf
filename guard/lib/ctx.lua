@@ -165,7 +165,7 @@ function _M.new()
   ctx.waf_start_time = now
   ctx.site_id = sites.get_site_id(ctx.host)
   ctx.real_client_ip = get_real_client_ip(ctx.host, ctx.remote_addr)  
-  ctx.upstream_host   = sites.get_origin_host(ctx.host)
+  ctx.upstream_host   = balancer.get_origin_host(ctx.host)
   ctx.ip_geo = get_ip_geo(ctx.real_client_ip)
   -- ctx.unescape_uri = decode_url(ctx.request_uri)
 

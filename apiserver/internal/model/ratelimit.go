@@ -4,7 +4,7 @@ type RateLimitModel struct {
 	Model
 	SiteID    int64  `json:"site_id" gorm:"index;not null" binding:"required,numeric"`
 	SiteUUID  string `json:"-" gorm:"index;type:char(20);default:''"`
-	Host      string `json:"host" gorm:"uniqueIndex;type:varchar(255);not null"`
+	Host      string `json:"host" gorm:"index;type:varchar(255);not null"`
 	Path      string `json:"path" gorm:"type:text;not null" binding:"required,uri"`
 	Limit     int64  `json:"limit" gorm:"type:bigint;not null" binding:"required,numeric"`
 	Window    int64  `json:"window" gorm:"type:bigint;not null" binding:"required,numeric"`

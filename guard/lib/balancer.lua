@@ -35,24 +35,6 @@ if not dns_lookup_lock then
 end
 
 
-
-
--- local function parse_orgins(origins)
---     local servers = {
---         http  = tab_new(0, #origins),
---         https = tab_new(0, #origins)
---     }
-
---     for _, origin in ipairs(origins) do
---         local addr_http  = origin.host .. ":" .. origin.http_port
---         local addr_https = origin.host .. ":" .. origin.https_port
---         local weight = origin.weight > 0 and origin.weight or DEFAULT_SERVER_WEIGHT
---         servers.http[addr_http] = weight
---         servers.https[addr_https] = weight
---     end
---     return servers
--- end
-
 local function balancer_reinit(host)
     local servers = upstream_servers[host]
     if not servers then
@@ -198,7 +180,6 @@ local function get_balancer(host)
 end
 
 
--- return protocol, peer
 function _M.get_origin_peer_and_protocol(host, scheme)
     local balancer = get_balancer(host)
     if not balancer then return nil, nil end
@@ -221,6 +202,10 @@ function _M.get_origin_peer_and_protocol(host, scheme)
     return protocol, peer
 end
 
+
+function _M.get_origin_host(host)
+    return site_origins[host] and site_origins[host].origin_host_header or ""
+end
 
 
 function _M.add_origin_config(_, host, origin_config)
@@ -345,14 +330,14 @@ end
 
 
 function _M.balance(ctx)
+    ngx_balancer.set_more_tries(1)
+
     -- local host = ctx.host
 
     -- if not host then
     --     log.error("failed to get host")
     --     return ngx_exit(HTTP_GATEWAY_TIMEOUT)
     -- end
-
-    -- ngx_balancer.set_more_tries(1)
 
     -- local balancer, err = get_balancer(host)
     -- if not balancer then

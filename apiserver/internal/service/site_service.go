@@ -168,7 +168,7 @@ func (svc *siteService) Add(payload *model.SiteReq) error {
 	// update guard
 	{
 		configs := make(model.GuardArrayRsp, 0)
-		config, err := svc.assembleSiteGuardRsp(siteEty.ID)
+		config, err := svc.assembleSiteGuardRsp(siteEty.ID, false)
 		if err != nil {
 			logx.Error("[GUARD]Failed to update guard: ", err)
 			return nil
@@ -234,7 +234,7 @@ func (svc *siteService) UpdateBasicConfigs(siteID int64, payload *model.SiteBasi
 	// guard update
 	{
 		configs := make(model.GuardArrayRsp, 0)
-		config, err := svc.assembleSiteGuardRsp(siteID)
+		config, err := svc.assembleSiteGuardRsp(siteID, true)
 		if err != nil {
 			return err
 		}
@@ -293,7 +293,7 @@ func (svc *siteService) UpdateHttpsConfigs(siteID int64, payload *model.SiteHttp
 	// update guard
 	{
 		configs := make(model.GuardArrayRsp, 0)
-		config, err := svc.assembleSiteGuardRsp(siteID)
+		config, err := svc.assembleSiteGuardRsp(siteID, true)
 		if err != nil {
 			return err
 		}
@@ -648,11 +648,12 @@ func (svc *siteService) GetCertificates(siteID int64, domain string) ([]*model.C
 
 }
 
-func (svc *siteService) assembleSiteGuardRsp(siteID int64) (*model.SiteGuard, error) {
+func (svc *siteService) assembleSiteGuardRsp(siteID int64, ignoreOriginCfg bool) (*model.SiteGuard, error) {
 	siteEntity := new(model.SiteModel)
 	siteConfigEntity := new(model.SiteConfigModel)
-	certEntity := new(model.CertModel)
-	siteOriginEntities := make([]*model.SiteOriginModel, 0)
+	//certEntity := new(model.CertModel)
+
+	//var siteOriginCfgGuar model.SiteOriginCfgGuard
 
 	if err := svc.repo.DB.Where("id = ?", siteID).First(siteEntity).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -666,9 +667,12 @@ func (svc *siteService) assembleSiteGuardRsp(siteID int64) (*model.SiteGuard, er
 		return nil, ecode.InternalServerError
 	}
 
-	if err := svc.repo.DB.Where("site_id = ?", siteID).Find(&siteOriginEntities).Error; err != nil {
-		return nil, ecode.InternalServerError
-	}
+	// 源站配置
+	//siteOriginCfgGuard := model.SiteOriginCfgGuard{
+	//	OriginProtocol:   siteConfigEntity.OriginProtocol,
+	//	OriginHostHeader: siteConfigEntity.OriginHostHeader,
+	//	Origins:          _siteOriginsGuard,
+	//}
 
 	// 站点
 	siteGuardRsp := new(model.SiteGuard)
@@ -676,37 +680,45 @@ func (svc *siteService) assembleSiteGuardRsp(siteID int64) (*model.SiteGuard, er
 	siteGuardRsp.Host = siteEntity.Domain
 	siteGuardRsp.Configs = nil
 
-	// 源站
-	_siteOriginsGuard := make([]*model.SiteOriginGuard, 0)
-	if err := copier.Copy(&_siteOriginsGuard, &siteOriginEntities); err != nil {
-		logx.Error("[site]Failed to copy site origins")
-		return nil, ecode.InternalServerError
-	}
-
-	siteOriginCfgGuard := model.SiteOriginCfgGuard{
-		OriginProtocol:   siteConfigEntity.OriginProtocol,
-		OriginHostHeader: siteConfigEntity.OriginHostHeader,
-		Origins:          _siteOriginsGuard,
-	}
-
 	// 站点配置
 	_siteConfigGuard := new(model.SiteConfigGuard)
 	if err := copier.Copy(_siteConfigGuard, siteConfigEntity); err != nil {
 		logx.Error("[site] Failed to copy site guard config: ", err)
 		return nil, err
 	}
+	_siteConfigGuard.CertID = siteConfigEntity.CertUUID
 
-	_siteConfigGuard.Origin = &siteOriginCfgGuard
-
-	if siteConfigEntity.CertID == 0 {
-		_siteConfigGuard.CertID = ""
-	} else {
-		if err := svc.repo.DB.Where("id =?", siteConfigEntity.CertID).First(certEntity).Error; err != nil {
-			logx.Error("[site] get cert uuid err: ", err)
-			_siteConfigGuard.CertID = ""
+	_siteConfigGuard.Origin = nil
+	if !ignoreOriginCfg {
+		siteOriginEntities := make([]*model.SiteOriginModel, 0)
+		if err := svc.repo.DB.Where("site_id = ?", siteID).Find(&siteOriginEntities).Error; err != nil {
+			return nil, ecode.InternalServerError
 		}
-		_siteConfigGuard.CertID = certEntity.UUID
+
+		// 源站
+		_siteOriginsGuard := make([]*model.SiteOriginGuard, 0)
+		if err := copier.Copy(&_siteOriginsGuard, &siteOriginEntities); err != nil {
+			logx.Error("[site]Failed to copy site origins")
+			return nil, ecode.InternalServerError
+		}
+		// 源站配置
+		siteOriginCfgGuard := model.SiteOriginCfgGuard{
+			OriginProtocol:   siteConfigEntity.OriginProtocol,
+			OriginHostHeader: siteConfigEntity.OriginHostHeader,
+			Origins:          _siteOriginsGuard,
+		}
+		_siteConfigGuard.Origin = &siteOriginCfgGuard
 	}
+
+	//if siteConfigEntity.CertID == 0 {
+	//	_siteConfigGuard.CertID = ""
+	//} else {
+	//	if err := svc.repo.DB.Where("id =?", siteConfigEntity.CertID).First(certEntity).Error; err != nil {
+	//		logx.Error("[site] get cert uuid err: ", err)
+	//		_siteConfigGuard.CertID = ""
+	//	}
+	//	_siteConfigGuard.CertID = certEntity.UUID
+	//}
 
 	siteGuardRsp.Configs = _siteConfigGuard
 
@@ -893,7 +905,7 @@ nextAddOrUpdate:
 	// update guard
 	{
 		configs := make(model.GuardArrayRsp, 0)
-		config, err := svc.assembleSiteGuardRsp(siteID)
+		config, err := svc.assembleSiteGuardRsp(siteID, false)
 		if err != nil {
 			return err
 		}

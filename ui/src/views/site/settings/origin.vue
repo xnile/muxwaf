@@ -17,7 +17,7 @@
       :wrapper-col="wrapperCol"
       label-align="left"
     >
-      <a-form-model-item label="回源host" prop="origin_host_header">
+      <a-form-model-item label="回源HOST" prop="origin_host_header">
         <a-input v-if="editable" style="width: 200px" placeholder="" v-model="form.origin_host_header" />
         <template v-else>{{ form.origin_host_header }}</template>
       </a-form-model-item>

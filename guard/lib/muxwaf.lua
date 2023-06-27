@@ -77,7 +77,7 @@ function _M.rewrite_phase()
 
   local request_uri = ngx.var.request_uri
   local scheme  = ngx.var.scheme
-  if scheme == "http" and sites:is_force_https(host) then
+  if scheme == "http" and sites.is_force_https(host) then
     return ngx.redirect(table_concat({"https://", host, request_uri}), 302)
   end
   ctx_init()

@@ -266,12 +266,12 @@ func (svc *certService) UpdateCert(c *gin.Context, id int64) error {
 	// 更新guard
 	{
 		configs := make(model.GuardArrayRsp, 0)
-		config := map[string]string{
-			"id":   entity.UUID,
-			"cert": entity.Cert,
-			"key":  entity.Key,
+		certGuard := model.CertificateGuard{
+			UUID: entity.UUID,
+			Cert: payload.Cert,
+			Key:  payload.Key,
 		}
-		configs = append(configs, &config)
+		configs = append(configs, &certGuard)
 		svc.eventBus.PushEvent(event.Certificate, event.OpTypeUpdate, configs)
 	}
 	return nil

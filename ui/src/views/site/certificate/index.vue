@@ -53,13 +53,13 @@
         :wrapper-col="{ span: 15 }"
         layout="vertical"
       >
-        <a-form-model-item label="证书名称">
+        <a-form-model-item label="证书名称" prop="name">
           <a-input placeholder="请输入证书名称" v-model="form.name"></a-input>
         </a-form-model-item>
-        <a-form-model-item label="证书文件">
+        <a-form-model-item label="证书文件" prop="cert">
           <a-textarea :rows="7" :placeholder="placeholderCert" v-model="form.cert"></a-textarea>
         </a-form-model-item>
-        <a-form-model-item label="证书私钥">
+        <a-form-model-item label="证书私钥" prop="key">
           <a-textarea :rows="7" :placeholder="placeholderKey" v-model="form.key"></a-textarea>
         </a-form-model-item>
         <!-- </a-form> -->
@@ -134,6 +134,9 @@ export default {
     add() {
       this.visible = true
       this.operateType = 'add'
+      this.$nextTick(() => {
+        this.$refs.form && this.$refs.form.resetFields()
+      })
     },
 
     onUpdateItem(record) {
