@@ -13,7 +13,6 @@ local net                = require("utils.net")
 local ngx                = ngx
 local ngx_var            = ngx.var
 local ngx_say            = ngx.say
--- local ngx_worker_id      = ngx.worker.id
 local ngx_unescape_uri   = ngx.unescape_uri
 local table_new          = table.new
 local setmetatable       = setmetatable
@@ -86,8 +85,6 @@ local function get_real_client_ip(host, remote_addr)
 
     real_client_ip = raw_header_ip:sub(1, idx - 1)
   end
-
-  log.error("real_client_ip: ", real_client_ip)
 
   if not net.is_valid_ip(real_client_ip) then
     log.warn("failed to get client ip from http header, '", real_client_ip, "' is invalid ip, fallback to use remote_addr")

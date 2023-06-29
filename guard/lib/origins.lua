@@ -16,7 +16,6 @@ function _M.add_origins(_, items)
         site_origins[host] = table_clone(origins)
         ::continue::
     end
-    -- sync_lookup_origins()
 end
 
 
@@ -32,7 +31,6 @@ function _M.del_origins(_, items)
         upstream_servers[host] = nil
         ::continue::
     end
-    -- sync_lookup_origins()
 end
 
 
@@ -48,7 +46,6 @@ function _M.update_origins(_, items)
         site_origins[host] = table_clone(origins)
         ::continue::
     end
-    -- sync_lookup_origins()
 end
 
 

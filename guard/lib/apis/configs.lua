@@ -1,7 +1,8 @@
-local events  = require("events")
+local events   = require("events")
 local schemas  = require("schemas")
-local configs = require("configs")
-local json    = require("utils.json")
+local configs  = require("configs")
+local json     = require("utils.json")
+local metrics  = require("metrics")
 local setmetatable = setmetatable
 
 
@@ -35,6 +36,7 @@ return setmetatable({}, {
 
                         event.data = data
                         events:send(c.encode(event))
+                        metrics:incr_config_updates()
                         return c.say_ok()
                     end
                 end

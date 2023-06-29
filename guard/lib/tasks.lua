@@ -14,8 +14,6 @@ local assert        = assert
 
 local CONFIG_SYNC_INTERVAL        = constants.CONFIG_SYNC_INTERVAL
 local SAMPLE_LOG_SYNC_INTERVAL    = constants.SAMPLE_LOG_SYNC_INTERVAL
--- local CALC_QPS_INTERVAL           = constants.CALC_QPS_INTERVAL
--- local CALC_BANDWIDTH_INTERVAL     = constants.CALC_BANDWIDTH_INTERVAL
 
 local _M = {
   _VERSION = 0.1
