@@ -108,10 +108,7 @@ func UpdateHttps(c *gin.Context) {
 	}
 	svc := service.SVC.Site
 	err := svc.UpdateHttpsConfigs(id, &payload)
-	if err != nil {
-		logx.Warnf("update site err, %v", err)
-	}
-	handler.ResponseBuilder(c, nil, nil)
+	handler.ResponseBuilder(c, err, nil)
 
 }
 

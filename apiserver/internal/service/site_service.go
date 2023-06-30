@@ -264,6 +264,9 @@ func (svc *siteService) UpdateHttpsConfigs(siteID int64, payload *model.SiteHttp
 	)
 
 	if *payload.IsHttps != 0 {
+		if *payload.CertID < 1 {
+			return errors.New("请选择证书")
+		}
 		isHttps = *payload.IsHttps
 		certID = *payload.CertID
 		isForceHttps = *payload.IsForceHttps

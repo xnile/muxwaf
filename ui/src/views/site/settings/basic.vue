@@ -1,6 +1,14 @@
 <template>
   <div>
-    <a-row>
+    <a-row v-if="!editable">
+      <div class="item">
+        <a-col :span="22"></a-col>
+        <a-col :span="2">
+          <a @click="onEdit">修改</a>
+        </a-col>
+      </div>
+    </a-row>
+    <!-- <a-row>
       <div class="item">
         <a-col :span="2">
           <span class="list-lable">域名 :</span>
@@ -13,18 +21,7 @@
         </a-col>
       </div>
     </a-row>
-    <!-- <a-row>
-      <div class="item">
-        <a-col :span="2">
-          <span class="list-lable">回源协议 :</span>
-        </a-col>
-        <a-col :span="12">
-          <span v-if="form.origin_protocol == 1">http</span>
-          <span v-else-if="form.origin_protocol == 2">https</span>
-          <span v-else-if="form.origin_protocol == 3">跟随</span>
-        </a-col>
-      </div>
-    </a-row> -->
+
     <a-row>
       <div class="item">
         <a-col :span="2">
@@ -46,36 +43,61 @@
           <span v-else-if="real_ip_header_type == 1">{{ form.real_ip_header }}</span>
         </a-col>
       </div>
-    </a-row>
+    </a-row> -->
 
     <!-- 新增 Modal -->
-    <a-modal :width="800" v-model="visible" title="基本配置" @ok="onOk">
-      <!-- <a-form-model-item label="域名">
+    <!-- <a-modal :width="800" v-model="visible" title="基本配置" @ok="onOk"> -->
+    <a-form-model
+      ref="form"
+      :model="form"
+      :rules="rules"
+      :label-col="labelCol"
+      :wrapper-col="wrapperCol"
+      label-align="left"
+    >
+      <a-form-model-item label="域名">
         {{ domain }}
-      </a-form-model-item> -->
-      <!-- <a-form-model-item label="回源协议">
-        <a-radio-group v-model="form.origin_protocol">
-          <a-radio :value="1">HTTP</a-radio>
-          <a-radio :value="2">HTTPS</a-radio>
-          <a-radio :value="3">跟随</a-radio>
-        </a-radio-group>
-      </a-form-model-item> -->
+      </a-form-model-item>
       <a-form-model-item label="前置CDN">
-        <a-switch v-model="pre_cdn" />
+        <a-switch v-if="editable" v-model="pre_cdn" />
+        <!-- eslint-disable-next-line -->
+        <template v-else
+          ><span v-if="form.is_real_ip_from_header == 1">是</span>
+          <span v-else>否</span>
+        </template>
       </a-form-model-item>
-      <a-form-model-item v-if="pre_cdn" label="获取IP的Header">
-        <a-radio-group v-model="real_ip_header_type">
-          <a-radio :value="0" :style="radioStyle">取X-Forwarded-For中的第一个IP作为客户端源IP</a-radio>
-          <a-radio :value="1" :style="radioStyle">自定义Header</a-radio>
-        </a-radio-group>
-        <a-input
-          v-if="real_ip_header_type"
-          type="text"
-          v-model="form.real_ip_header"
-          style="display: block; width: 20em"
-        />
+      <a-form-model-item label="获取IP的Header" v-if="pre_cdn">
+        <template v-if="editable">
+          <a-radio-group v-model="real_ip_header_type">
+            <a-radio :value="0" :style="radioStyle">取X-Forwarded-For中的第一个IP作为客户端源IP</a-radio>
+            <a-radio :value="1" :style="radioStyle">自定义Header</a-radio>
+          </a-radio-group>
+          <a-input
+            v-if="real_ip_header_type"
+            type="text"
+            v-model="form.real_ip_header"
+            style="display: block; width: 20em"
+          />
+        </template>
+
+        <template v-else>
+          <span v-if="real_ip_header_type == 0">取X-Forwarded-For中的第一个IP作为客户端源IP</span>
+          <span v-else-if="real_ip_header_type == 1">{{ form.real_ip_header }}</span>
+        </template>
       </a-form-model-item>
-    </a-modal>
+      <template v-if="editable">
+        <a-row style="margin-top: 40px;">
+          <a-col>
+            <a-button style="margin-left: 10px;" type="primary" @click="onOK">
+              保存
+            </a-button>
+            <a-button style="margin-left: 10px;" @click="onCancel">
+              取消
+            </a-button>
+          </a-col>
+        </a-row>
+      </template>
+    </a-form-model>
   </div>
 </template>
 
@@ -85,20 +107,20 @@ import { GetBasicConfigs, UpdateSiteBasicConfigs } from '@/api/site'
 export default {
   data() {
     return {
-      visible: false,
+      // visible: false,
+      editable: false,
       domain: '',
       real_ip_header_type: 0,
       pre_cdn: false,
       form: {
-        // origin_protocol: 1,
         is_real_ip_from_header: 0,
         real_ip_header: ''
       },
       rules: {
         // protocol: [{ required: true, message: '' }]
       },
-      // labelCol: { span: 3 },
-      // wrapperCol: { span: 20 },
+      labelCol: { span: 3 },
+      wrapperCol: { span: 20 },
       radioStyle: {
         display: 'block',
         // height: '30px',
@@ -108,11 +130,12 @@ export default {
   },
   methods: {
     onEdit() {
-      this.visible = true
+      // this.visible = true
+      this.editable = true
     },
     // onOk() {},
 
-    onOk() {
+    onOK() {
       let payload = {}
       Object.assign(payload, this.form)
       payload.is_real_ip_from_header = 1
@@ -133,7 +156,7 @@ export default {
         .then(res => {
           if (res.code == 0) {
             this.$message.success('更新成功！')
-            this.visible = false
+            this.editable = false
             this.getBasicSiteConfigs()
           } else {
             this.$message.error(res.msg)
@@ -146,6 +169,7 @@ export default {
     // onChange() {},
     onCancel() {
       // window.location.reload()
+      this.editable = false
       this.$router.push({ name: 'basicSettings' })
       this.getBasicSiteConfigs()
     },
@@ -185,6 +209,7 @@ export default {
   activated() {
     // 在首次挂载、
     // 以及每次从缓存中被重新插入的时候调用
+    this.editable = false
     this.getBasicSiteConfigs()
     // this.domain = store.state.site.domain
     // if (this.domain == '') {
@@ -195,18 +220,12 @@ export default {
 </script>
 
 <style scoped>
-.list-lable {
-  color: rgba(0, 0, 0, 0.65);
-  font-size: 14px;
-  /* line-height: 30px; */
-  /* font-weight: 400; */
-}
 .item {
   /* height: 10px; */
-  line-height: 35px;
+  /* line-height: 35px; */
 }
 
-.right {
-  text-align: right;
+.ant-form-item {
+  margin-bottom: 5px;
 }
 </style>
