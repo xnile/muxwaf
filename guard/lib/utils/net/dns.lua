@@ -99,8 +99,9 @@ function _M.lookup(host)
 
   local r, err = resolver:new{
     nameservers = resolv_conf.nameservers,
-    retrans = 5,
+    retrans = 5,  -- 5 retransmissions on receive timeout
     timeout = 2000,  -- 2 sec
+    no_random = true, -- always start with first nameserver
   }
 
   if not r then
