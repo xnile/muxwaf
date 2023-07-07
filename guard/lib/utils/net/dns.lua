@@ -7,7 +7,8 @@ local resolv_conf = require("utils.net.resolv_conf")
 
 local ngx_log = ngx.log
 local ngx_INFO = ngx.INFO
-local ngx_ERR = ngx.ERR
+-- local ngx_ERR = ngx.ERR
+local ngx_WARN = ngx.WARN
 local string_format = string.format
 local table_concat = table.concat
 local table_insert = table.insert
@@ -15,11 +16,12 @@ local ipairs = ipairs
 local tostring = tostring
 
 local _M = {}
-local CACHE_SIZE = 10000
+local CACHE_SIZE = 1000
 -- maximum value according to https://tools.ietf.org/html/rfc2181
 local MAXIMUM_TTL_VALUE = 2147483647
 -- for every host we will try two queries for the following types with the order set here
 local QTYPES_TO_CHECK = { resolver.TYPE_A, resolver.TYPE_AAAA }
+
 
 local cache
 do
@@ -113,6 +115,14 @@ function _M.lookup(host)
   if addresses then
     cache_set(host, addresses, min_ttl)
     return addresses, min_ttl, nil
+  end
+
+
+  local _, stale_addresses = cache:get(host)
+  if stale_addresses then
+      ngx_log(ngx_WARN, "failed to query the DNS server for ", host, ":\n", table_concat(dns_errors, "\n"),
+       ", fallback to using the previous DNS resolution result")
+      return  stale_addresses, 0, nil
   end
 
   return nil, -1, "failed to query the DNS server for " .. host .. ":\n" .. table_concat(dns_errors, "\n")

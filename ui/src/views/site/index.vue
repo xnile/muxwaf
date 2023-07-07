@@ -2,7 +2,7 @@
   <page-header-wrapper>
     <!-- 添加按钮 -->
     <template v-slot:extra>
-      <a-button type="primary" @click="add">添加防护网站</a-button>
+      <a-button type="primary" @click="add">新增防护网站</a-button>
     </template>
     <a-card>
       <div class="table-page-search-wrapper">

@@ -89,7 +89,8 @@ local function resolve_origins_and_reinit_balancer(host, force)
         elseif origin_type == 2 then
             local addresses, min_ttl, err = dns.lookup(addr)
             if not addresses then
-                log.error("could not resolve host '", addr, "'")
+                -- log.error("could not resolve host '", addr, "'")
+                log.error(err)
                 addresses = {addr}
             end
 

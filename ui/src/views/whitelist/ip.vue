@@ -8,7 +8,7 @@
       <div class="table-page-search-wrapper">
         <a-form-model layout="inline" labelAlign="right">
           <a-row>
-            <a-col :span="5">
+            <a-col :span="6">
               <a-form-item label="">
                 <a-range-picker :showTime="showTime" v-model="time" @change="onTimeChange" />
               </a-form-item>
