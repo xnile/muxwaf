@@ -5,7 +5,7 @@
       <a-button type="primary" @click="add">添加证书</a-button>
     </template>
 
-    <a-card title="证书管理">
+    <a-card>
       <!-- 表格 -->
       <a-table :columns="columns" :dataSource="list" :rowKey="record => record.id" :pagination="false">
         <span slot="end_time" slot-scope="text">{{ text | moment }}</span>

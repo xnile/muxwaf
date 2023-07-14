@@ -10,12 +10,12 @@
           <a-row>
             <a-col :span="6">
               <a-form-item label="">
-                <a-range-picker :showTime="showTime" v-model="time" @change="onTimeChange" />
+                <a-range-picker :showTime="showTime" v-model="time" @change="onTimeChange" @ok="onTimeOK" />
               </a-form-item>
             </a-col>
             <a-col :span="2" style="margin-left: 5px">
               <a-form-model-item label="">
-                <a-select placeholder="请选择" v-model="queryParams.status">
+                <a-select placeholder="请选择" v-model="queryParams.status" @change="onStatusChange">
                   <a-select-option value="">全部</a-select-option>
                   <a-select-option :value="0">未启用</a-select-option>
                   <a-select-option :value="1">已启用</a-select-option>
@@ -233,6 +233,14 @@ export default {
       }
       this.queryParams.start_time = date[0].valueOf() / 1000
       this.queryParams.end_time = date[1].valueOf() / 1000
+    },
+
+    onTimeOK() {
+      this.doGetList()
+    },
+
+    onStatusChange() {
+      this.doGetList()
     },
 
     onQuery() {

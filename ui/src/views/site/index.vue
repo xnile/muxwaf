@@ -10,7 +10,7 @@
           <a-row>
             <a-col :span="2">
               <a-form-model-item label="">
-                <a-select placeholder="请选择" v-model="queryParams.status">
+                <a-select placeholder="请选择" v-model="queryParams.status" @change="onStatusChange">
                   <a-select-option value="">全部</a-select-option>
                   <a-select-option :value="0">未启用</a-select-option>
                   <a-select-option :value="1">已启用</a-select-option>
@@ -345,6 +345,10 @@ export default {
     onSettings(id, domain) {
       this.$router.push({ path: `/site/${id}/settings` })
       store.commit('SET_DOMAIN', domain)
+    },
+
+    onStatusChange() {
+      this.doGetList()
     },
 
     add() {

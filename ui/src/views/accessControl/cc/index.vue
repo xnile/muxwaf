@@ -10,7 +10,7 @@
           <a-row>
             <a-col :span="3">
               <a-form-model-item label="">
-                <a-select placeholder="请选择网站" v-model="queryParams.site_id">
+                <a-select placeholder="请选择网站" v-model="queryParams.site_id" @change="onSiteChange">
                   <a-select-option :value="0">全部网站</a-select-option>
                   <a-select-option v-for="item in sites" :value="item.id" :key="item.id">{{
                     item.domain
@@ -20,7 +20,7 @@
             </a-col>
             <a-col :span="2" style="margin-left: 10px">
               <a-form-model-item label="">
-                <a-select placeholder="请选择" v-model="queryParams.match_mode">
+                <a-select placeholder="请选择" v-model="queryParams.match_mode" @change="onMatchModeChange">
                   <a-select-option :value="0">全部模式</a-select-option>
                   <a-select-option :value="1">前缀</a-select-option>
                   <a-select-option :value="2">精准</a-select-option>
@@ -29,7 +29,7 @@
             </a-col>
             <a-col :span="2" style="margin-left: 10px">
               <a-form-model-item label="">
-                <a-select placeholder="请选择" v-model="queryParams.status">
+                <a-select placeholder="请选择" v-model="queryParams.status" @change="onStatusChange">
                   <a-select-option value="">全部</a-select-option>
                   <a-select-option :value="0">未启用</a-select-option>
                   <a-select-option :value="1">已启用</a-select-option>
@@ -242,7 +242,18 @@ export default {
 
     onChange() {},
 
-    onTimeChange() {},
+    // onTimeChange() {},
+    onSiteChange() {
+      this.doGetList()
+    },
+
+    onMatchModeChange() {
+      this.doGetList()
+    },
+
+    onStatusChange() {
+      this.doGetList()
+    },
 
     query() {
       this.queryParams.page_num = 1

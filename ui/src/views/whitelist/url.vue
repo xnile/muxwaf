@@ -10,7 +10,7 @@
           <a-row>
             <a-col :span="4">
               <a-form-model-item label="">
-                <a-select placeholder="请选择" v-model="queryParams.site_id">
+                <a-select placeholder="请选择" v-model="queryParams.site_id" @change="onChangeSite">
                   <a-select-option :value="0">全部</a-select-option>
                   <a-select-option v-for="item in domains" :value="item.id" :key="item.id">{{
                     item.domain
@@ -20,7 +20,7 @@
             </a-col>
             <a-col :span="2" style="margin-left: 10px">
               <a-form-model-item label="">
-                <a-select placeholder="请选择" v-model="queryParams.status">
+                <a-select placeholder="请选择" v-model="queryParams.status" @change="onChangeStatus">
                   <a-select-option value="">全部</a-select-option>
                   <a-select-option :value="0">未启用</a-select-option>
                   <a-select-option :value="1">已启用</a-select-option>
@@ -218,13 +218,13 @@ export default {
     onShowSizeChange(current, pageSize) {
       this.queryParams.page_size = pageSize
       this.queryParams.page_num = 1
-      this.doGetList()
+      this.getList()
     },
 
     // 跳转到第几页
     onChange(page, pageSize) {
       this.queryParams.page_num = page
-      this.doGetList()
+      this.getList()
     },
 
     onCancel() {
@@ -233,6 +233,14 @@ export default {
 
     onSearch() {
       this.queryParams.page_num = 1
+      this.getList()
+    },
+
+    onChangeSite() {
+      this.getList()
+    },
+
+    onChangeStatus() {
       this.getList()
     },
 
