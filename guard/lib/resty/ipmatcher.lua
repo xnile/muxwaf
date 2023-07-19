@@ -536,7 +536,7 @@ function _M.match(self, ip)
         return false, nil, "invalid ip address, not ipv4 and ipv6"
     end
 
-    -- TODO: put this part inside the match_ipv6 function
+    -- TODO: move to the match_ipv6 function
     local ipv6s = self.ipv6
     local value = ipv6s[ip]
     if value ~= nil then

@@ -27,7 +27,8 @@ local _M = {
 
 local geo_ip_searcher
 do
-  geo_ip_searcher = geo.new("ipip")
+  -- geo_ip_searcher = geo.new("ipip")
+  geo_ip_searcher = geo.new("xdb")
 end
 
 function _M.get_ip_geo_searcher()

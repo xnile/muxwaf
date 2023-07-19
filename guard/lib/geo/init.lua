@@ -111,7 +111,14 @@ function _M.search(self, ip)
         local db, provider = self.db, self.provider
 
         if provider == "ipip" then
-            geo = db:find(ip, "CN")
+            local res = db:find(ip, "CN")
+            geo = {
+                country_name = res.country_name,
+                region_name = res.region_name,
+                city_name = res.city_name
+            }
+
+
         elseif provider == "xdb" then
             local res, err = db:search(ip)
             if not res then
@@ -120,8 +127,8 @@ function _M.search(self, ip)
 
             geo = {
                 country_name = res.country_name,
-                city_name = parse_region_city(res.city_name),
                 region_name = parse_region_city(res.region_name),
+                city_name = parse_region_city(res.city_name)
             }
         end
         ip_geo_cache:set(ip, geo, IP_GEO_CACHE_TTL)

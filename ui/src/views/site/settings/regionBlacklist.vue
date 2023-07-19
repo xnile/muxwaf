@@ -44,7 +44,7 @@
           style="width: 50%"
         />
         <template v-else>
-          <span>{{ form.regions || '无' }}</span>
+          <span style="padding-left: 20px;">{{ form.regions || '无' }}</span>
         </template>
       </a-form-model-item>
       <a-form-model-item label="海外地域级IP黑名单" style="margin-top: 10px;">
@@ -55,7 +55,7 @@
           style="width: 50%"
         />
         <template v-else>
-          <span>{{ form.countries || '无' }}</span>
+          <span style="padding-left: 20px;">{{ form.countries || '无' }}</span>
         </template>
       </a-form-model-item>
       <template v-if="editable">

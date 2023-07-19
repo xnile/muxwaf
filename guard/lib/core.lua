@@ -44,7 +44,7 @@ local function check_blacklist_ip(ctx)
     return ctx:say_block()
   end
   if err then
-    log.error(err)
+    log.warn(err)
   end
 end
 
@@ -67,7 +67,7 @@ local function check_whitelist_ip(ctx)
     return ngx_exit(NGX_OK)
   end
   if err then
-    log.error(err)
+    log.warn(err)
   end
   return
 end

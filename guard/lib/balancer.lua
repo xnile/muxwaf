@@ -70,7 +70,7 @@ local function resolve_origins_and_reinit_balancer(host, force)
 
     local ok = dns_lookup_lock:lock(host)
     if not ok then
-        log.debug("skip updating the origin for '", host, "'")
+        -- log.debug("skip updating the origin for '", host, "'")
         return
     end
 
