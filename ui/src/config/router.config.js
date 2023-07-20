@@ -185,21 +185,21 @@ export const asyncRouterMap = [
 
       // 访问控制
       {
-        path: '/accesscontrol',
-        name: 'accesscontrol',
+        path: '/protect',
+        name: 'protect',
         component: RouteView,
         meta: { title: '访问控制', icon: 'close-circle', permission: ['超级管理员', '管理员'] },
         children: [
           {
-            path: '/accesscontrol/blacklist/ip',
+            path: '/protect/blacklist/ip',
             name: 'BlacklistIP',
-            component: () => import('@/views/accessControl/blacklist/ip'),
+            component: () => import('@/views/protect/blacklist/ip'),
             meta: { title: 'IP黑名单', keepAlive: true, permission: ['超级管理员', '管理员'] }
           },
           {
-            path: '/accesscontrol/cc',
+            path: '/protect/cc',
             name: 'Frequency',
-            component: () => import('@/views/accessControl/cc'),
+            component: () => import('@/views/protect/cc'),
             meta: { title: 'CC防护', keepAlive: true, permission: ['超级管理员', '管理员'] }
           }
         ]
@@ -207,7 +207,7 @@ export const asyncRouterMap = [
 
       // 攻击日志管理
       {
-        path: '/attacklog',
+        path: '/log/sample',
         name: 'AttackLog',
         // component: RouteView,
         component: () => import('@/views/sampleLog'),
@@ -215,18 +215,18 @@ export const asyncRouterMap = [
       },
 
       {
-        path: '/user',
+        path: '/admin/user',
         component: RouteView,
         meta: { title: '用户管理', icon: 'user', permission: ['超级管理员', '管理员'] },
         children: [
           {
-            path: '/user/list',
+            path: '/admin/user/list',
             name: 'UserList',
             component: () => import('@/views/user'),
             meta: { title: '用户列表', keepAlive: true, permission: ['超级管理员', '管理员'] }
           },
           {
-            path: '/user/profile/:id',
+            path: '/admin/user/profile/:id',
             name: '用户详情',
             component: () => import('@/views/user/profile/index.vue'),
             meta: { title: '用户详情', keepAlive: true, permission: ['超级管理员', '管理员'] },
@@ -236,13 +236,13 @@ export const asyncRouterMap = [
       },
 
       {
-        path: '/system',
+        path: '/sys',
         name: 'System',
         component: RouteView,
         meta: { title: '系统管理', icon: 'setting', permission: ['超级管理员', '管理员'] },
         children: [
           {
-            path: '/system/node',
+            path: '/sys/node',
             name: '节点管理',
             component: () => import('@/views/system/node'),
             meta: { title: '节点管理', keepAlive: true, permission: ['超级管理员', '管理员'] }
@@ -255,7 +255,11 @@ export const asyncRouterMap = [
   {
     path: '*',
     redirect: '/404',
-    hidden: true
+    hidden: true,
+    meta: {
+      title: '404',
+      keepAlive: true
+    }
   }
 ]
 
@@ -271,7 +275,7 @@ export const constantRouterMap = [
     hidden: true,
     children: [
       {
-        path: '/user/login',
+        path: 'login',
         name: 'login',
         component: () => import(/* webpackChunkName: "user" */ '@/views/Login')
       }
