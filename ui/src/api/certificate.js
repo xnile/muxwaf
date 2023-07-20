@@ -49,9 +49,9 @@ export function GetDomainCert(domain) {
   })
 }
 
-export function GetCertName(id) {
-  return request({
-    url: `/api/certificates/${id}/name`,
-    method: 'get'
-  })
-}
+// export function GetCertName(id) {
+//   return request({
+//     url: `/api/certificates/${id}/name`,
+//     method: 'get'
+//   })
+// }

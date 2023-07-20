@@ -132,7 +132,7 @@ do
     end
 end
 
-function _M.init()
+function _M.init_worker()
     local fd, err = io_open(CONFIG_FILE, "r")
     if not fd then
         fd = io_open(CONFIG_FILE, "w")

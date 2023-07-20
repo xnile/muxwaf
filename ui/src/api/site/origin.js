@@ -3,14 +3,14 @@ import { method } from 'lodash'
 
 export function GetOrigins(id) {
   return request({
-    url: `/api/sites/${id}/origins`,
+    url: `/api/sites/${id}/configs/origin`,
     method: 'get'
   })
 }
 
-export function UpdateOrigin(id, data) {
+export function UpdateOriginCfg(siteID, data) {
   return request({
-    url: `/api/sites/origins/${id}`,
+    url: `/api/sites/${siteID}/configs/origin`,
     method: 'put',
     data: data
   })

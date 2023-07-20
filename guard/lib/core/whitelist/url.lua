@@ -10,7 +10,7 @@ local table_new      = table.new
 local table_clear    = table.clear
 local table_clone    = require("table.clone")
 
-local cache  = table_new(0, 50)
+local raw  = table_new(0, 50)
 local tree = table_new(0, 10)
 
 local _M = {}
@@ -20,8 +20,8 @@ function _M.add(self, items)
   for _, item in ipairs(items) do
     local id, host, path, match_mode = item.id, item.host, item.path, item.match_mode
 
-    if cache[id] then
-      log.warn("failed add URL whitelist, the rule id \"", id, "\" already exists")
+    if raw[id] then
+      log.warn("failed add URL whitelist, the rule id '", id, "' already exists")
       goto continue
     end    
 
@@ -37,12 +37,12 @@ function _M.add(self, items)
     elseif match_mode == 2 then -- exact
       tree[host].exact:insert(path, id)
     else
-      log.warn("unsupported match mode \"", match_mode, "\"")
+      log.warn("unsupported match mode '", match_mode, "'")
       goto continue
     end
 
-    cache[id] = table_clone(item)
-    log.debug("successed to add url whitelist, host is \"", host, "\", URL is \"", path, "\", matching mode is \"", match_mode, "\"")
+    raw[id] = table_clone(item)
+    log.debug("successed to add url whitelist, host is '", host, "', URL is '", path, "', matching mode is '", match_mode, "'")
   end
 
   ::continue::
@@ -51,9 +51,9 @@ end
 
 function _M.del(self, items)
   for _, id in ipairs(items) do
-    local rule = cache[id]
+    local rule = raw[id]
     if not rule then
-      log.warn("failed to delete URL whitelist, the rule with ID \"", id, "\" does not exist")
+      log.warn("failed to delete URL whitelist, the rule with ID '", id, "' does not exist")
       goto continue
     end
 
@@ -61,21 +61,21 @@ function _M.del(self, items)
     if match_mode == 1 then
       local ok, err = tree[host].prefix:remove(path)
       if not ok then
-        log.error("Failed to delete the URL whitelist with ID \"", id, "\"", err)
+        log.error("Failed to delete the URL whitelist with ID '", id, "'", err)
       end
-      log.debug("successed to delete the URL whitelist, id \"", id, "\", host \"", host, "\", URL \"", path, "\", match mode \"", match_mode, "\"")
+      log.debug("successed to delete the URL whitelist, id '", id, "', host '", host, "', URL '", path, "', match mode '", match_mode, "'")
     elseif match_mode == 2 then
       local ok, err = tree[host].exact:remove(path)
       if not ok then
-        log.error("Failed to delete the URL whitelist with ID \"", id, "\"", err)
+        log.error("Failed to delete the URL whitelist with ID '", id, "'", err)
       end
-      log.debug("successed to delete the URL whitelist, id \"", id, "\", host \"", host, "\", URL \"", path, "\", match mode \"", match_mode, "\"")
+      log.debug("successed to delete the URL whitelist, id '", id, "', host '", host, "', URL '", path, "', match mode '", match_mode, "'")
     else
-      log.error("Failed to delete the URL whitelist with ID \"", id, "\", the match mode \"", tostring(match_mode), " does not supported")
+      log.error("Failed to delete the URL whitelist with ID '", id, "', the match mode '", tostring(match_mode), " does not supported")
       goto continue
     end
 
-    cache[id] = nil
+    raw[id] = nil
     ::continue::
   end
 end
@@ -84,8 +84,8 @@ end
 function _M.update(self, items)
   for _,item in ipairs(items)do
     local id = item.id
-    if not cache[id] then
-      log.warn("failed to update URL whitelist, the rule with ID \"", id, "\" does not exist")
+    if not raw[id] then
+      log.warn("failed to update URL whitelist, the rule with ID '", id, "' does not exist")
       goto continue
     end
 
@@ -101,13 +101,13 @@ end
 
 
 function _M.full_sync(_, items)
-  local del_ids = utils.diff_cfg_ids(table_clone(cache), items)
+  local del_ids = utils.diff_cfg_ids(table_clone(raw), items)
 
   local this = _M
   this:del(del_ids)
 
   for _, item in ipairs(items) do
-    if not cache[item.id] then
+    if not raw[item.id] then
       this:add({ item })
     else
       this:update({item })
@@ -138,7 +138,7 @@ end
 
 function _M.get_raw(_)
   local cnt = {}
-  for _, item in pairs(cache) do
+  for _, item in pairs(raw) do
     cnt[#cnt +1] = table_clone(item)
   end
   return cnt
@@ -146,7 +146,7 @@ end
 
 
 function _M.reset(self)
-  table_clear(cache)
+  table_clear(raw)
   table_clear(tree)
 end
 

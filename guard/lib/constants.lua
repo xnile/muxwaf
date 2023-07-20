@@ -74,15 +74,15 @@ return {
     BLOCK  = 2,  
   },
 
-  SCHEME_TO_DEFAULT_PORT = {
-    HTTP  = 80,
-    HTTPS = 443,
-  },
+  -- SCHEME_TO_DEFAULT_PORT = {
+  --   HTTP  = 80,
+  --   HTTPS = 443,
+  -- },
 
-  ORIGIN_PROTOCOL = {
-    HTTP   = 1,
-    HTTPS  = 2,
-    FOLLOW = 3,
-  }
+  -- ORIGIN_PROTOCOL = {
+  --   HTTP   = 1,
+  --   HTTPS  = 2,
+  --   FOLLOW = 3,
+  -- }
 
 }

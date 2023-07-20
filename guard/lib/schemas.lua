@@ -1,8 +1,11 @@
 local jsonschema    = require("resty.jsonschema")
+local table_clone   = require("table.clone")
 local string_format = string.format
 local table_insert  = table.insert
 local table_concat  = table.concat
 local pairs         = pairs
+
+local _VERSION = 1.0
 
 -- base
 local client_ip_def, id_def, url_match_mode
@@ -54,7 +57,7 @@ do
 end
 
 
--- delete
+-- delete should be passed as an array
 local delete_array_validator_def
 do
     assert(id_def ~= nil, "id_def can not be empty")
@@ -246,9 +249,60 @@ do
 end
 
 
--- site
+-- site config
 local site_validator, site_schema_def
 do
+
+    local site_origin_def = {
+        type = "object",
+        properties = {
+            addr = {
+                type = "string"
+            },
+            port = {
+                type = "integer",
+                minimum = 1,
+                maximum = 65535
+            },     
+            weight = {
+                type = "integer",
+                minimum = 0,
+                maximum = 100,
+                default = 100
+            },
+            kind = {
+                type = "integer",
+                enum = { 1, 2 },
+                default = 1,           
+            },
+            protocol = {
+                type = "string",
+                enum = { "http", "https"},
+                default = "http"
+            }
+        },
+        additionalProperties = false,
+        required = { "addr", "port", "weight", "kind", "protocol" }
+    }
+
+    local site_origin_config_def = {
+        type = "object",
+        properties = {
+            origin_protocol = {
+                type = "string",
+                enum = { "http", "https"},
+                default = "http"
+            },
+            origin_host_header = {
+                type = "string"
+            },
+            origins = {
+                type = "array",
+                items = site_origin_def
+            },
+        },
+    }
+
     local site_config_def = {
     type = "object",
     properties = {
@@ -261,10 +315,10 @@ do
             type = "string",
             default = ""
         },
-        origin_protocol = {
+        is_force_https = {
             type = "integer",
-            enum = { 1, 2, 3 },
-            default = 1
+            enum = { 0, 1 },
+            default = 0,
         },
         is_real_ip_from_header = {
             type = "integer",
@@ -274,39 +328,12 @@ do
         real_ip_header = {
             type = "string",
             default = "X-Forwarded-For"
-        }
+        },
+        origin = site_origin_config_def
     },
     additionalProperties = false,
-    required = { "is_https", "cert_id", "origin_protocol", "is_real_ip_from_header", "real_ip_header" }
-}
-
-    local site_origin_def = {
-        type = "object",
-        properties = {
-            host = {
-                type = "string"
-            },
-            http_port = {
-                type = "integer",
-                minimum = 1,
-                maximum = 65535
-            },
-            https_port = {
-                type = "integer",
-                minimum = 1,
-                maximum = 65535
-            },        
-            weight = {
-                type = "integer",
-                minimum = 0,
-                maximum = 100,
-                default = 100
-            }
-        },
-        additionalProperties = false,
-        required = { "host", "http_port", "https_port", "weight" }
+    required = { "is_https", "cert_id", "is_force_https", "is_real_ip_from_header", "real_ip_header", "origin" }
     }
-
 
     site_schema_def = {
         type = "object",
@@ -316,14 +343,17 @@ do
                 type = "string"
             },
             config = site_config_def,
-            origins = {
-                type = "array",
-                items = site_origin_def
-            }
+            -- origins = {
+            --     type = "array",
+            --     items = site_origin_def
+            -- }
         },
         additionalProperties = false,
-        required = { "id", "host", "config", "origins" }
+        required = { "id", "host", "config" }
     }
+
+    local update_site_config_def = table_clone(site_config_def)
+    update_site_config_def.required = nil
 
     local site_update_schema_def = {
         type = "object",
@@ -332,17 +362,10 @@ do
             host = {
                 type = "string"
             },
-            config = site_config_def,
-            origins = {
-                type = "array",
-                items = site_origin_def
-            }
+            config = update_site_config_def,
         },
         additionalProperties = false,    
-        anyOf = {
-            { required = { "id", "host", "config" } },
-            { required = { "id", "host", "origins" } }
-        }
+        required = { "id", "host", "config" }
     }
 
     local site_array_schema = {
@@ -365,9 +388,9 @@ do
 end
 
 -- log cfg
-local log_cfg_validator, log_cfg_schema
+local sample_log_cfg_validator, sample_log_cfg_schema
 do
-    log_cfg_schema = {
+    sample_log_cfg_schema = {
         type = "object",
         properties = {
             is_sample_log_upload = {
@@ -381,8 +404,8 @@ do
         additionalProperties = false,
         required = { "is_sample_log_upload", "sample_log_upload_api", "sample_log_upload_api_token"}
     }
-    log_cfg_validator = {
-        update = jsonschema.generate_validator(log_cfg_schema)
+    sample_log_cfg_validator = {
+        update = jsonschema.generate_validator(sample_log_cfg_schema)
     }
 end
 
@@ -393,7 +416,7 @@ do
     local full_cfg_schema = {
         type = "object",
         properties = {
-            log             = log_cfg_schema,
+            sample_log             = sample_log_cfg_schema,
             sites           = { type = "array", items = site_schema_def },
             certificates    = { type = "array", items = certificate_schema_def },
             rules = {
@@ -410,7 +433,7 @@ do
             },
         },
         additionalProperties = false,
-        required = { "log", "sites", "certificates", "rules"}
+        required = { "sample_log", "sites", "certificates", "rules"}
 
     }
 
@@ -425,7 +448,7 @@ end
 local validator = {
     this             = full_validator,
     sites            = site_validator,
-    sample_log       = log_cfg_validator,
+    sample_log       = sample_log_cfg_validator,
     certificates     = certificate_validator,
     blacklist_ip     = blacklist_ip_validator,
     whitelist_ip     = whitelist_ip_validator,
@@ -463,5 +486,6 @@ do
 end
 
 return {
-    validator = validator
+    validator = validator,
+    _VERSION = _VERSION
 }

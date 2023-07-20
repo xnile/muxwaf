@@ -8,7 +8,6 @@ local lrucache      = require("resty.lrucache")
 local ngx           = ngx
 local ngx_exit      = ngx.exit
 local error         = error
-local string_format = string.format
 local NGX_ERROR     = ngx.ERROR
 
 local _M = {
@@ -89,24 +88,24 @@ function  _M.certificate(ctx)
     end
 
     if not sites.is_exist(server_name) then
-        log.info(string_format("the site %s does not exist", server_name))
+        log.debug("the site '", server_name, "' does not exist")
         return set_cert_and_priv_key(DEFAULT_CERT, DEFAULT_PRIV_KEY)
     end
 
     if not sites.is_enable_https(server_name) then
-        log.info(string_format("the site %s https not enabled", server_name))
+        log.debug("the site '", server_name, "' https not enabled")
         return set_cert_and_priv_key(DEFAULT_CERT, DEFAULT_PRIV_KEY)
     end
 
     local cert_id = sites.get_site_cert_id(server_name)
     if cert_id == nil or cert_id == "" then
-        log.info("the cert id is empty")
+        log.error("certificate for the site '", server_name ," was not found, and the certificate ID is null")
         return set_cert_and_priv_key(DEFAULT_CERT, DEFAULT_PRIV_KEY)
     end
 
     local cert, pkey, err = get_cert_and_priv_key_by_cert_id(cert_id)
     if not cert or not pkey then
-        log.error(string_format("failed to get certificate and private key by id %s : %s",cert_id, err))
+        log.error("failed to get certificate and private key with ID '", cert_id, "', ", err)
         return set_cert_and_priv_key(DEFAULT_CERT, DEFAULT_PRIV_KEY)
     end
 
@@ -116,12 +115,6 @@ function  _M.certificate(ctx)
         return ngx_exit(NGX_ERROR)
     end
 
-    -- local err = set_cert_and_priv_key(cert, pkey)
-    -- if err then
-    --     log.error("failed to set certificate and private key : ", err)
-    --     return ngx_exit(NGX_ERROR)
-    -- end
-    
     return set_cert_and_priv_key(cert, pkey)
 end
 

@@ -49,6 +49,7 @@ local prom_metric_shm_free_bytes
 local prom_metric_errors_total
 local prom_metric_upstream_response_duration_seconds
 local prom_metric_upstream_connect_duration_seconds
+local prom_metric_config_updates_total
 
 
 local function collect_shm_mem_alloc()
@@ -96,6 +97,7 @@ function _M.init_worker()
     prom_metric_errors_total = prometheus:counter("muxwaf_errors_total", "Number of muxwaf errors")
     prom_metric_upstream_response_duration_seconds = prometheus:histogram("muxwaf_upstream_response_duration_second", "The time spent on receiving the response from the upstream server", {"host"})
     prom_metric_upstream_connect_duration_seconds = prometheus:histogram("muxwaf_upstream_connect_duration_second", "The time spent on establishing a connection with the upstream server", {"host"})
+    prom_metric_config_updates_total = prometheus:counter("muxwaf_config_updates_total", "Number of muxwaf configuration updates")
 
     local worker_id  = ngx_worker_id()
 
@@ -125,11 +127,11 @@ function _M.log_phase(ctx)
     if not ctx or not ctx.host then return end
     -- prom_metric_requests_total:inc(1)
 
-    -- Skip non-existent sites
-    if ctx.site_id == "" then return end
+    -- -- Skip non-existent sites
+    -- if ctx.site_id == "" then return end
     
-    -- Skip self
-    if ctx.server_port == tostring(DEFAULT_API_LISTEN_PORT) and ctx.request_path == "/api/sys/metrics" then return end
+    -- -- Skip self
+    -- if ctx.server_port == tostring(DEFAULT_API_LISTEN_PORT) and ctx.request_path == "/api/sys/metrics" then return end
 
     -- local host            = ngx.var.host or "-"
     local host            = ctx.host
@@ -160,6 +162,12 @@ end
 function _M.incr_errors()
     prom_metric_errors_total:inc(1)
 end
+
+
+function _M.incr_config_updates()
+    prom_metric_config_updates_total:inc(1)
+end
+
 
 
 function _M.collect(_)

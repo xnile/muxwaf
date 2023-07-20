@@ -26,7 +26,7 @@ local _M = {
 -- The number of log entries sent in each batch
 local BATCH_SIZE = 10000
 local ACTION_TYPES = constants.ACTION_TYPES
-local SAMPLE_LOG_FILE = ngx_cfg_prefix() .. "logs/sampled.log"
+local SAMPLE_LOG_FILE = ngx_cfg_prefix() .. "logs/sample.log"
 
 local shm_log = ngx_shared[constants.DICTS.LOG]
 local sample_log_batch = table_new(BATCH_SIZE +2, 0)
@@ -109,20 +109,20 @@ end
 local function sampled(ctx, rule_type, action, rule_id)
     ctx.sample_log =  {
         host               = ctx.host,
-        site_id            = ctx.site_id,
+        -- site_id            = ctx.site_id,
         real_client_ip     = ctx.real_client_ip,
         request_id         = ctx.request_id,    
         remote_addr        = ctx.remote_addr,
         request_path       = ctx.request_uri,
         request_method     = ctx.request_method,
         request_time       = math.floor(ngx_var.msec),
-        waf_start_time     = math.floor(ctx.waf_start_time /1000 /1000),
+        -- waf_start_time     = math.floor(ctx.waf_start_time /1000 /1000),
         waf_process_time   = time.now() - ctx.waf_start_time,
         rule_type          = rule_type,
         action             = action or -1,
-        ngx_worker_id      = ctx.worker_id,
+        -- ngx_worker_id      = ctx.worker_id,
         rule_id            = rule_id,
-        ip_location        = ctx.ip_location,
+        ip_geo             = ctx.ip_geo,
         time_local         = ngx_var.time_local,
     }
 end

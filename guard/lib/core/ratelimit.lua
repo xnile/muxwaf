@@ -38,17 +38,17 @@ function _M.add(self, items)
     if match_mode == 1 then -- prefix
       local ok, err = tree[host].prefix:insert(path, id)
       if not ok then
-        log.error("failed to add rate limit with ID \"", id, "\", ", err)
+        log.error("Failed to add rate limit with ID '", id, "', ", err)
       end
-      log.debug("successed to add rate limit, id \"", id, "\", host \"", host, "\", URL \"", path, "\", match mode \"", match_mode, "\"")
+      log.debug("successed to add rate limit, id '", id, "', host '", host, "', URL '", path, "', match mode '", match_mode, "'")
     elseif match_mode == 2 then -- exact
       local ok,err = tree[host].exact:insert(path, id)
       if not ok then
-        log.error("failed to add rate limit with ID \"", id, "\", ", err)
+        log.error("failed to add rate limit with ID '", id, "', ", err)
       end
-      log.debug("successed to add rate limit, id \"", id, "\", host \"", host, "\", URL \"", path, "\", match mode \"", match_mode, "\"")
+      log.debug("successed to add rate limit, id '", id, "', host '", host, "', URL '", path, "', match mode '", match_mode, "'")
     else
-      log.warn("failed to add rate limit, unsupported match mode \"", match_mode, "\"")
+      log.warn("failed to add rate limit, unsupported match mode '", match_mode, "'")
       goto continue
     end
   end
@@ -62,7 +62,7 @@ function _M.del(self, items)
   for _, id in pairs(items) do
     local rule = cache[id]
     if not rule then
-      log.warn("faild to delete rate limit, the rule with ID \'", id, "\' does not exist")
+      log.warn("faild to delete rate limit, the rule with ID '", id, "' does not exist")
       goto continue
     end
 
@@ -70,22 +70,22 @@ function _M.del(self, items)
     if match_mode == 1 then
       local ok, err = tree[host].prefix:remove(path)
       if not ok then
-        log.error("failed to delete rate limit with ID \"", id, "\", ", err)
+        log.error("failed to delete rate limit with ID '", id, "', ", err)
       end
-      log.debug("successed to delete rate limit, id \"", id, "\", host \"", host, "\", URL \"", path, "\", match mode \"", match_mode, "\"")
+      log.debug("successed to delete rate limit, id '", id, "', host '", host, "', URL '", path, "', match mode '", match_mode, "'")
     elseif match_mode == 2 then
       local ok, err = tree[host].exact:remove(path)
       if not ok then
-        log.error("failed to delete rate limit with ID \"", id, "\", ", err)
+        log.error("failed to delete rate limit with ID '", id, "', ", err)
       end
-      log.debug("successed to delete rate limit, id \"", id, "\", host \"", host, "\", URL \"", path, "\", match mode \"", match_mode, "\"")
+      log.debug("successed to delete rate limit, id '", id, "', host '", host, "', URL '", path, "', match mode '", match_mode, "'")
     else
-      log.debug("failed to delete rate limit: match mode \'", match_mode, "\' not supported")
+      log.debug("failed to delete rate limit: match mode '", match_mode, "' not supported")
       goto continue
     end
 
     cache[id] = nil
-    log.debug("succeeded to delete the rate limit rule with ID \'", id, "\'")
+    log.debug("succeeded to delete the rate limit rule with ID '", id, "'")
     ::continue::
   end
 end
@@ -97,7 +97,7 @@ function _M.update(self, items)
     local id, host, path, match_mode = item.id, item.host, item.path, item.match_mode
     local old = cache[id]
     if not old then
-      log.warn("faild to update rate limit, the rule with ID \'", id, "\' does not exist")
+      log.warn("faild to update rate limit, the rule with ID '", id, "' does not exist")
       goto continue
     end
 

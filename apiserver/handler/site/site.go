@@ -61,17 +61,35 @@ func GetAllSite(c *gin.Context) {
 	handler.ResponseBuilder(c, err, data)
 }
 
-func UpdateSiteConfig(c *gin.Context) {
+//func UpdateSiteConfig(c *gin.Context) {
+//	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+//
+//	var payload model.SiteConfigReq
+//	if err := c.ShouldBindJSON(&payload); err != nil {
+//		logx.Warnf("request parameter error: %v", err)
+//		handler.ResponseBuilder(c, ecode.ErrParam, nil)
+//		return
+//	}
+//	svc := service.SVC.Site
+//	err := svc.UpdateConfig(id, &payload)
+//	if err != nil {
+//		logx.Warnf("update site err, %v", err)
+//	}
+//	handler.ResponseBuilder(c, err, nil)
+//
+//}
+
+func UpdateBasicCfg(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	var payload model.SiteConfigReq
+	var payload model.SiteBasicCfgReq
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		logx.Warnf("request parameter error: %v", err)
 		handler.ResponseBuilder(c, ecode.ErrParam, nil)
 		return
 	}
 	svc := service.SVC.Site
-	err := svc.UpdateConfig(id, &payload)
+	err := svc.UpdateBasicConfigs(id, &payload)
 	if err != nil {
 		logx.Warnf("update site err, %v", err)
 	}
@@ -89,70 +107,95 @@ func UpdateHttps(c *gin.Context) {
 		return
 	}
 	svc := service.SVC.Site
-	err := svc.UpdateHttps(id, &payload)
-	if err != nil {
-		logx.Warnf("update site err, %v", err)
-	}
-	handler.ResponseBuilder(c, nil, nil)
+	err := svc.UpdateHttpsConfigs(id, &payload)
+	handler.ResponseBuilder(c, err, nil)
 
 }
 
-func GetOrigins(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+//func GetOrigins(c *gin.Context) {
+//	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+//	svc := service.SVC.Site
+//	data := svc.GetOrigins(id)
+//	handler.ResponseBuilder(c, nil, data)
+//}
+
+func GetOriginCfg(c *gin.Context) {
+	siteID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+
 	svc := service.SVC.Site
-	data := svc.GetOrigins(id)
-	handler.ResponseBuilder(c, nil, data)
+	data, err := svc.GetOriginCfg(siteID)
+	handler.ResponseBuilder(c, err, data)
 }
 
 func UpdateOrigin(c *gin.Context) {
+	//id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	//
+	//var payload model.SiteOriginModel
+	//if err := c.ShouldBindJSON(&payload); err != nil {
+	//	logx.Warnf("request parameter error: %v", err)
+	//	handler.ResponseBuilder(c, ecode.ErrParam, nil)
+	//	return
+	//}
+	//svc := service.SVC.Site
+	//err := svc.UpdateOrigin(id, &payload)
+	//handler.ResponseBuilder(c, err, nil)
+
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 
-	var payload model.SiteOriginModel
+	var payload model.OriginCfgReq
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		logx.Warnf("request parameter error: %v", err)
 		handler.ResponseBuilder(c, ecode.ErrParam, nil)
 		return
 	}
 	svc := service.SVC.Site
-	err := svc.UpdateOrigin(id, &payload)
+	err := svc.UpdateOriginCfg(id, payload)
 	handler.ResponseBuilder(c, err, nil)
+
 }
 
-func AddOrigins(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+//func AddOrigins(c *gin.Context) {
+//	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+//
+//	payload := make([]*model.SiteOriginModel, 0)
+//	if err := c.ShouldBindJSON(&payload); err != nil {
+//		logx.Warnf("request parameter error: %v", err)
+//		handler.ResponseBuilder(c, ecode.ErrParam, nil)
+//		return
+//	}
+//	svc := service.SVC.Site
+//	err := svc.AddSiteOrigins(id, payload)
+//	handler.ResponseBuilder(c, err, nil)
+//}
 
-	payload := make([]*model.SiteOriginModel, 0)
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		logx.Warnf("request parameter error: %v", err)
-		handler.ResponseBuilder(c, ecode.ErrParam, nil)
-		return
-	}
-	svc := service.SVC.Site
-	err := svc.AddSiteOrigins(id, payload)
-	handler.ResponseBuilder(c, err, nil)
-}
-
-func GetHttpsInfo(c *gin.Context) {
+func GetHttpsConfigs(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	svc := service.SVC.Site
-	data, err := svc.GetHttps(id)
+	data, err := svc.GetHttpsConfigs(id)
 	handler.ResponseBuilder(c, err, data)
 
 }
 
-func GetConfigs(c *gin.Context) {
+//func GetConfigs(c *gin.Context) {
+//	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+//	svc := service.SVC.Site
+//	data, err := svc.GetConfigs(id)
+//	handler.ResponseBuilder(c, err, data)
+//}
+
+func GetBasicConfigs(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	svc := service.SVC.Site
-	data, err := svc.GetConfigs(id)
+	data, err := svc.GetBasicHttps(id)
 	handler.ResponseBuilder(c, err, data)
 }
 
-func DelOrigin(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	svc := service.SVC.Site
-	err := svc.DelOrigin(id)
-	handler.ResponseBuilder(c, err, nil)
-}
+//func DelOrigin(c *gin.Context) {
+//	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+//	svc := service.SVC.Site
+//	err := svc.DelOrigin(id)
+//	handler.ResponseBuilder(c, err, nil)
+//}
 
 func DelSite(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -169,8 +212,8 @@ func GetCandidateCertificates(c *gin.Context) {
 	handler.ResponseBuilder(c, err, data)
 }
 
-func GetSiteDomain(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
-	data, err := service.SVC.Site.GetSiteDomain(id)
-	handler.ResponseBuilder(c, err, data)
-}
+//func GetSiteDomain(c *gin.Context) {
+//	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+//	data, err := service.SVC.Site.GetSiteDomain(id)
+//	handler.ResponseBuilder(c, err, data)
+//}

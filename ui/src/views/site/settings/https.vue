@@ -1,17 +1,15 @@
 <template>
   <div>
-    <!-- <a-form-model :label-col="labelCol" labelAlign="left">
-      <a-form-model-item label="HTTPS" class="info-item">
-        <template v-if="enableHttps">已启用</template>
-        <template v-else>未启用</template>
-      </a-form-model-item>
-      <a-form-model-item label="证书名称">
-        <template v-if="enableHttps">{{ certName }}</template>
-        <template v-else>无</template>
-        <a-button type="link" @click="onEditCert">编辑证书</a-button>
-      </a-form-model-item>
-    </a-form-model> -->
     <a-row>
+      <div class="item">
+        <a-col :span="22"></a-col>
+        <a-col :span="2">
+          <a @click="onEdit">修改</a>
+        </a-col>
+      </div>
+    </a-row>
+
+    <!-- <a-row>
       <div class="item">
         <a-col :span="2">
           <span class="list-lable">HTTPS :</span>
@@ -25,96 +23,149 @@
         </a-col>
       </div>
     </a-row>
+
     <a-row v-if="form.is_https == 1">
       <div class="item">
         <a-col :span="2">
-          <span class="list-lable">HTTPS证书 :</span>
+          <span class="list-lable">证书 :</span>
         </a-col>
         <a-col :span="12">
-          <span>{{ certName }} </span>
+          <span>{{ form.cert_name }} </span>
         </a-col>
       </div>
     </a-row>
-    <a-modal
-      title="编辑证书"
-      :visible="visible"
+    <a-row v-if="form.is_https == 1">
+      <div class="item">
+        <a-col :span="2">
+          <span class="list-lable">强制HTTPS :</span>
+        </a-col>
+        <a-col :span="12">
+          <span v-if="form.is_force_https == 1">是</span>
+          <span v-else>否</span>
+        </a-col>
+      </div>
+    </a-row> -->
+
+    <!-- <a-modal
+      title="修改HTTPS配置"
+      :editable="editable"
       :confirm-loading="confirmLoading"
       @ok="handleOk"
       @cancel="handleCancel"
+    > -->
+    <a-form-model
+      ref="form"
+      :model="form"
+      :rules="rules"
+      :label-col="labelCol"
+      :wrapper-col="wrapperCol"
+      label-align="left"
     >
-      <a-form-model :model="form" :label-col="{ span: 5 }">
-        <a-form-model-item label="启用HTTPS">
-          <a-switch v-model="enableHttps" @change="onChange" />
-        </a-form-model-item>
-        <a-form-model-item
-          v-if="enableHttps"
-          label="证书选择"
-          prop="policy_id"
-          :wrapper-col="{ span: 10 }"
-          type="hidden"
+      <a-form-model-item label="开启HTTPS">
+        <a-switch v-if="editable" v-model="enableHttps" @change="onChange" />
+        <template v-else>
+          <span v-if="form.is_https == 1">已启用</span>
+          <span v-else>未启用</span>
+        </template>
+      </a-form-model-item>
+      <a-form-model-item v-if="enableHttps" label="证书选择" prop="policy_id" :wrapper-col="{ span: 10 }" type="hidden">
+        <a-select
+          v-if="editable"
+          show-search
+          placeholder="请选择证书"
+          option-filter-prop="children"
+          v-model="form.cert_id"
+          @dropdownVisibleChange="dropdownVisibleChange"
         >
-          <a-select
-            show-search
-            placeholder="请选择证书"
-            option-filter-prop="children"
-            v-model="form.cert_id"
-            @dropdownVisibleChange="dropdownVisibleChange"
-          >
-            <a-select-option v-for="(item, index) in certificates" :value="item.id" :key="index">{{
-              item.name
-            }}</a-select-option>
-          </a-select>
-        </a-form-model-item>
-      </a-form-model>
-    </a-modal>
+          <a-select-option :value="0">请选择证书</a-select-option>
+          <a-select-option v-for="(item, index) in certificates" :value="item.id" :key="index">{{
+            item.name
+          }}</a-select-option>
+        </a-select>
+        <template v-else>
+          <span>{{ form.cert_name }} </span>
+        </template>
+      </a-form-model-item>
+      <a-form-model-item v-if="enableHttps" label="强制跳转">
+        <a-switch v-if="editable" v-model="isForceHttps" @change="onChange" />
+        <template v-else>
+          <span v-if="form.is_force_https == 1">是</span>
+          <span v-else>否</span>
+        </template>
+      </a-form-model-item>
+      <template v-if="editable">
+        <a-row style="margin-top: 40px;">
+          <a-col>
+            <a-button style="margin-left: 10px;" type="primary" @click="onOK">
+              保存
+            </a-button>
+            <a-button style="margin-left: 10px;" @click="onCancel">
+              取消
+            </a-button>
+          </a-col>
+        </a-row>
+      </template>
+    </a-form-model>
+    <!-- </a-modal> -->
   </div>
 </template>
 
 <script>
 import store from '@/store'
 // import { GetAll } from '@/api/certificate'
-import { GetConfigs, UpdateSiteHttps } from '@/api/site'
+import { UpdateSiteHttpsConfigs } from '@/api/site'
+import { GetHttpsConfigs } from '@/api/site/https'
 import { GetCandidateCertificates } from '@/api/site/cert'
-import { GetCertName } from '@/api/certificate'
+import { boolean } from 'yargs'
+// import { GetCertName } from '@/api/certificate'
 export default {
   data() {
     return {
       labelCol: { span: 2 },
       wrapperCol: { span: 20 },
       enableHttps: false,
-      certName: '无',
+      isForceHttps: false,
+
       form: {
         is_https: 0,
-        cert_id: null
+        cert_id: 0,
+        is_force_https: 0,
+        cert_name: ''
       },
+      rules: {},
+
       // edit
-      visible: false,
+      editable: false,
       confirmLoading: false,
       certificates: []
     }
   },
   methods: {
-    onChange() {
-      if (this.form.cert_id == 0) {
-        this.form.cert_id = null
-      }
-    },
-    handleOk() {
+    onChange() {},
+    onOK() {
       let payload = {}
       Object.assign(payload, this.form)
       if (this.enableHttps) {
+        const isForceHttps = this.isForceHttps ? 1 : 0
+        if (payload.cert_id < 1) {
+          this.$message.error('请选择证书')
+          return
+        }
         payload.is_https = 1
+        payload.is_force_https = isForceHttps
       } else {
         payload.is_https = 0
         payload.cert_id = 0
+        payload.is_force_https = 0
       }
+
       let id = this.$route.params.id
-      UpdateSiteHttps(id, payload)
+      UpdateSiteHttpsConfigs(id, payload)
         .then(res => {
           if (res.code == 0) {
             this.$message.success('更新成功！')
             this.doGetConfigs()
-            this.visible = false
+            this.editable = false
           } else {
             this.$message.error(res.msg)
           }
@@ -124,12 +175,12 @@ export default {
         })
     },
 
-    handleCancel() {
-      this.visible = false
+    onCancel() {
+      this.editable = false
     },
 
-    onEditCert() {
-      this.visible = true
+    onEdit() {
+      this.editable = true
     },
 
     dropdownVisibleChange() {
@@ -149,20 +200,22 @@ export default {
 
     doGetConfigs() {
       let id = this.$route.params.id
-      GetConfigs(id).then(res => {
+      GetHttpsConfigs(id).then(res => {
         if (res.code == 0) {
-          this.form.is_https = res.data.is_https
-          this.form.cert_id = res.data.cert_id
-          if (this.form.is_https) {
-            this.enableHttps = true
-            GetCertName(this.form.cert_id).then(r => {
-              if (r.code == 0) {
-                this.certName = r.data
-              }
-            })
-          } else {
-            this.certName = '无'
-          }
+          this.form = res.data
+          // if (this.form.is_https) {
+          //   this.enableHttps = true
+          //   GetCertName(this.form.cert_id).then(r => {
+          //     if (r.code == 0) {
+          //       this.certName = r.data
+          //     }
+          //   })
+          // } else {
+          //   this.certName = '无'
+          // }
+
+          this.enableHttps = Boolean(this.form.is_https)
+          this.isForceHttps = Boolean(this.form.is_force_https)
         }
       })
     }
@@ -171,6 +224,7 @@ export default {
     this.doGetConfigs()
   },
   activated() {
+    this.editable = false
     this.doGetConfigs()
     this.doGetAllCertificates()
   }
@@ -178,18 +232,7 @@ export default {
 </script>
 
 <style scoped>
-.list-lable {
-  color: rgba(0, 0, 0, 0.65);
-  font-size: 14px;
-  /* line-height: 30px; */
-  /* font-weight: 500; */
-}
-.item {
-  /* height: 10px; */
-  line-height: 35px;
-}
-
-.right {
-  text-align: right;
+.ant-form-item {
+  margin-bottom: 2px;
 }
 </style>

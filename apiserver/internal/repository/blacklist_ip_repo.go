@@ -12,7 +12,7 @@ type IBlacklistIPRepo interface {
 	IsExist(ip string) (bool, error)
 	UpdateStatus(id int64) error
 	Delete(id int64) error
-	GetStatus(id int64) (int16, error)
+	GetStatus(id int64) (int8, error)
 }
 
 type blacklistIPRepo struct {
@@ -61,7 +61,7 @@ func (repo *blacklistIPRepo) Delete(id int64) error {
 	return repo.db.Where("id = ?", id).Delete(&model.BlacklistIPModel{}).Error
 }
 
-func (repo *blacklistIPRepo) GetStatus(id int64) (int16, error) {
+func (repo *blacklistIPRepo) GetStatus(id int64) (int8, error) {
 	entity := model.BlacklistIPModel{}
 	err := repo.db.Where("id = ?", id).Select("Status").First(&entity).Error
 	return entity.Status, err

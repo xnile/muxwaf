@@ -24,6 +24,16 @@ function _M.rfind_char(s, ch, idx)
     return nil
 end
 
+function _M.lfind_char(s, ch, idx)
+    local b = str_byte(ch)
+    for i = idx or 1, #s, 1 do
+        if str_byte(s, i, i) == b then
+            return i
+        end
+    end
+    return nil
+end
+
 
 return _M
 

@@ -24,7 +24,7 @@ type WhitelistURLGuard struct {
 	SiteID    string `json:"site_id"`
 	Host      string `json:"host"`
 	Path      string `json:"path"`
-	MatchMode int16  `json:"match_mode"`
+	MatchMode int8   `json:"match_mode"`
 }
 
 type RateLimitGuard struct {
@@ -34,7 +34,7 @@ type RateLimitGuard struct {
 	Path      string `json:"path"`
 	Limit     int64  `json:"limit"`
 	Window    int64  `json:"window"`
-	MatchMode int16  `json:"match_mode"`
+	MatchMode int8   `json:"match_mode"`
 }
 
 type CertificateGuard struct {
@@ -50,25 +50,27 @@ type SampleLogUploadGuard struct {
 }
 
 type SiteConfigGuard struct {
-	CertID             string `json:"cert_id"`
-	IsHttps            int16  `json:"is_https"`
-	IsRealIPFromHeader int16  `json:"is_real_ip_from_header"`
-	OriginProtocol     int16  `json:"origin_protocol"`
-	RealIPHeader       string `json:"real_ip_header"`
+	CertID             string              `json:"cert_id"`
+	IsHttps            int8                `json:"is_https"`
+	IsForceHttps       int8                `json:"is_force_https"`
+	IsRealIPFromHeader int8                `json:"is_real_ip_from_header"`
+	RealIPHeader       string              `json:"real_ip_header"`
+	Origin             *SiteOriginCfgGuard `json:"origin,omitempty"`
 }
 
 type SiteOriginGuard struct {
-	Host      string `json:"host"`
-	HttpPort  int16  `json:"http_port"`
-	HttpsPort int16  `json:"https_port"`
-	Weight    int16  `json:"weight"`
+	Addr     string         `json:"addr"`
+	Port     int16          `json:"port"`
+	Weight   int8           `json:"weight"`
+	Kind     OriginType     `json:"kind"`
+	Protocol OriginProtocol `json:"protocol"`
 }
 
 type SiteGuard struct {
-	UUID    string             `json:"id"`
-	Host    string             `json:"host"`
-	Config  *SiteConfigGuard   `json:"config"`
-	Origins []*SiteOriginGuard `json:"origins"`
+	UUID    string           `json:"id"`
+	Host    string           `json:"host"`
+	Configs *SiteConfigGuard `json:"config"`
+	//Origins []*SiteOriginGuard `json:"origins"`
 }
 
 type SiteRegionBlacklistGuard struct {
@@ -86,9 +88,16 @@ type RulesGuard struct {
 	RateLimit       []*RateLimitGuard           `json:"rate_limit"`
 }
 
-type GuardConfigs struct {
-	Log          *SampleLogUploadGuard `json:"log"`
-	Sites        []*SiteGuard           `json:"sites"`
-	Certificates []*CertificateGuard    `json:"certificates"`
-	Rules        *RulesGuard            `json:"rules"`
+type SiteOriginCfgGuard struct {
+	OriginProtocol   OriginProtocol     `json:"origin_protocol"`
+	OriginHostHeader string             `json:"origin_host_header"`
+	Origins          []*SiteOriginGuard `json:"origins"`
+}
+
+// ConfigsSyncGuard Guard全量配置
+type ConfigsSyncGuard struct {
+	SampleLog    *SampleLogUploadGuard `json:"sample_log"`
+	Sites        []*SiteGuard          `json:"sites"`
+	Certificates []*CertificateGuard   `json:"certificates"`
+	Rules        *RulesGuard           `json:"rules"`
 }

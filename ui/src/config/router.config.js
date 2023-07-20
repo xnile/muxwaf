@@ -48,7 +48,7 @@ export const asyncRouterMap = [
         path: '/site',
         name: 'Site',
         component: RouteView,
-        meta: { title: '网站管理', icon: 'setting', permission: ['超级管理员', '管理员'] },
+        meta: { title: '防护网站', icon: 'setting', permission: ['超级管理员', '管理员'] },
         redirect: '/site/list',
         children: [
           {
@@ -89,7 +89,7 @@ export const asyncRouterMap = [
                 name: 'httpsSettings',
                 component: () => import('@/views/site/settings/https.vue'),
                 meta: {
-                  title: 'https配置',
+                  title: 'HTTPS配置',
                   hidden: true,
                   keepAlive: true,
                   permission: ['超级管理员', '管理员']

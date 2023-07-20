@@ -23,13 +23,15 @@ ffi_cdef[[
     int inet_pton(int af, const char * restrict src, void * restrict dst);
 ]]
 
+local inet = ffi_new("unsigned int [1]")
+
 
 function _M.is_valid_ip(ip)
     if type(ip) ~= "string" then
         return false
     end
 
-    local inet = ffi_new("unsigned int [1]")
+    -- local inet = ffi_new("unsigned int [1]")
     if C.inet_pton(AF_INET, ip, inet) == 1 then
         return true
     end
@@ -40,6 +42,26 @@ function _M.is_valid_ip(ip)
 
     return false
 
+end
+
+
+function _M.is_valid_ipv4(ip)
+    -- local inet = ffi_new("unsigned int [1]")
+    if C.inet_pton(AF_INET, ip, inet) == 1 then
+        return true
+    end
+
+    return false
+end
+
+
+function _M.is_valid_ipv6(ip)
+    -- local inet = ffi_new("unsigned int [1]")
+    if C.inet_pton(AF_INET6, ip, inet) == 1 then
+        return true
+    end
+
+    return false
 end
 
 return _M

@@ -21,7 +21,7 @@ type ICertService interface {
 	List(pageNum, pageSize int64) (*model.ListResp, error)
 	Delete(id int64) error
 	GetALL() ([]*model.CertCandidateResp, error)
-	GetCertName(id int64) (string, error)
+	//GetCertName(id int64) (string, error)
 	UpdateCert(c *gin.Context, id int64) error
 }
 
@@ -56,12 +56,6 @@ func (svc *certService) Add(name, cert, key string) error {
 		return ecode.ErrCertInvalid
 	}
 
-	//entity := model.CertModel{
-	//	Name: name,
-	//	Cert: cert,
-	//	Key:  key,
-	//	Sans: []string{"xnile.cn", "*.xnile.cn"},
-	//}
 	entity := model.CertModel{
 		Name:      name,
 		Cert:      cert,
@@ -207,16 +201,16 @@ func (svc *certService) GetALL() ([]*model.CertCandidateResp, error) {
 	return certAllRespList, nil
 }
 
-func (svc *certService) GetCertName(id int64) (string, error) {
-	entity := new(model.CertModel)
-	if err := svc.repo.DB.Where("id = ?", id).
-		Select("Name").
-		First(entity).Error; err != nil {
-		logx.Error("[certificate] get cert name err: ", err)
-		return "", ecode.InternalServerError
-	}
-	return entity.Name, nil
-}
+//func (svc *certService) GetCertName(id int64) (string, error) {
+//	entity := new(model.CertModel)
+//	if err := svc.repo.DB.Where("id = ?", id).
+//		Select("Name").
+//		First(entity).Error; err != nil {
+//		logx.Error("[certificate] get cert name err: ", err)
+//		return "", ecode.InternalServerError
+//	}
+//	return entity.Name, nil
+//}
 
 func (svc *certService) UpdateCert(c *gin.Context, id int64) error {
 	entity := new(model.CertModel)
@@ -272,12 +266,12 @@ func (svc *certService) UpdateCert(c *gin.Context, id int64) error {
 	// 更新guard
 	{
 		configs := make(model.GuardArrayRsp, 0)
-		config := map[string]string{
-			"id":   entity.UUID,
-			"cert": entity.Cert,
-			"key":  entity.Key,
+		certGuard := model.CertificateGuard{
+			UUID: entity.UUID,
+			Cert: payload.Cert,
+			Key:  payload.Key,
 		}
-		configs = append(configs, &config)
+		configs = append(configs, &certGuard)
 		svc.eventBus.PushEvent(event.Certificate, event.OpTypeUpdate, configs)
 	}
 	return nil

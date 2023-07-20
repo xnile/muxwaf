@@ -39,7 +39,7 @@ func NewINodeService(db *gorm.DB, eventBus *event.EventBus) INodeService {
 
 func (svc *nodeService) Add(payload *model.NodeModel) error {
 	//node := new(model.NodeModel)
-	if err := svc.gDB.Where("ip_or_domain = ? and port = ?", payload.IPOrDomain, payload.Port).First(new(model.NodeModel)).Error; err == nil {
+	if err := svc.gDB.Where("addr = ? and port = ?", payload.Addr, payload.Port).First(new(model.NodeModel)).Error; err == nil {
 		return errors.New("节点已经存在")
 	}
 
@@ -116,218 +116,320 @@ func (svc *nodeService) SwitchSampleLogUpload(id int64) error {
 }
 
 func (svc *nodeService) Sync(id int64) error {
+	// k,v
 	sitesCache := make(map[int64]*model.SiteModel)
+	OriginsCache := make(map[int64][]*model.SiteOriginModel)
+	siteConfigsCache := make(map[int64]*model.SiteConfigModel)
 	certsCache := make(map[int64]*model.CertModel)
 
+	// 实体
+	// Guard节点
 	nodeEntity := new(model.NodeModel)
+	// IP黑名单
 	blacklistIPEntities := make([]*model.BlacklistIPModel, 0)
+	// IP白名单
 	whitelistIPEntities := make([]*model.WhitelistIPModel, 0)
+	// URL白名单
 	whitelistURLEntities := make([]*model.WhitelistURLModel, 0)
+	// 频率限制
 	rateLimitEntities := make([]*model.RateLimitModel, 0)
+	// 证书
 	certificateEntities := make([]*model.CertModel, 0)
+	// 网站
 	siteEntities := make([]*model.SiteModel, 0)
+	// 网站地域级IP黑名单
 	siteRegionBlacklistEntities := make([]*model.SiteRegionBlacklistModel, 0)
 
-	_siteConfigEntities := make([]*model.SiteConfigModel, 0)
-	_siteOriginEntities := make([]*model.SiteOriginModel, 0)
+	// 网站配置
+	siteConfigEntities := make([]*model.SiteConfigModel, 0)
+	// 网站源站
+	siteOriginEntities := make([]*model.SiteOriginModel, 0)
 
-	if err := svc.gDB.Where("id = ?", id).First(nodeEntity).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return errors.New("节点不存在")
+	// 数据库查询
+	{
+		if err := svc.gDB.Where("id = ?", id).First(nodeEntity).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("节点不存在")
+			}
+			return ecode.InternalServerError
 		}
-		return ecode.InternalServerError
-	}
 
-	if err := svc.gDB.Where("status = ?", 1).Find(&blacklistIPEntities).Error; err != nil {
-		logx.Error("[node] Failed to get ip blacklist: ", err.Error())
-		return ecode.InternalServerError
-	}
-
-	// TODO: ignore status cond
-	if err := svc.gDB.Where("status = ?", 1).Find(&siteRegionBlacklistEntities).Error; err != nil {
-		logx.Error("[node] Failed to get region blacklist: ", err.Error())
-		return ecode.InternalServerError
-	}
-
-	if err := svc.gDB.Where("status = ?", 1).Find(&whitelistIPEntities).Error; err != nil {
-		logx.Error("[node] Failed to get ip whitelist: ", err.Error())
-		return ecode.InternalServerError
-	}
-
-	if err := svc.gDB.Where("status = ?", 1).Find(&whitelistURLEntities).Error; err != nil {
-		logx.Error("[node] Failed to get url whitelist: ", err.Error())
-		return ecode.InternalServerError
-	}
-
-	if err := svc.gDB.Where("status = ?", 1).Find(&rateLimitEntities).Error; err != nil {
-		logx.Error("[node] Failed to get rate limit: ", err.Error())
-		return ecode.InternalServerError
-	}
-
-	if err := svc.gDB.Find(&certificateEntities).Error; err != nil {
-		logx.Error("[node] Failed to get certificates: ", err.Error())
-		return ecode.InternalServerError
-	}
-
-	if err := svc.gDB.Where("status = ?", 1).Find(&siteEntities).Error; err != nil {
-		logx.Error("[node] Failed to get sites: ", err.Error())
-		return ecode.InternalServerError
-	}
-
-	if err := svc.gDB.Find(&_siteConfigEntities).Error; err != nil {
-		logx.Error("[node] Failed to get site config entities: ", err.Error())
-		return ecode.InternalServerError
-	}
-
-	if err := svc.gDB.Find(&_siteOriginEntities).Error; err != nil {
-		logx.Error("[node] Failed to get site origin entities: ", err.Error())
-		return ecode.InternalServerError
-	}
-
-	for _, site := range siteEntities {
-		sitesCache[site.ID] = site
-	}
-
-	for _, cert := range certificateEntities {
-		certsCache[cert.ID] = cert
-	}
-
-	mapSiteConfigGuard := make(map[int64]*model.SiteConfigGuard)
-	for _, cfg := range _siteConfigEntities {
-		var _certID string
-		cert, ok := certsCache[cfg.CertID]
-		if ok {
-			_certID = cert.UUID
-		} else {
-			_certID = ""
+		if nodeEntity.Status == 0 {
+			return errors.New("节点当前处于禁用状态，请先启用节点后再同步")
 		}
-		cfgGuard := model.SiteConfigGuard{
-			CertID:             _certID,
-			IsHttps:            cfg.IsHttps,
-			IsRealIPFromHeader: cfg.IsRealIPFromHeader,
-			OriginProtocol:     cfg.OriginProtocol,
-			RealIPHeader:       cfg.RealIPHeader,
+
+		if err := svc.gDB.Where("status = ?", 1).Find(&blacklistIPEntities).Error; err != nil {
+			logx.Error("[node] Failed to get ip blacklist: ", err.Error())
+			return ecode.InternalServerError
 		}
-		mapSiteConfigGuard[cfg.SiteID] = &cfgGuard
+
+		if err := svc.gDB.Where("status = ?", 1).Find(&siteRegionBlacklistEntities).Error; err != nil {
+			logx.Error("[node] Failed to get region blacklist: ", err.Error())
+			return ecode.InternalServerError
+		}
+
+		if err := svc.gDB.Where("status = ?", 1).Find(&whitelistIPEntities).Error; err != nil {
+			logx.Error("[node] Failed to get ip whitelist: ", err.Error())
+			return ecode.InternalServerError
+		}
+
+		if err := svc.gDB.Where("status = ?", 1).Find(&whitelistURLEntities).Error; err != nil {
+			logx.Error("[node] Failed to get url whitelist: ", err.Error())
+			return ecode.InternalServerError
+		}
+
+		if err := svc.gDB.Where("status = ?", 1).Find(&rateLimitEntities).Error; err != nil {
+			logx.Error("[node] Failed to get rate limit: ", err.Error())
+			return ecode.InternalServerError
+		}
+
+		if err := svc.gDB.Find(&certificateEntities).Error; err != nil {
+			logx.Error("[node] Failed to get certificates: ", err.Error())
+			return ecode.InternalServerError
+		}
+
+		if err := svc.gDB.Where("status = ?", 1).Find(&siteEntities).Error; err != nil {
+			logx.Error("[node] Failed to get sites: ", err.Error())
+			return ecode.InternalServerError
+		}
+
+		if err := svc.gDB.Find(&siteConfigEntities).Error; err != nil {
+			logx.Error("[node] Failed to get site config entities: ", err.Error())
+			return ecode.InternalServerError
+		}
+
+		if err := svc.gDB.Find(&siteOriginEntities).Error; err != nil {
+			logx.Error("[node] Failed to get site origin entities: ", err.Error())
+			return ecode.InternalServerError
+		}
 	}
 
-	mapArraySiteGuardOrigin := make(map[int64][]*model.SiteOriginGuard)
-	for _, origin := range _siteOriginEntities {
-		guardOrigin := model.SiteOriginGuard{
-			Host:      origin.Host,
-			HttpPort:  origin.HttpPort,
-			HttpsPort: origin.HttpsPort,
-			Weight:    origin.Weight,
+	// k,v处理，方便使用
+	{
+		for _, site := range siteEntities {
+			sitesCache[site.ID] = site
 		}
-		mapArraySiteGuardOrigin[origin.SiteID] = append(mapArraySiteGuardOrigin[origin.SiteID], &guardOrigin)
+
+		for _, cert := range certificateEntities {
+			certsCache[cert.ID] = cert
+		}
+
+		for _, origin := range siteOriginEntities {
+			siteID := origin.SiteID
+			if OriginsCache[siteID] == nil {
+				OriginsCache[siteID] = make([]*model.SiteOriginModel, 0)
+			}
+			OriginsCache[siteID] = append(OriginsCache[siteID], origin)
+		}
+
+		for _, cfg := range siteConfigEntities {
+			siteConfigsCache[cfg.SiteID] = cfg
+		}
 	}
 
-	logCfgGuard := new(model.SampleLogUploadGuard)
+	// 准备组装ConfigsSyncGuard需要的数据类型
+	sampleLogCfgGuard := new(model.SampleLogUploadGuard)
 	arrayBlacklistIPGuard := make([]*model.BlacklistIPGuard, 0)
-	arraySiteRegionBlacklistGuard := make([]*model.SiteRegionBlacklistGuard, 0)
 	arrayWhitelistIPGuard := make([]*model.WhitelistIPGuard, 0)
 	arrayCertificateGuard := make([]*model.CertificateGuard, 0)
 
-	// struct copy
-	if err := copier.Copy(logCfgGuard, nodeEntity); err != nil {
-		logx.Error("[node] Failed to copy sampledLogUploadGuard: ", 0)
-		return ecode.InternalServerError
-	}
+	//_arraySiteOriginGuard := make([]*model.SiteOriginGuard, 0)
 
-	if err := copier.Copy(&arrayBlacklistIPGuard, &blacklistIPEntities); err != nil {
-		logx.Error("[node] Failed to copy arrayBlacklistIPGuard: ", 0)
-		return ecode.InternalServerError
-	}
-	//if err := copier.Copy(&arrayBlacklistRegionGuard, &blacklistRegionEntities); err != nil {
-	//	logx.Error("[node] Failed to copy arrayBlacklistRegionGuard: ", 0)
-	//	return ecode.InternalServerError
-	//}
-	if err := copier.Copy(&arrayWhitelistIPGuard, &whitelistIPEntities); err != nil {
-		logx.Error("[node] Failed to copy arrayWhitelistIPGuard: ", 0)
-		return ecode.InternalServerError
-	}
-	if err := copier.Copy(&arrayCertificateGuard, &certificateEntities); err != nil {
-		logx.Error("[node] Failed to copy arrayCertificateGuard: ", 0)
-		return ecode.InternalServerError
+	// 类型转换
+	{
+		// 拦截日志
+		if err := copier.Copy(sampleLogCfgGuard, nodeEntity); err != nil {
+			logx.Error("[node] Failed to copy sampledLogUploadGuard: ", 0)
+			return ecode.InternalServerError
+		}
+
+		// IP黑名单
+		if err := copier.Copy(&arrayBlacklistIPGuard, &blacklistIPEntities); err != nil {
+			logx.Error("[node] Failed to copy arrayBlacklistIPGuard: ", 0)
+			return ecode.InternalServerError
+		}
+		//if err := copier.Copy(&arrayBlacklistRegionGuard, &blacklistRegionEntities); err != nil {
+		//	logx.Error("[node] Failed to copy arrayBlacklistRegionGuard: ", 0)
+		//	return ecode.InternalServerError
+		//}
+		// IP白名单
+		if err := copier.Copy(&arrayWhitelistIPGuard, &whitelistIPEntities); err != nil {
+			logx.Error("[node] Failed to copy arrayWhitelistIPGuard: ", 0)
+			return ecode.InternalServerError
+		}
+
+		// 证书，只同步在使用的证书会有问题，同步以后，再操作给站点启用证书话可能会找不到证书，所以这里同步全部证书
+		{
+			//inUseCertificates := make([]*model.CertModel, 0)
+			//for _, site := range siteEntities {
+			//	cfg := siteConfigsCache[site.ID]
+			//	if cfg == nil {
+			//		logx.Error("[node]Site configuration not found")
+			//		return ecode.InternalServerError
+			//	}
+			//
+			//	certID := cfg.CertID
+			//	if certID < 1 {
+			//		// 站点未启用HTTPS
+			//		continue
+			//	}
+			//	candidate := certsCache[certID]
+			//	if candidate == nil {
+			//		logx.Error("[node]Certificate not found")
+			//		continue
+			//	}
+			//	inUseCertificates = append(inUseCertificates, candidate)
+			//}
+			//if err := copier.Copy(&arrayCertificateGuard, &inUseCertificates); err != nil {
+			if err := copier.Copy(&arrayCertificateGuard, &certificateEntities); err != nil {
+				logx.Error("[node] Failed to copy arrayCertificateGuard: ", 0)
+				return ecode.InternalServerError
+			}
+		}
 	}
 
 	arrayWhitelistURLGuard := make([]*model.WhitelistURLGuard, 0)
-	for _, whitelistURL := range whitelistURLEntities {
-		whitelistGuard := model.WhitelistURLGuard{
-			UUID:      whitelistURL.UUID,
-			SiteID:    sitesCache[whitelistURL.SiteID].UUID,
-			Host:      sitesCache[whitelistURL.SiteID].Domain,
-			Path:      whitelistURL.Path,
-			MatchMode: whitelistURL.MatchMode,
-		}
-		arrayWhitelistURLGuard = append(arrayWhitelistURLGuard, &whitelistGuard)
-	}
-
 	arrayRateLimitGuard := make([]*model.RateLimitGuard, 0)
-	for _, rateLimit := range rateLimitEntities {
-		rateLimitGuard := model.RateLimitGuard{
-			UUID:      rateLimit.UUID,
-			SiteID:    sitesCache[rateLimit.SiteID].UUID,
-			Host:      sitesCache[rateLimit.SiteID].Domain,
-			Path:      rateLimit.Path,
-			Limit:     rateLimit.Limit,
-			Window:    rateLimit.Window,
-			MatchMode: rateLimit.MatchMode,
+	arraySiteRegionBlacklistGuard := make([]*model.SiteRegionBlacklistGuard, 0)
+	{
+		// URL白名单列表
+		{
+			for _, whitelistURL := range whitelistURLEntities {
+				whitelistGuard := model.WhitelistURLGuard{
+					UUID:      whitelistURL.UUID,
+					SiteID:    sitesCache[whitelistURL.SiteID].UUID,
+					Host:      sitesCache[whitelistURL.SiteID].Domain,
+					Path:      whitelistURL.Path,
+					MatchMode: whitelistURL.MatchMode,
+				}
+				arrayWhitelistURLGuard = append(arrayWhitelistURLGuard, &whitelistGuard)
+			}
 		}
-		arrayRateLimitGuard = append(arrayRateLimitGuard, &rateLimitGuard)
+
+		// 频率限制列表
+		{
+			for _, rateLimit := range rateLimitEntities {
+				rateLimitGuard := model.RateLimitGuard{
+					UUID:      rateLimit.UUID,
+					SiteID:    sitesCache[rateLimit.SiteID].UUID,
+					Host:      sitesCache[rateLimit.SiteID].Domain,
+					Path:      rateLimit.Path,
+					Limit:     rateLimit.Limit,
+					Window:    rateLimit.Window,
+					MatchMode: rateLimit.MatchMode,
+				}
+				arrayRateLimitGuard = append(arrayRateLimitGuard, &rateLimitGuard)
+			}
+		}
+
+		// 网站地域级IP黑名单
+		{
+			for _, siteRegionBlacklist := range siteRegionBlacklistEntities {
+				siteRegionBlacklistGuard := model.SiteRegionBlacklistGuard{
+					SiteID:    sitesCache[siteRegionBlacklist.SiteID].UUID,
+					Countries: siteRegionBlacklist.Countries,
+					Regions:   siteRegionBlacklist.Regions,
+					MatchMode: siteRegionBlacklist.Status,
+				}
+				arraySiteRegionBlacklistGuard = append(arraySiteRegionBlacklistGuard, &siteRegionBlacklistGuard)
+			}
+		}
 	}
 
 	arraySiteGuard := make([]*model.SiteGuard, 0)
 	for _, site := range siteEntities {
-		siteGuard := model.SiteGuard{
-			UUID:    site.UUID,
-			Host:    site.Domain,
-			Config:  mapSiteConfigGuard[site.ID],
-			Origins: mapArraySiteGuardOrigin[site.ID],
+		siteID := site.ID
+		cfg := siteConfigsCache[siteID]
+
+		var siteGuard model.SiteGuard
+		{
+			var configsGuard model.SiteConfigGuard
+			{
+				var originCfgGuard model.SiteOriginCfgGuard
+				{
+					var arraySiteOriginGuard []*model.SiteOriginGuard
+					{
+						arraySiteOrigin := OriginsCache[siteID]
+						arraySiteOriginGuard = make([]*model.SiteOriginGuard, 0)
+						if err := copier.Copy(&arraySiteOriginGuard, &arraySiteOrigin); err != nil {
+							logx.Error("[node] Failed to copy arraySiteOriginGuard: ", err)
+							return ecode.InternalServerError
+						}
+					}
+					originCfgGuard = model.SiteOriginCfgGuard{
+						OriginProtocol:   cfg.OriginProtocol,
+						OriginHostHeader: cfg.OriginHostHeader,
+						Origins:          arraySiteOriginGuard,
+					}
+				}
+
+				{
+					certUUID := ""
+					if cfg.CertID > 0 {
+						cert, ok := certsCache[cfg.CertID]
+						if !ok {
+							logx.Error("[node]Certificate not found")
+							return ecode.InternalServerError
+						}
+						certUUID = cert.UUID
+					}
+
+					configsGuard = model.SiteConfigGuard{
+						CertID:             certUUID,
+						IsHttps:            cfg.IsHttps,
+						IsRealIPFromHeader: cfg.IsRealIPFromHeader,
+						RealIPHeader:       cfg.RealIPHeader,
+						Origin:             &originCfgGuard,
+					}
+				}
+			}
+
+			siteGuard = model.SiteGuard{
+				UUID:    site.UUID,
+				Host:    site.Domain,
+				Configs: &configsGuard,
+			}
 		}
+
 		arraySiteGuard = append(arraySiteGuard, &siteGuard)
 	}
 
-	for _, siteRegionBlacklist := range siteRegionBlacklistEntities {
-		siteRegionBlacklistGuard := model.SiteRegionBlacklistGuard{
-			SiteID:    sitesCache[siteRegionBlacklist.SiteID].UUID,
-			Countries: siteRegionBlacklist.Countries,
-			Regions:   siteRegionBlacklist.Regions,
-			MatchMode: siteRegionBlacklist.Status,
-		}
-		arraySiteRegionBlacklistGuard = append(arraySiteRegionBlacklistGuard, &siteRegionBlacklistGuard)
-	}
-
-	//logCfgGuard := model.SampleLogUploadGuard{
-	//	IsSampleLogUpload:       0,
-	//	SampleLogUploadAPI:      "",
-	//	SampleLogUploadAPIToken: "",
+	//
+	//{
+	//	sampledLogUploadApi := "http://" + utils.GetOutboundIP().String() + ":" + viper.GetString("port") + sampleLogAPIURL
+	//	sampleLogCfgGuard.SampleLogUploadAPI = sampledLogUploadApi
+	//
 	//}
 
-	rules := model.RulesGuard{
-		WhitelistIP:     arrayWhitelistIPGuard,
-		WhitelistURL:    arrayWhitelistURLGuard,
-		BlacklistIP:     arrayBlacklistIPGuard,
-		BlacklistRegion: arraySiteRegionBlacklistGuard,
-		RateLimit:       arrayRateLimitGuard,
-	}
+	var guardConfigs model.ConfigsSyncGuard
+	{
+		var rules model.RulesGuard
+		{
+			rules = model.RulesGuard{
+				WhitelistIP:     arrayWhitelistIPGuard,
+				WhitelistURL:    arrayWhitelistURLGuard,
+				BlacklistIP:     arrayBlacklistIPGuard,
+				BlacklistRegion: arraySiteRegionBlacklistGuard,
+				RateLimit:       arrayRateLimitGuard,
+			}
+		}
 
-	sampledLogUploadApi := "http://" + utils.GetOutboundIP().String() + ":" + viper.GetString("port") + sampleLogAPIURL
-	logCfgGuard.SampleLogUploadAPI = sampledLogUploadApi
-
-	guardConfigs := model.GuardConfigs{
-		Log:          logCfgGuard,
-		Sites:        arraySiteGuard,
-		Certificates: arrayCertificateGuard,
-		Rules:        &rules,
+		guardConfigs = model.ConfigsSyncGuard{
+			SampleLog:    sampleLogCfgGuard,
+			Sites:        arraySiteGuard,
+			Certificates: arrayCertificateGuard,
+			Rules:        &rules,
+		}
 	}
 
 	// update guard
-	go func() {
-		logx.Info("push event: ", id)
+	{
+		//go func() {
+		//	logx.Info("push event: ", id)
+		//	svc.eventBus.PushEvent(event.All, event.OpTypeSync, guardConfigs, id)
+		//}()
 		svc.eventBus.PushEvent(event.All, event.OpTypeSync, guardConfigs, id)
-	}()
-	//svc.eventBus.PushEvent(event.All, event.OpTypeSync, guardConfigs)
+	}
 	return nil
 }
 

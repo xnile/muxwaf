@@ -12,25 +12,24 @@ local tostring    = tostring
 local NGX_OK                      = ngx.OK
 local HTTP_GONE                   = ngx.HTTP_GONE
 local HTTP_INTERNAL_SERVER_ERROR  = ngx.HTTP_INTERNAL_SERVER_ERROR
-
-local RULE_TYPE               = constants.RULE_TYPE
-local DEFAULT_API_LISTEN_PORT = constants.DEFAULT_API_LISTEN_PORT
+local RULE_TYPE                   = constants.RULE_TYPE
+-- local DEFAULT_API_LISTEN_PORT     = constants.DEFAULT_API_LISTEN_PORT
 
 local _M = {
   _VERSION = 0.1
 }
 
-local function skip_check_apis(ctx)
-  if ctx.server_port == tostring(DEFAULT_API_LISTEN_PORT) then
-    log.debug("allow apis to pass through")
-    return ngx_exit(NGX_OK)
-  end
-end
+-- local function bypass_apis(ctx)
+--   if ctx.server_port == tostring(DEFAULT_API_LISTEN_PORT) then
+--     -- log.debug("allow apis to pass through")
+--     return ngx_exit(NGX_OK)
+--   end
+-- end
 
 
 local function check_site_is_exist(ctx)
   if ctx.site_id == "" then
-    log.warn("site \"", ctx.host, "\" is not exist")
+    log.warn("The site '", ctx.host, "' is not exist")
     return ctx.say_410()
   end
 end
@@ -45,15 +44,14 @@ local function check_blacklist_ip(ctx)
     return ctx:say_block()
   end
   if err then
-    log.error(err)
+    log.warn(err)
   end
 end
 
 local function check_blacklist_region(ctx)
   local client_ip = ctx.real_client_ip
   local mather = rules.blacklist_region
-  -- if mather.match(ctx.site_id, client_ip) then
-  if mather.match(ctx) then
+  if mather.deny(ctx) then
     sample_log.block(ctx, RULE_TYPE.BLACKLIST_REGION, nil)
     return ctx:say_block()
   end
@@ -69,7 +67,7 @@ local function check_whitelist_ip(ctx)
     return ngx_exit(NGX_OK)
   end
   if err then
-    log.error(err)
+    log.warn(err)
   end
   return
 end
@@ -124,8 +122,8 @@ local function check_ratelimit(ctx)
 end
 
 
-function _M.access(_, ctx)
-  skip_check_apis(ctx)
+function _M.access_phase(ctx)
+  -- bypass_apis(ctx)
   check_site_is_exist(ctx)
   check_whitelist_ip(ctx)
   check_whitelist_url(ctx)

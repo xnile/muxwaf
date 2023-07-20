@@ -14,8 +14,6 @@ local assert        = assert
 
 local CONFIG_SYNC_INTERVAL        = constants.CONFIG_SYNC_INTERVAL
 local SAMPLE_LOG_SYNC_INTERVAL    = constants.SAMPLE_LOG_SYNC_INTERVAL
--- local CALC_QPS_INTERVAL           = constants.CALC_QPS_INTERVAL
--- local CALC_BANDWIDTH_INTERVAL     = constants.CALC_BANDWIDTH_INTERVAL
 
 local _M = {
   _VERSION = 0.1
@@ -37,35 +35,13 @@ local function sync_config()
 end
 
 
--- local function calc_qps()
---     -- just need one worker
---     if ngx_worker_id() == 0 then
---         local ok, err = every(CALC_QPS_INTERVAL, metrics.calc_qps)
---         assert(ok, "failed to setting up timer for calculate qps: " .. tostring(err))        
---     end
--- end
-
--- local function calc_bandwidth()
---     -- just need one worker
---     if ngx_worker_id() == 0 then
---         local ok, err = every(CALC_BANDWIDTH_INTERVAL, metrics.calc_bandwidth)
---         assert(ok, "failed to setting up timer for calculate bandwidth: " .. tostring(err))        
---     end
--- end
-
-
--- local function collect_lua_mem_alloc()
---     local ok, err = every(2, metrics.collect_lua_mem_alloc_timer_callback)
---     assert(ok, "failed to setting up timer for collect lua memory allocated: " .. tostring(err))
--- end
-
-
-function _M.run(_)
+local function start()
     sync_config()
     send_sample_logs()
-    -- calc_qps()
-    -- calc_bandwidth()
-    -- collect_lua_mem_alloc()
 end
+
+
+_M.init_worker = start
+
 
 return _M

@@ -2,7 +2,7 @@
   <page-header-wrapper>
     <!-- 添加按钮 -->
     <template v-slot:extra>
-      <a-button type="primary" @click="add">新增网站</a-button>
+      <a-button type="primary" @click="add">新增防护网站</a-button>
     </template>
     <a-card>
       <div class="table-page-search-wrapper">
@@ -10,7 +10,7 @@
           <a-row>
             <a-col :span="2">
               <a-form-model-item label="">
-                <a-select placeholder="请选择" v-model="queryParams.status">
+                <a-select placeholder="请选择" v-model="queryParams.status" @change="onStatusChange">
                   <a-select-option value="">全部</a-select-option>
                   <a-select-option :value="0">未启用</a-select-option>
                   <a-select-option :value="1">已启用</a-select-option>
@@ -134,8 +134,8 @@
       <!-- 分页end -->
     </a-card>
     <a-drawer
-      :title="(operateType == 'add' ? '添加' : '修改') + '网站'"
-      :width="800"
+      :title="(operateType == 'add' ? '添加' : '修改') + '防护网站'"
+      :width="900"
       placement="right"
       :closable="false"
       :visible="visible"
@@ -151,10 +151,10 @@
         :wrapper-col="wrapperCol"
         layout="vertical"
       >
-        <a-form-model-item label="域名" prop="domain" :wrapper-col="{ span: 15 }">
+        <a-form-model-item label="防护域名" prop="domain" :wrapper-col="{ span: 15 }">
           <a-input placeholder="请输入域名" v-model="form.domain" :disabled="operateType == 'edit'" />
         </a-form-model-item>
-        <a-form-model-item label="源站" prop="origins">
+        <a-form-model-item label="源站地址" prop="origins">
           <a-table
             :columns="srcColumns"
             :dataSource="form.origins"
@@ -165,20 +165,26 @@
             "
             :pagination="false"
           >
-            <template slot="ip" slot-scope="v, r, index">
-              <a-input type="text" placeholder="请输入单个IP" v-model="form.origins[index].host" />
+            <template slot="addr" slot-scope="v, r, index">
+              <a-input type="text" placeholder="请输入源站地址（IP/域名）" v-model="form.origins[index].addr" />
             </template>
-            <template slot="http_port" slot-scope="v, r, index">
+            <template slot="port" slot-scope="v, r, index">
               <a-input
                 type="number"
                 min="0"
                 max="65535"
-                :placeholder="80"
-                v-model.number="form.origins[index].http_port"
+                placeholder="1-65535"
+                v-model.number="form.origins[index].port"
               />
             </template>
             <template slot="weight" slot-scope="v, r, index">
-              <a-input type="number" min="0" max="100" v-model.number="form.origins[index].weight" />
+              <a-input
+                type="number"
+                min="0"
+                max="100"
+                placeholder="0-100"
+                v-model.number="form.origins[index].weight"
+              />
             </template>
             <template slot="operation" slot-scope="v, record, index">
               <a-space>
@@ -187,6 +193,12 @@
             </template>
           </a-table>
           <a-button style="width: 100%; margin: 20px 0" type="dashed" @click="addSrc">+ 新增</a-button>
+        </a-form-model-item>
+        <a-form-model-item label="源站协议">
+          <a-radio-group v-model="form.origin_protocol">
+            <a-radio value="http">HTTP</a-radio>
+            <a-radio value="https">HTTPS</a-radio>
+          </a-radio-group>
         </a-form-model-item>
         <!-- form END -->
       </a-form-model>
@@ -257,31 +269,27 @@ const srcColumns = [
   //   scopedSlots: { customRender: 'index' }
   // },
   {
-    title: 'IP',
-    dataIndex: 'host',
-    width: 300,
-    scopedSlots: { customRender: 'ip' }
+    title: '源站地址',
+    dataIndex: 'addr',
+    width: '57%',
+    scopedSlots: { customRender: 'addr' }
   },
   {
     title: '端口',
-    dataIndex: 'http_port',
-    width: 100,
-    scopedSlots: { customRender: 'http_port' }
+    dataIndex: 'port',
+    width: '20%',
+    scopedSlots: { customRender: 'port' }
   },
-  // {
-  //   title: '线路',
-  //   dataIndex: 'active_standby',
-  //   scopedSlots: { customRender: 'active_standby' }
-  // },
   {
     title: '权重',
     dataIndex: 'weight',
-    width: 100,
+    width: '18%',
     scopedSlots: { customRender: 'weight' }
   },
   {
     title: '操作',
     dataIndex: 'action',
+    width: '5%',
     scopedSlots: { customRender: 'operation' }
   }
 ]
@@ -305,13 +313,13 @@ export default {
       certificates: [],
       real_ip_header_type: 0,
       form: {
-        // id: 0,
         domain: '',
+        origin_protocol: 'http',
         origins: [
           {
-            host: '',
-            http_port: 80,
-            weight: 100
+            addr: null,
+            port: null,
+            weight: null
           }
         ]
       },
@@ -380,6 +388,10 @@ export default {
         },
         onCancel() {}
       })
+    },
+
+    onStatusChange() {
+      this.doGetList()
     },
 
     add() {
