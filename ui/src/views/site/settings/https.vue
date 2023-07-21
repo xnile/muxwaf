@@ -184,7 +184,7 @@ export default {
     },
 
     dropdownVisibleChange() {
-      this.doGetAllCertificates()
+      // this.doGetAllCertificates()
     },
 
     doGetAllCertificates() {
@@ -203,17 +203,6 @@ export default {
       GetHttpsConfigs(id).then(res => {
         if (res.code == 0) {
           this.form = res.data
-          // if (this.form.is_https) {
-          //   this.enableHttps = true
-          //   GetCertName(this.form.cert_id).then(r => {
-          //     if (r.code == 0) {
-          //       this.certName = r.data
-          //     }
-          //   })
-          // } else {
-          //   this.certName = '无'
-          // }
-
           this.enableHttps = Boolean(this.form.is_https)
           this.isForceHttps = Boolean(this.form.is_force_https)
         }
