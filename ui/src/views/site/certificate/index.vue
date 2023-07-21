@@ -159,6 +159,8 @@ export default {
       this.operateType = 'edit'
       this.form.name = record.name
       this.form.id = record.id
+      this.form.cert = ''
+      this.form.key = ''
     },
 
     onDelItem(record) {
