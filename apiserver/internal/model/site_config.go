@@ -41,7 +41,7 @@ type SiteHttpsReq struct {
 }
 
 type SiteBasicCfgReq struct {
-	IsRealIPFromHeader *int8   `json:"is_real_ip_from_header" binding:"required"`
+	IsRealIPFromHeader *int8   `json:"is_real_ip_from_header" binding:"oneof=0 1"`
 	RealIPHeader       *string `json:"real_ip_header" binding:"required"`
 }
 

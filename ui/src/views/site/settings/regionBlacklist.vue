@@ -36,23 +36,25 @@
     <!-- <a-modal :width="800" v-model="visible" title="修改" @ok="onOk"> -->
     <a-form-model ref="form" :model="form" :rules="rules" label-align="left" layout="horizontal">
       <a-form-model-item label="国内地域级IP黑名单：">
-        <a-input
+        <a-textarea
+          :rows="3"
           v-if="editable"
           v-model="form.regions"
           placeholder="输入内地省份名，多个用','号分隔，如: 北京,南京"
           @change="onChange"
-          style="width: 50%"
+          style="width: 80%"
         />
         <template v-else>
           <span style="padding-left: 20px;">{{ form.regions || '无' }}</span>
         </template>
       </a-form-model-item>
       <a-form-model-item label="海外地域级IP黑名单" style="margin-top: 10px;">
-        <a-input
+        <a-textarea
+          :rows="3"
           v-if="editable"
           v-model="form.countries"
           placeholder="输入国家名，多个用','号分隔，如：美国,日本"
-          style="width: 50%"
+          style="width: 80%"
         />
         <template v-else>
           <span style="padding-left: 20px;">{{ form.countries || '无' }}</span>

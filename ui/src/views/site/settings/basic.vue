@@ -8,45 +8,7 @@
         </a-col>
       </div>
     </a-row>
-    <!-- <a-row>
-      <div class="item">
-        <a-col :span="2">
-          <span class="list-lable">域名 :</span>
-        </a-col>
-        <a-col :span="20">
-          <span>{{ domain }}</span>
-        </a-col>
-        <a-col :span="2">
-          <a @click="onEdit">修改</a>
-        </a-col>
-      </div>
-    </a-row>
 
-    <a-row>
-      <div class="item">
-        <a-col :span="2">
-          <span class="list-lable">前置CDN :</span>
-        </a-col>
-        <a-col :span="12">
-          <span v-if="form.is_real_ip_from_header == 1">是</span>
-          <span v-else>否</span>
-        </a-col>
-      </div>
-    </a-row>
-    <a-row v-if="form.is_real_ip_from_header == 1">
-      <div class="item">
-        <a-col :span="2">
-          <span class="list-lable">获取IP头 :</span>
-        </a-col>
-        <a-col :span="12">
-          <span v-if="real_ip_header_type == 0">取X-Forwarded-For中的第一个IP作为客户端源IP</span>
-          <span v-else-if="real_ip_header_type == 1">{{ form.real_ip_header }}</span>
-        </a-col>
-      </div>
-    </a-row> -->
-
-    <!-- 新增 Modal -->
-    <!-- <a-modal :width="800" v-model="visible" title="基本配置" @ok="onOk"> -->
     <a-form-model
       ref="form"
       :model="form"
@@ -68,7 +30,7 @@
       </a-form-model-item>
       <a-form-model-item label="获取IP的Header" v-if="pre_cdn">
         <template v-if="editable">
-          <a-radio-group v-model="real_ip_header_type">
+          <a-radio-group v-model="real_ip_header_type" @change="onRealIPHeaderTypeChange">
             <a-radio :value="0" :style="radioStyle">取X-Forwarded-For中的第一个IP作为客户端源IP</a-radio>
             <a-radio :value="1" :style="radioStyle">自定义Header</a-radio>
           </a-radio-group>
@@ -143,13 +105,20 @@ export default {
       if (!this.pre_cdn) {
         payload.is_real_ip_from_header = 0
         payload.real_ip_header = ''
-      }
-
-      if (this.pre_cdn && this.real_ip_header_type == 0) {
+      } else {
         if (this.real_ip_header_type == 0) {
           payload.real_ip_header = 'X-Forwarded-For'
+        } else if (this.real_ip_header_type == 1 && payload.real_ip_header == '') {
+          this.$message.error('Header不能用空')
+          return
         }
       }
+
+      // if (this.pre_cdn && this.real_ip_header_type == 0) {
+      //   if (this.real_ip_header_type == 0) {
+      //     payload.real_ip_header = 'X-Forwarded-For'
+      //   }
+      // }
 
       let id = this.$route.params.id
       UpdateSiteBasicConfigs(id, payload)
@@ -174,6 +143,12 @@ export default {
       this.getBasicSiteConfigs()
     },
 
+    onRealIPHeaderTypeChange() {
+      if (this.real_ip_header_type == 1) {
+        this.form.real_ip_header = ''
+      }
+    },
+
     getDomain() {
       // let id = this.$route.params.id
       // GetDomain(id).then(res => {
@@ -190,10 +165,15 @@ export default {
           this.pre_cdn = Boolean(res.data.is_real_ip_from_header)
           this.form.real_ip_header = res.data.real_ip_header
           this.form.is_real_ip_from_header = res.data.is_real_ip_from_header
-          if (res.data.real_ip_header == 'X-Forwarded-For') {
+
+          if (!this.pre_cdn) {
             this.real_ip_header_type = 0
           } else {
-            this.real_ip_header_type = 1
+            if (res.data.real_ip_header == 'X-Forwarded-For') {
+              this.real_ip_header_type = 0
+            } else {
+              this.real_ip_header_type = 1
+            }
           }
         }
       })
@@ -220,11 +200,6 @@ export default {
 </script>
 
 <style scoped>
-.item {
-  /* height: 10px; */
-  /* line-height: 35px; */
-}
-
 .ant-form-item {
   margin-bottom: 5px;
 }

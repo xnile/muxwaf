@@ -222,6 +222,10 @@ func (svc *siteService) UpdateBasicConfigs(siteID int64, payload *model.SiteBasi
 		IsRealIPFromHeader: *payload.IsRealIPFromHeader,
 		RealIPHeader:       *payload.RealIPHeader,
 	}
+	if *payload.IsRealIPFromHeader == 1 && *payload.RealIPHeader == "" {
+		return errors.New("参数有误，header不能为空")
+	}
+
 	if err := svc.repo.DB.Model(&model.SiteConfigModel{}).
 		Select("IsRealIPFromHeader", "RealIPHeader").
 		Where("site_id = ?", siteID).
