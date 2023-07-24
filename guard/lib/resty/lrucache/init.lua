@@ -204,6 +204,30 @@ function _M.get(self, key)
 end
 
 
+function _M.get_with_ttl(self, key)
+    local hasht = self.hasht
+    local val = hasht[key]
+    if val == nil then
+        return nil
+    end
+
+    local node = self.key2node[key]
+
+    -- print(key, ": moving node ", tostring(node), " to cache queue head")
+    local cache_queue = self.cache_queue
+    queue_remove(node)
+    queue_insert_head(cache_queue, node)
+
+    if node.expire >= 0 and node.expire < ngx_now() then
+        -- print("expired: ", node.expire, " > ", ngx_now())
+        return nil, val, node.user_flags, -1
+    end
+
+    return val, nil, node.user_flags, node.expire - ngx_now()
+end
+
+
+
 function _M.delete(self, key)
     self.hasht[key] = nil
 

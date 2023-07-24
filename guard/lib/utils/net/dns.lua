@@ -94,9 +94,9 @@ local function resolve_host(r, host)
 end
 
 function _M.lookup(host)
-  local cached_addresses = cache:get(host)
+  local cached_addresses, _, _, ttl = cache:get_with_ttl(host)
   if cached_addresses then
-    return cached_addresses, -1, nil
+    return cached_addresses, ttl, nil
   end
 
   local r, err = resolver:new{
