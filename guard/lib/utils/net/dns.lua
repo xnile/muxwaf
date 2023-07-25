@@ -120,12 +120,12 @@ function _M.lookup(host)
 
   local _, stale_addresses = cache:get(host)
   if stale_addresses then
-      ngx_log(ngx_WARN, "failed to query the DNS server for ", host, ":\n", table_concat(dns_errors, "\n"),
+      ngx_log(ngx_WARN, "failed to query the DNS server for ", host, ", ", table_concat(dns_errors, ", "),
        ", fallback to using the previous DNS resolution result")
       return  stale_addresses, 0, nil
   end
 
-  return nil, -1, "failed to query the DNS server for " .. host .. ":\n" .. table_concat(dns_errors, "\n")
+  return nil, -1, "failed to query the DNS server for " .. host .. ", " .. table_concat(dns_errors, ", ")
 end
 
 setmetatable(_M, {__index = { _cache = cache }})
