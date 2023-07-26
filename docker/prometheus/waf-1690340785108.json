@@ -24,14 +24,14 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 2,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "jTXo_8EVk"
+        "uid": "AsRU-4wVk"
       },
       "description": "拦截总次数",
       "fieldConfig": {
@@ -79,7 +79,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
           "expr": "sum(increase(muxwaf_attacks_blocked{instance=~\"$node\", host=~\"$host\"}[${__range_s}s])) or vector(0)",
@@ -94,7 +94,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "jTXo_8EVk"
+        "uid": "AsRU-4wVk"
       },
       "description": "频率限制拦截次数",
       "fieldConfig": {
@@ -146,10 +146,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
-          "expr": "sum(muxwaf_attacks_blocked{rule_type=\"ratelimit\",instance=~\"$node\"}) or vector(0)",
+          "expr": "sum(increase(muxwaf_attacks_blocked{rule_type=\"ratelimit\",instance=~\"$node\", host=~\"$host\"}[${__range_s}s])) or vector(0)",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -161,7 +161,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "jTXo_8EVk"
+        "uid": "AsRU-4wVk"
       },
       "description": "IP黑名单拦截次数",
       "fieldConfig": {
@@ -209,7 +209,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
           "expr": "sum(increase(muxwaf_attacks_blocked{rule_type=\"blacklist_ip\", instance=~\"$node\"}[${__range_s}s])) or vector(0)",
@@ -224,7 +224,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "jTXo_8EVk"
+        "uid": "AsRU-4wVk"
       },
       "description": "地域级IP黑名单拦截次数",
       "fieldConfig": {
@@ -286,7 +286,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
           "expr": "sum(increase(muxwaf_attacks_blocked{rule_type=\"blacklist_region\", instance=~\"$node\"}[${__range_s}s])) or vector(0)",
@@ -301,7 +301,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "jTXo_8EVk"
+        "uid": "AsRU-4wVk"
       },
       "fieldConfig": {
         "defaults": {
@@ -382,7 +382,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -400,7 +400,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "jTXo_8EVk"
+        "uid": "AsRU-4wVk"
       },
       "fieldConfig": {
         "defaults": {
@@ -478,9 +478,9 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
-          "editorMode": "builder",
+          "editorMode": "code",
           "expr": "sum by(state) (muxwaf_connections)",
           "legendFormat": "__auto",
           "range": true,
@@ -493,7 +493,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "jTXo_8EVk"
+        "uid": "AsRU-4wVk"
       },
       "description": "",
       "fieldConfig": {
@@ -603,10 +603,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
-          "expr": "sum(rate(muxwaf_request_bytes_total{instance=~\"$node\", host=~\"$host\"}[5m]))",
+          "expr": "sum(rate(muxwaf_request_bytes_total{instance=~\"$node\", host=~\"$host\"}[5m])) *8",
           "legendFormat": "流入",
           "range": true,
           "refId": "A"
@@ -614,11 +614,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(rate(muxwaf_response_bytes_total{instance=~\"$node\", host=~\"$host\"}[5m]))",
+          "expr": "sum(rate(muxwaf_response_bytes_total{instance=~\"$node\", host=~\"$host\"}[5m])) *8",
           "hide": false,
           "instant": false,
           "interval": "",
@@ -633,7 +633,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "jTXo_8EVk"
+        "uid": "AsRU-4wVk"
       },
       "description": "",
       "fieldConfig": {
@@ -712,11 +712,11 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
-          "expr": "max by(instance) (muxwaf_lua_memstats_alloc_bytes)",
-          "legendFormat": "{{node}}",
+          "expr": "max by(instance) (muxwaf_lua_memstats_alloc_bytes{instance=~\"$node\"})",
+          "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
         }
@@ -727,7 +727,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "jTXo_8EVk"
+        "uid": "AsRU-4wVk"
       },
       "fieldConfig": {
         "defaults": {
@@ -805,10 +805,10 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
-          "expr": "muxwaf_lua_memstats_alloc_bytes",
+          "expr": "muxwaf_lua_memstats_alloc_bytes{instance=~\"$node\"}",
           "legendFormat": "{{instance}},worker{{worker_id}}",
           "range": true,
           "refId": "A"
@@ -820,7 +820,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "jTXo_8EVk"
+        "uid": "AsRU-4wVk"
       },
       "description": "shm-based dictionary information",
       "fieldConfig": {
@@ -902,19 +902,19 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
           "expr": "muxwaf_shm_free_bytes{instance=~\"$node\"}",
           "hide": false,
-          "legendFormat": "{{name}}[{{node}}]可用内存",
+          "legendFormat": "{{name}}[{{instance}}]可用内存",
           "range": true,
           "refId": "B"
         },
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
           "exemplar": false,
@@ -923,7 +923,7 @@
           "hide": false,
           "instant": false,
           "interval": "",
-          "legendFormat": "{{name}}[{{node}}]总内存",
+          "legendFormat": "{{name}}[{{instance}}]总内存",
           "range": true,
           "refId": "A"
         }
@@ -934,7 +934,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "jTXo_8EVk"
+        "uid": "AsRU-4wVk"
       },
       "fieldConfig": {
         "defaults": {
@@ -1012,13 +1012,28 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
           "expr": "sum by(status) (increase(muxwaf_requests{instance=~\"$node\", host=~\"$host\"}[$__rate_interval]))",
-          "legendFormat": "__auto",
+          "legendFormat": "{{status}}",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "AsRU-4wVk"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "sum by(upstream_status) (increase(muxwaf_requests{node=~\"$node\", host=~\"$host\", upstream_status!=\"-\"}[$__rate_interval]))",
+          "format": "time_series",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "源站：{{upstream_status}}",
+          "range": true,
+          "refId": "B"
         }
       ],
       "title": "状态码",
@@ -1027,7 +1042,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "jTXo_8EVk"
+        "uid": "AsRU-4wVk"
       },
       "fieldConfig": {
         "defaults": {
@@ -1075,7 +1090,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
           "expr": "sum by(status) (increase(muxwaf_requests{instance=~\"$node\", host=~\"$host\", status!=\"204\"}[${__range_s}s]))",
@@ -1092,7 +1107,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "jTXo_8EVk"
+        "uid": "AsRU-4wVk"
       },
       "fieldConfig": {
         "defaults": {
@@ -1140,7 +1155,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
           "expr": "sum by(upstream_status) (increase(muxwaf_requests{instance=~\"$node\", host=~\"$host\", upstream_status!=\"-\", upstream_status!=\"204\"}[${__range_s}s]))",
@@ -1155,7 +1170,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "jTXo_8EVk"
+        "uid": "AsRU-4wVk"
       },
       "description": "RT",
       "fieldConfig": {
@@ -1212,8 +1227,8 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
-        "w": 24,
+        "h": 8,
+        "w": 16,
         "x": 0,
         "y": 29
       },
@@ -1234,7 +1249,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum(rate(muxwaf_request_duration_second_bucket{instance=~\"$node\", host=~\"$host\"}[5m])) by (le, host))",
@@ -1245,7 +1260,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(rate(muxwaf_request_duration_second_bucket{instance=~\"$node\", host=~\"$host\"}[5m])) by (le, host))",
@@ -1257,7 +1272,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "jTXo_8EVk"
+            "uid": "AsRU-4wVk"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.90, sum(rate(muxwaf_request_duration_second_bucket{instance=~\"$node\", host=~\"$host\"}[5m])) by (le, host))",
@@ -1265,9 +1280,151 @@
           "legendFormat": "p90 {{host}}",
           "range": true,
           "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "AsRU-4wVk"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum(rate(muxwaf_upstream_response_duration_second_bucket{instance=~\"$node\", host=~\"$host\"}[5m])) by (le, host))",
+          "hide": false,
+          "legendFormat": "p99 {{host}} 源站",
+          "range": true,
+          "refId": "D"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "AsRU-4wVk"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum(rate(muxwaf_upstream_response_duration_second_bucket{instance=~\"$node\", host=~\"$host\"}[5m])) by (le, host))",
+          "hide": false,
+          "legendFormat": "p95 {{host}} 源站",
+          "range": true,
+          "refId": "E"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "AsRU-4wVk"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum(rate(muxwaf_upstream_response_duration_second_bucket{instance=~\"$node\", host=~\"$host\"}[5m])) by (le, host))",
+          "hide": false,
+          "legendFormat": "p90 {{host}} 源站",
+          "range": true,
+          "refId": "F"
         }
       ],
       "title": "响应时间",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "AsRU-4wVk"
+      },
+      "description": "跟源站建立连接的时间",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 29
+      },
+      "id": 38,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "AsRU-4wVk"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum(rate(muxwaf_upstream_connect_duration_second_bucket{instance=~\"$node\", host=~\"$host\"}[5m])) by (le, host))",
+          "legendFormat": "p99 {{host}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "AsRU-4wVk"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum(rate(muxwaf_upstream_connect_duration_second_bucket{instance=~\"$node\", host=~\"$host\"}[5m])) by (le, host))",
+          "hide": false,
+          "legendFormat": "p95 {{host}}",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "源站建连时间",
       "type": "timeseries"
     }
   ],
@@ -1281,17 +1438,17 @@
       {
         "allValue": ".*",
         "current": {
-          "selected": true,
+          "selected": false,
           "text": [
-            "10.11.0.54:8083"
+            "10.100.0.166:8083"
           ],
           "value": [
-            "10.11.0.54:8083"
+            "10.100.0.166:8083"
           ]
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "jTXo_8EVk"
+          "uid": "AsRU-4wVk"
         },
         "definition": "label_values(muxwaf_lua_memstats_alloc_bytes, instance) ",
         "description": "节点",
@@ -1324,7 +1481,7 @@
         },
         "datasource": {
           "type": "prometheus",
-          "uid": "jTXo_8EVk"
+          "uid": "AsRU-4wVk"
         },
         "definition": "label_values(muxwaf_requests, host) ",
         "description": "域名",
@@ -1347,13 +1504,13 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
-  "title": "muxwaf",
+  "title": "waf",
   "uid": "iBuTnQPVz",
-  "version": 33,
+  "version": 11,
   "weekStart": ""
 }
