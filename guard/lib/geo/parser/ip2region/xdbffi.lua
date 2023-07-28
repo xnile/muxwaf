@@ -14,6 +14,7 @@ ffi.cdef[[
 
 
 local function load_shared_lib(so_name)
+    ngx.log(ngx.DEBUG, "LOAD--XDB--LIB")
     local string_gmatch = string.gmatch
     local string_match = string.match
     local io_open = io.open
