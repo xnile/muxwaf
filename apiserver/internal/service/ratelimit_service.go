@@ -52,6 +52,7 @@ func (svc *rateLimitService) Add(payload *model.RateLimitReq) error {
 	//payload.SiteUUID = siteEty.UUID
 	//payload.Host = siteEty.Domain
 	entity := model.RateLimitModel{
+		SiteID:    payload.SiteID,
 		SiteUUID:  siteEty.UUID,
 		Host:      siteEty.Domain,
 		Path:      payload.Path,
