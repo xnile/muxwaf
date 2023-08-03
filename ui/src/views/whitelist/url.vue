@@ -148,40 +148,42 @@ import { ListSite } from '@/api/site'
 const columns = [
   {
     title: '网站',
-    dataIndex: 'host'
+    dataIndex: 'host',
+    width: '10%'
   },
   {
     title: '路径',
     dataIndex: 'path',
-    width: 300
+    width: '20%'
   },
   {
     title: '匹配模式',
     dataIndex: 'match_mode',
-    scopedSlots: { customRender: 'match_mode' }
+    scopedSlots: { customRender: 'match_mode' },
+    width: '5%'
   },
-  // {
-  //   title: '方法',
-  //   dataIndex: 'method'
-  // },
   {
     title: '状态',
     dataIndex: 'status',
-    scopedSlots: { customRender: 'status' }
+    scopedSlots: { customRender: 'status' },
+    width: '8%'
   },
   {
     title: '添加时间',
     dataIndex: 'created_at',
-    scopedSlots: { customRender: 'created_at' }
+    scopedSlots: { customRender: 'created_at' },
+    width: '15%'
   },
   {
     title: '备注',
-    dataIndex: 'remark'
+    dataIndex: 'remark',
+    width: '15%'
   },
   {
     title: '操作',
     dataIndex: 'operation',
-    scopedSlots: { customRender: 'operation' }
+    scopedSlots: { customRender: 'operation' },
+    width: '15%'
   }
 ]
 

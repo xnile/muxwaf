@@ -179,42 +179,46 @@ const columns = [
   {
     title: '路径',
     dataIndex: 'path',
-    width: '15%'
+    width: '20%'
   },
   {
     title: '匹配模式',
     dataIndex: 'match_mode',
     scopedSlots: { customRender: 'match_mode' },
-    width: '8%'
+    width: '5%'
   },
   {
     title: '阈值',
     dataIndex: 'limit',
-    width: '8%'
+    width: '7%'
   },
   {
     title: '时长(秒)',
     dataIndex: 'window',
-    width: '8%'
+    width: '6%'
   },
   {
     title: '状态',
     dataIndex: 'status',
-    scopedSlots: { customRender: 'status' }
+    scopedSlots: { customRender: 'status' },
+    width: '8%'
   },
   {
     title: '添加时间',
     dataIndex: 'created_at',
-    scopedSlots: { customRender: 'created_at' }
+    scopedSlots: { customRender: 'created_at' },
+    width: '15%'
   },
   {
     title: '备注',
-    dataIndex: 'remark'
+    dataIndex: 'remark',
+    width: '15%'
   },
   {
     title: '操作',
     dataIndex: 'operation',
-    scopedSlots: { customRender: 'operation' }
+    scopedSlots: { customRender: 'operation' },
+    width: '15%'
   }
 ]
 
