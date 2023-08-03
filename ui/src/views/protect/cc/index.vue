@@ -239,6 +239,7 @@ export default {
       time: ['', ''],
       sites: [],
       form: {
+        id: null,
         site_id: null,
         path: '',
         limit: 1,
@@ -315,7 +316,14 @@ export default {
       this.visible = true
 
       this.$nextTick(() => {
-        this.form = record
+        let form = this.form
+        form.id = record.id
+        form.site_id = record.site_id
+        form.path = record.path
+        form.limit = record.limit
+        form.window = record.window
+        form.match_mode = record.match_mode
+        form.remark = record.remark
       })
     },
 
